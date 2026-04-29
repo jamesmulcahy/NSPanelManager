@@ -47,23 +47,40 @@
         var filter_text = $("#item_select_{{ name }}_input").val();
         var has_uppercase = /[A-Z]/.test(filter_text);
 
+        // Returns true if all characters of pattern appear in text in order
+        // (but not necessarily consecutively), e.g. "lvrm" matches "living_room"
+        function fuzzyMatch(text, pattern) {
+            var ti = 0, pi = 0;
+            while (ti < text.length && pi < pattern.length) {
+                if (text[ti] === pattern[pi]) pi++;
+                ti++;
+            }
+            return pi === pattern.length;
+        }
+
+        function itemMatches(label, item_id) {
+            if (filter_text === "") return true;
+            // Exact substring match — case-sensitive when query contains uppercase
+            if (has_uppercase) {
+                if (label.includes(filter_text) || item_id.includes(filter_text)) return true;
+            } else {
+                if (label.toLowerCase().includes(filter_text.toLowerCase()) || item_id.toLowerCase().includes(filter_text.toLowerCase())) return true;
+            }
+            // Fuzzy subsequence fallback (always case-insensitive)
+            var pattern = filter_text.toLowerCase();
+            return fuzzyMatch(label.toLowerCase(), pattern) || fuzzyMatch(item_id.toLowerCase(), pattern);
+        }
+
         var num_items_shown = 0;
         $("#item_select_options_{{ name }} > li").each(function () {
-          if(has_uppercase) {
-            if ($(this).attr("data-label").includes(filter_text) || $(this).attr("data-item-id").includes(filter_text) || filter_text == "") {
-              $(this).show();
-              num_items_shown++;
+            var label = $(this).attr("data-label") || '';
+            var item_id = $(this).attr("data-item-id") || '';
+            if (itemMatches(label, item_id)) {
+                $(this).show();
+                num_items_shown++;
             } else {
-              $(this).hide();
+                $(this).hide();
             }
-          } else if(!has_uppercase) {
-            if ($(this).attr("data-label").toLowerCase().includes(filter_text.toLowerCase()) || $(this).attr("data-item-id").toLowerCase().includes(filter_text.toLowerCase()) || filter_text == "") {
-              $(this).show();
-              num_items_shown++;
-            } else {
-              $(this).hide();
-            }
-          }
         });
 
         if(num_items_shown == 0) {
