@@ -1,0 +1,62 @@
+# A self-contained NSPanelManager development stack: its own MQTT broker, NSPanelManager
+# built from this checkout, and simulated NSPanels. Nothing here talks to a real broker,
+# panel or Home Assistant, so it can run next to a production install.
+#
+# Use it through ./nspm-dev (see README.md) rather than calling docker compose directly.
+name: nspm-dev
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0.18
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    ports:
+      # Published so tools on the host (nspm-mcp, mosquitto_sub, ...) can watch the stack.
+      - "${NSPM_DEV_MQTT_PORT:-1884}:1883"
+
+  nspm:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        IS_DEVEL: "yes"
+        no_mqttmanager_build: "yes"
+    image: nspanelmanager-dev
+    depends_on:
+      - mosquitto
+    command: bash /dev-stack/nspm-entrypoint.sh
+    environment:
+      NSPM_DEV_SIM_PANELS: "${NSPM_DEV_SIM_PANELS:-1}"
+    ports:
+      - "${NSPM_DEV_PORT:-8010}:8000"
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    volumes:
+      - ./:/dev-stack:ro
+      - ../web:/usr/src/app
+      - ../HMI_files:/usr/src/app/nspanelmanager/HMI_files:ro
+      - ../nginx/sites-templates:/etc/nginx/sites-templates:ro
+      - ../MQTTManager:/MQTTManager
+      # Build output and Conan packages live in volumes, so they survive restarts and no
+      # root-owned build files end up in the checkout. NSPM_CONAN_CACHE may name a host
+      # directory instead, to share one Conan cache with other checkouts.
+      - nspm-dev-build:/MQTTManager/build
+      - "${NSPM_CONAN_CACHE:-nspm-dev-conan}:/MQTTManager/conan_cache"
+      - nspm-dev-data:/data
+      - /etc/localtime:/etc/localtime:ro
+
+  sim:
+    build: ./nspanel_sim
+    image: nspanel-sim
+    depends_on:
+      - mosquitto
+    volumes:
+      - ../protobuf:/protobuf:ro
+    command: ["--broker", "mosquitto", "--proto-dir", "/protobuf", "run", "--count", "${NSPM_DEV_SIM_PANELS:-1}"]
+
+volumes:
+  nspm-dev-build:
+  nspm-dev-conan:
+  nspm-dev-data:
