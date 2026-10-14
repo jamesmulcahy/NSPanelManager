@@ -23,7 +23,9 @@ up)
   # with other builds of this Dockerfile. docker compose build would use the current buildx
   # builder, which may be a separate container builder (older buildx releases fail with
   # "http: invalid Host header" there).
-  DOCKER_BUILDKIT=1 docker build --build-arg IS_DEVEL=yes --build-arg no_mqttmanager_build=yes -t nspanelmanager-dev .. &&
+  # The Dockerfile copies MQTTManager/build even when it does not compile MQTTManager.
+  mkdir -p ../MQTTManager/build &&
+    DOCKER_BUILDKIT=1 docker build --build-arg IS_DEVEL=yes --build-arg no_mqttmanager_build=yes -t nspanelmanager-dev .. &&
     DOCKER_BUILDKIT=1 docker build -t nspanel-sim nspanel_sim &&
     compose up -d || exit 1
   echo
