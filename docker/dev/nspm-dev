@@ -19,9 +19,13 @@ compose() {
 
 case "$1" in
 up)
-  # One image at a time: building them in parallel races to start a container-based buildx
-  # builder ("container name buildx_buildkit_default is already in use").
-  compose build nspm && compose build sim && compose up -d || exit 1
+  # Built with plain docker build, which uses the daemon's own BuildKit and shares its cache
+  # with other builds of this Dockerfile. docker compose build would use the current buildx
+  # builder, which may be a separate container builder (older buildx releases fail with
+  # "http: invalid Host header" there).
+  DOCKER_BUILDKIT=1 docker build --build-arg IS_DEVEL=yes --build-arg no_mqttmanager_build=yes -t nspanelmanager-dev .. &&
+    DOCKER_BUILDKIT=1 docker build -t nspanel-sim nspanel_sim &&
+    compose up -d || exit 1
   echo
   echo "NSPanelManager: http://localhost:${NSPM_DEV_PORT:-8010}"
   echo "MQTT broker:    localhost:${NSPM_DEV_MQTT_PORT:-1884}"
