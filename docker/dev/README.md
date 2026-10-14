@@ -5,7 +5,7 @@ manager or a copy of a production database:
 
 | Service | What it is |
 |---|---|
-| `mosquitto` | The stack's own MQTT broker, published on a free localhost port (`nspm-dev up` prints it) |
+| `mosquitto` | The stack's own MQTT broker, published on a free port (`nspm-dev up` prints it) |
 | `nspm` | NSPanelManager built from this checkout, on `http://localhost:8010` |
 | `sim` | Simulated NSPanels ([`nspanel_sim/nspanel_sim.py`](nspanel_sim/nspanel_sim.py)) |
 
@@ -17,6 +17,7 @@ pointing at `mosquitto`, a room, and the simulated panels, already accepted.
 
 ```bash
 docker/dev/nspm-dev up          # first start builds the image and MQTTManager; slow once
+                                # (the web UI is up meanwhile; the manager starts when its build is done)
 docker/dev/nspm-dev logs nspm   # follow it
 docker/dev/nspm-dev logs sim    # what the simulated panels receive, one JSON line per message
 ```
@@ -48,7 +49,8 @@ Environment variables, read by `nspm-dev up`:
 | Variable | Default | |
 |---|---|---|
 | `NSPM_DEV_PORT` | `8010` | Web UI port on the host |
-| `NSPM_DEV_MQTT_PORT` | picked by Docker | Broker port on the host (localhost only) |
+| `NSPM_DEV_MQTT_PORT` | picked by Docker | Broker port on the host |
+| `NSPM_DEV_MQTT_BIND` | `0.0.0.0` | Broker address on the host; `127.0.0.1` keeps the anonymous broker off the network |
 | `NSPM_DEV_SIM_PANELS` | `1` | Number of simulated panels (MACs `02:00:00:00:00:01`, …) |
 | `NSPM_CONAN_CACHE` | a volume | Host directory for Conan packages, to share with other checkouts |
 

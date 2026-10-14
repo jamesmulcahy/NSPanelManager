@@ -11,10 +11,10 @@ services:
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     ports:
-      # Published so tools on the host (nspm-mcp, mosquitto_sub, ...) can watch the stack.
-      # Only on localhost, as the broker allows anonymous clients, and on a free port
-      # Docker picks unless NSPM_DEV_MQTT_PORT sets one (`nspm-dev up` prints it).
-      - "127.0.0.1:${NSPM_DEV_MQTT_PORT:-}:1883"
+      # Published so tools and real panels can reach the stack, on a free port Docker picks
+      # unless NSPM_DEV_MQTT_PORT sets one (`nspm-dev up` prints it). The broker allows
+      # anonymous clients; NSPM_DEV_MQTT_BIND=127.0.0.1 keeps it off the network.
+      - "${NSPM_DEV_MQTT_BIND:-0.0.0.0}:${NSPM_DEV_MQTT_PORT:-}:1883"
 
   nspm:
     build:
