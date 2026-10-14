@@ -19,7 +19,9 @@ compose() {
 
 case "$1" in
 up)
-  compose up -d --build || exit 1
+  # One image at a time: building them in parallel races to start a container-based buildx
+  # builder ("container name buildx_buildkit_default is already in use").
+  compose build nspm && compose build sim && compose up -d || exit 1
   echo
   echo "NSPanelManager: http://localhost:${NSPM_DEV_PORT:-8010}"
   echo "MQTT broker:    localhost:${NSPM_DEV_MQTT_PORT:-1884}"
