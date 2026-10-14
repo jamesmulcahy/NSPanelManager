@@ -5,7 +5,7 @@ manager or a copy of a production database:
 
 | Service | What it is |
 |---|---|
-| `mosquitto` | The stack's own MQTT broker, published on `localhost:1884` |
+| `mosquitto` | The stack's own MQTT broker, published on a free localhost port (`nspm-dev up` prints it) |
 | `nspm` | NSPanelManager built from this checkout, on `http://localhost:8010` |
 | `sim` | Simulated NSPanels ([`nspanel_sim/nspanel_sim.py`](nspanel_sim/nspanel_sim.py)) |
 
@@ -48,7 +48,7 @@ Environment variables, read by `nspm-dev up`:
 | Variable | Default | |
 |---|---|---|
 | `NSPM_DEV_PORT` | `8010` | Web UI port on the host |
-| `NSPM_DEV_MQTT_PORT` | `1884` | Broker port on the host |
+| `NSPM_DEV_MQTT_PORT` | picked by Docker | Broker port on the host (localhost only) |
 | `NSPM_DEV_SIM_PANELS` | `1` | Number of simulated panels (MACs `02:00:00:00:00:01`, …) |
 | `NSPM_CONAN_CACHE` | a volume | Host directory for Conan packages, to share with other checkouts |
 
@@ -65,5 +65,5 @@ restart it with `nspm-dev compose restart sim`. It also runs outside Docker:
 
 ```bash
 pip install -r docker/dev/nspanel_sim/requirements.txt
-python docker/dev/nspanel_sim/nspanel_sim.py --broker localhost --port 1884 run --watch-manager
+python docker/dev/nspanel_sim/nspanel_sim.py --broker localhost --port <broker port> run --watch-manager
 ```

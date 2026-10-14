@@ -30,7 +30,7 @@ up)
     compose up -d || exit 1
   echo
   echo "NSPanelManager: http://localhost:${NSPM_DEV_PORT:-8010}"
-  echo "MQTT broker:    localhost:${NSPM_DEV_MQTT_PORT:-1884}"
+  echo "MQTT broker:    $(compose port mosquitto 1883)"
   echo "The first start builds MQTTManager, which takes a while. Follow it with: $0 logs nspm"
   ;;
 down)
