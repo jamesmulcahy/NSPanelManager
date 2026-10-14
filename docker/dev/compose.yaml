@@ -19,10 +19,7 @@ services:
   nspm:
     build:
       context: ..
-      dockerfile: Dockerfile
-      args:
-        IS_DEVEL: "yes"
-        no_mqttmanager_build: "yes"
+      dockerfile: dev/Dockerfile
     image: nspanelmanager-dev
     depends_on:
       - mosquitto

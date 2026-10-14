@@ -1,0 +1,7 @@
+# Build context for the dev stack's Dockerfile: only what the image installs from.
+*
+!build_scripts/
+!web/requirements.txt
+!web/nspanelmanager/web/react-components/package.json
+!web/nspanelmanager/web/react-components/package-lock.json
+!nginx/sites-enabled/

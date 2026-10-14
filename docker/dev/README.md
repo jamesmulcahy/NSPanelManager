@@ -10,7 +10,10 @@ manager or a copy of a production database:
 | `sim` | Simulated NSPanels ([`nspanel_sim/nspanel_sim.py`](nspanel_sim/nspanel_sim.py)) |
 
 The stack has its own broker, so it never touches real panels and can run next to a
-production install. A fresh stack seeds its database ([`seed.py`](seed.py)): MQTT settings
+production install. It sits alongside the existing build: it does not use or change
+`docker/Dockerfile` or `docker-build_and_run_dev.sh`. Its image ([`Dockerfile`](Dockerfile))
+holds only tools and packages; the source is mounted in, so editing it never rebuilds the
+image. A fresh stack seeds its database ([`seed.py`](seed.py)): MQTT settings
 pointing at `mosquitto`, a room, and the simulated panels, already accepted.
 
 ## Usage
