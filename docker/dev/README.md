@@ -55,6 +55,7 @@ Environment variables, read by `nspm-dev up`:
 | `NSPM_DEV_MQTT_PORT` | picked by Docker | Broker port on the host |
 | `NSPM_DEV_MQTT_BIND` | `0.0.0.0` | Broker address on the host; `127.0.0.1` keeps the anonymous broker off the network |
 | `NSPM_DEV_SIM_PANELS` | `1` | Number of simulated panels (MACs `02:00:00:00:00:01`, …) |
+| `NSPM_DEV_TZ` | the image's | The manager's timezone, e.g. `Europe/Stockholm` |
 | `NSPM_CONAN_CACHE` | a volume | Host directory for Conan packages, to share with other checkouts |
 
 With `sudo`, keep them with `sudo --preserve-env=NSPM_CONAN_CACHE,...`.
