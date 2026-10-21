@@ -26,7 +26,9 @@ RUN bash /build_scripts/install_build_tools.sh yes
 
 RUN apt-get install -y nginx libmagick++-dev
 COPY web/requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+# CPUCOUNT=1 builds uWSGI on one thread. Its parallel build can fail to start a compiler
+# ("OSError: [Errno 14] Bad address: '/bin/sh") on some hosts, then fails to link.
+RUN CPUCOUNT=1 pip install --no-cache-dir -r /tmp/requirements.txt
 
 COPY nginx/sites-enabled/ /etc/nginx/sites-enabled/
 COPY --from=ui-builder /ui-app/dist /var/www/html/webapp
