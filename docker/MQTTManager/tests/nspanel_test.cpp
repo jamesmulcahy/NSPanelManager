@@ -206,6 +206,30 @@ TEST_F(NSPanelTest, panel_settings_are_sent_in_the_config) {
   EXPECT_FALSE(config->show_screensaver_outside_temperature());
 }
 
+TEST_F(NSPanelTest, timezone_rule_is_sent_in_the_config) {
+  std::string previous_rule = MqttManagerConfig::timezone_posix_rule;
+  OnExit restore_rule{[&] { MqttManagerConfig::timezone_posix_rule = previous_rule; }};
+  MqttManagerConfig::timezone_posix_rule = "CET-1CEST,M3.5.0,M10.5.0/3";
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->tz_posix(), "CET-1CEST,M3.5.0,M10.5.0/3");
+}
+
+TEST_F(NSPanelTest, unknown_timezone_rule_is_sent_empty) {
+  std::string previous_rule = MqttManagerConfig::timezone_posix_rule;
+  OnExit restore_rule{[&] { MqttManagerConfig::timezone_posix_rule = previous_rule; }};
+  MqttManagerConfig::timezone_posix_rule = "";
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->tz_posix(), "");
+}
+
 TEST_F(NSPanelTest, temperature_calibration_is_sent_in_tenths_of_a_degree) {
   set_panel_setting("temperature_calibration", "-1.5"); // Django stores str(float(...)).
 
@@ -409,6 +433,148 @@ TEST_F(NSPanelTest, panel_locked_to_its_room_only_gets_that_room) {
   EXPECT_EQ(std::vector<int>(config->room_infos(0).entity_page_ids().begin(), config->room_infos(0).entity_page_ids().end()), std::vector<int>({panel_rooms().entities_page_id}));
 }
 
+TEST_F(NSPanelTest, config_has_no_sounds_without_buzzer_settings) {
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->sounds_size(), 0);
+}
+
+TEST_F(NSPanelTest, global_buzzer_sounds_are_sent_per_event) {
+  OnExit reset{[] {
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "");
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED, "");
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_SAVED, "");
+  }};
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "touch:d=32,o=6,b=190:g6");
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED, "activated:d=16,o=6,b=180:c,e,g");
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_SAVED, "saved:d=8,o=5,b=120:c6");
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  ASSERT_EQ(config->sounds_size(), 3);
+  EXPECT_EQ(config->sounds(0).event(), NSPanelConfig_NSPanelSoundEvent_TOUCH);
+  EXPECT_EQ(config->sounds(0).rtttl(), "touch:d=32,o=6,b=190:g6");
+  EXPECT_EQ(config->sounds(1).event(), NSPanelConfig_NSPanelSoundEvent_SCENE_ACTIVATED);
+  EXPECT_EQ(config->sounds(1).rtttl(), "activated:d=16,o=6,b=180:c,e,g");
+  EXPECT_EQ(config->sounds(2).event(), NSPanelConfig_NSPanelSoundEvent_SCENE_SAVED);
+  EXPECT_EQ(config->sounds(2).rtttl(), "saved:d=8,o=5,b=120:c6");
+}
+
+TEST_F(NSPanelTest, panel_buzzer_settings_override_the_global_sounds) {
+  OnExit reset{[] {
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "");
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED, "");
+  }};
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "global_touch:d=32,o=6,b=190:g6");
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED, "global_activated:d=16,o=6,b=180:c");
+  set_panel_setting("buzzer_sound_touch", "panel_touch:d=32,o=7,b=200:c");
+  set_panel_setting("buzzer_sound_scene_activated", ""); // Silences the event on this panel only.
+  set_panel_setting("buzzer_sound_scene_saved", "panel_saved:d=8,o=5,b=120:e");
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  ASSERT_EQ(config->sounds_size(), 2);
+  EXPECT_EQ(config->sounds(0).event(), NSPanelConfig_NSPanelSoundEvent_TOUCH);
+  EXPECT_EQ(config->sounds(0).rtttl(), "panel_touch:d=32,o=7,b=200:c");
+  EXPECT_EQ(config->sounds(1).event(), NSPanelConfig_NSPanelSoundEvent_SCENE_SAVED);
+  EXPECT_EQ(config->sounds(1).rtttl(), "panel_saved:d=8,o=5,b=120:e");
+}
+
+TEST_F(NSPanelTest, muting_the_buzzer_sends_no_sounds_until_unmuted) {
+  OnExit reset{[] {
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "");
+  }};
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "touch:d=32,o=6,b=190:g6");
+  load_panel();
+  last_published_config();
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/buzzer_mute_cmd", "1");
+
+  auto messages = MQTT_Manager::test_take_published_messages();
+  auto state = std::find_if(messages.begin(), messages.end(), [](auto &message) { return message.topic == "nspanel/" + PANEL_MAC + "/buzzer_mute_state"; });
+  ASSERT_NE(state, messages.end());
+  EXPECT_EQ(state->payload, "1");
+  EXPECT_TRUE(state->retain);
+  auto config = std::find_if(messages.begin(), messages.end(), [](auto &message) { return message.topic == "nspanel/" + PANEL_MAC + "/config"; });
+  ASSERT_NE(config, messages.end());
+  NSPanelConfig muted_config;
+  ASSERT_TRUE(muted_config.ParseFromString(config->payload));
+  EXPECT_EQ(muted_config.sounds_size(), 0);
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/buzzer_mute_cmd", "0");
+
+  auto unmuted_config = last_published_config();
+  ASSERT_TRUE(unmuted_config.has_value());
+  ASSERT_EQ(unmuted_config->sounds_size(), 1);
+  EXPECT_EQ(unmuted_config->sounds(0).rtttl(), "touch:d=32,o=6,b=190:g6");
+}
+
+TEST_F(NSPanelTest, buzzer_mute_is_kept_across_config_reloads) {
+  OnExit reset{[] {
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "");
+  }};
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, "touch:d=32,o=6,b=190:g6");
+  load_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/buzzer_mute_cmd", "1");
+  last_published_config();
+
+  panel->reload_config();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->sounds_size(), 0);
+}
+
+TEST_F(NSPanelTest, unchanged_buzzer_mute_does_not_resend_the_config) {
+  load_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/buzzer_mute_cmd", "1");
+  last_published_config();
+
+  // The broker replays the retained command on every resubscribe.
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/buzzer_mute_cmd", "1");
+
+  EXPECT_FALSE(last_published_config().has_value());
+}
+
+TEST_F(NSPanelTest, unknown_buzzer_mute_command_is_ignored) {
+  load_panel();
+  last_published_config();
+  ScopedErrorLog log;
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/buzzer_mute_cmd", "ON");
+
+  EXPECT_FALSE(last_published_config().has_value());
+  auto errors = log.errors();
+  EXPECT_TRUE(std::any_of(errors.begin(), errors.end(), [](auto &error) { return error.find("buzzer mute") != std::string::npos; }));
+}
+
+TEST_F(NSPanelTest, sonoff_panel_registers_a_retained_buzzer_mute_switch) {
+  load_panel();
+
+  auto messages = nspm_test::mqtt_published_to("homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_buzzer_mute/config");
+  ASSERT_FALSE(messages.empty());
+  auto discovery = nlohmann::json::parse(messages.back().payload);
+  EXPECT_EQ(discovery["command_topic"], "nspanel/" + PANEL_MAC + "/buzzer_mute_cmd");
+  EXPECT_EQ(discovery["state_topic"], "nspanel/" + PANEL_MAC + "/buzzer_mute_state");
+  EXPECT_EQ(discovery["retain"], true);
+}
+
+TEST_F(NSPanelTest, custom_panel_does_not_register_a_buzzer_mute_switch) {
+  update_row([](auto &settings) {
+    settings.model = "custom";
+  });
+
+  load_panel();
+
+  EXPECT_TRUE(nspm_test::mqtt_published_to("homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_buzzer_mute/config").empty());
+}
+
 TEST_F(NSPanelTest, reload_config_sends_changed_settings) {
   load_panel();
   last_published_config();
@@ -531,6 +697,26 @@ TEST_F(NSPanelTest, commands_go_to_the_mac_and_legacy_name_topics) {
     EXPECT_EQ(nlohmann::json::parse(messages[0].payload), nlohmann::json({{"command", "reboot"}}));
   }
   EXPECT_EQ(panel->get_state(), MQTT_MANAGER_NSPANEL_STATE::WAITING);
+}
+
+TEST_F(NSPanelTest, panel_coming_online_is_sent_the_time) {
+  load_panel();
+  nspm_test::ScopedBrokerConnected connected;
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status", R"({"state": "online"})");
+
+  auto messages = nspm_test::mqtt_sent_to(nspm_test::epoch_topic());
+  ASSERT_EQ(messages.size(), 1);
+  EXPECT_FALSE(messages[0].retain);
+}
+
+TEST_F(NSPanelTest, panel_going_offline_is_not_sent_the_time) {
+  load_panel();
+  nspm_test::ScopedBrokerConnected connected;
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status", R"({"state": "offline"})");
+
+  EXPECT_TRUE(nspm_test::mqtt_sent_to(nspm_test::epoch_topic()).empty());
 }
 
 TEST_F(NSPanelTest, mqtt_payload_button_publishes_the_configured_message) {

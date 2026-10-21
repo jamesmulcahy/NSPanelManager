@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "test_helpers.hpp"
 #include <cxxabi.h>
 #include <database_manager/database_manager.hpp>
 #include <execinfo.h>
@@ -57,13 +58,17 @@ int main(int argc, char **argv) {
 
   ::testing::InitGoogleTest(&argc, argv);
   spdlog::set_level(spdlog::level::warn); // Keep test output readable; raise when debugging.
+  // Before anything starts a thread that logs, see nspm_test::log_capture_sink().
+  spdlog::default_logger()->sinks().push_back(nspm_test::log_capture_sink());
   database_manager::init();
   int result = RUN_ALL_TESTS();
 
-  // Skip static destructors. Each Room runs a detached thread that waits on the room's own mutex
-  // and condition variable forever; destroying EntityManager's static room list at exit pulls
-  // those out from under the threads and segfaults after every test has passed. The manager
-  // itself never exits this way. Results, including the JUnit XML, are written by now.
+  // Skip static destructors. EntityManager's static rooms and entities detach themselves from other
+  // static singletons (CommandManager, MQTT_Manager, the Home Assistant and OpenHAB managers, spdlog)
+  // when destroyed, and statics in different files are destroyed in no defined order. Some
+  // components also keep threads running that nothing stops. Exiting cleanly would need an explicit
+  // shutdown that tears entities down first. The manager itself never exits this way. Results,
+  // including the JUnit XML, are written by now.
   spdlog::default_logger()->flush();
   std::fflush(nullptr);
   std::_Exit(result);

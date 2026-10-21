@@ -1,6 +1,7 @@
 #include "nspanel.hpp"
 #include "database_manager/database_manager.hpp"
 #include "entity_manager/entity_manager.hpp"
+#include "manager_clock/manager_clock.hpp"
 #include "mqtt_manager/mqtt_manager.hpp"
 #include "mqtt_manager_config/mqtt_manager_config.hpp"
 #include "protobuf_nspanel.pb.h"
@@ -47,6 +48,8 @@
 #include <string>
 #include <sys/stat.h>
 #include <system_error>
+#include <tuple>
+#include <vector>
 #include <websocket_server/websocket_server.hpp>
 
 NSPanel::NSPanel(uint32_t id) {
@@ -224,10 +227,13 @@ void NSPanel::reload_config() {
     this->_mqtt_number_screen_brightness_topic = fmt::format("homeassistant/number/nspanelmanager/{}_screen_brightness/config", mqtt_register_mac);
     this->_mqtt_number_screensaver_brightness_topic = fmt::format("homeassistant/number/nspanelmanager/{}_screensaver_brightness/config", mqtt_register_mac);
     this->_mqtt_select_screensaver_topic = fmt::format("homeassistant/select/nspanelmanager/{}_screensaver_select/config", mqtt_register_mac);
+    this->_mqtt_switch_buzzer_mute_topic = fmt::format("homeassistant/switch/nspanelmanager/{}_buzzer_mute/config", mqtt_register_mac);
     this->_mqtt_relay1_command_topic = fmt::format("nspanel/{}/relay1_cmd", this->_mac);
     this->_mqtt_relay1_state_topic = fmt::format("nspanel/{}/relay1_state", this->_mac);
     this->_mqtt_relay2_command_topic = fmt::format("nspanel/{}/relay2_cmd", this->_mac);
     this->_mqtt_relay2_state_topic = fmt::format("nspanel/{}/relay2_state", this->_mac);
+    this->_mqtt_buzzer_mute_command_topic = fmt::format("nspanel/{}/buzzer_mute_cmd", this->_mac);
+    this->_mqtt_buzzer_mute_state_topic = fmt::format("nspanel/{}/buzzer_mute_state", this->_mac);
     this->_mqtt_status_topic = fmt::format("nspanel/{}/status", this->_mac);
     this->_mqtt_status_report_topic = fmt::format("nspanel/{}/status_report", this->_mac);
     this->_mqtt_mac_log_topic = fmt::format("nspanel/{}/log", this->_mac);
@@ -254,6 +260,7 @@ void NSPanel::reload_config() {
       MQTT_Manager::subscribe(this->_mqtt_mac_log_topic, boost::bind(&NSPanel::mqtt_log_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
+      MQTT_Manager::subscribe(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
     }
 
     if (name_changed || reregister_to_ha_mqtt_discovery) {
@@ -297,6 +304,7 @@ void NSPanel::send_config() {
   config.set_screensaver_dim_level(std::stoi(this->_get_nspanel_setting_with_default("screensaver_dim_level", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_DIM_LEVEL))));
   config.set_screensaver_activation_timeout(std::stoi(this->_get_nspanel_setting_with_default("screensaver_activation_timeout", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_ACTIVATION_TIMEOUT))));
   config.set_clock_us_style(MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::CLOCK_US_STYLE));
+  config.set_tz_posix(MqttManagerConfig::timezone_posix_rule);
   config.set_use_fahrenheit(MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT));
   config.set_is_us_panel(this->_get_nspanel_setting_with_default("is_us_panel", "False").compare("True") == 0);
   config.set_reverse_relays(this->_get_nspanel_setting_with_default("reverse_relays", "False").compare("True") == 0);
@@ -479,6 +487,22 @@ void NSPanel::send_config() {
     SPDLOG_WARN("No global entities pages were loaded while building config for NSPanel {}::{}", this->_id, this->_name);
   }
 
+  // Load buzzer sounds. A panel setting overrides the global one, an empty value means no sound for that event.
+  // While the buzzer is muted no sounds are sent, which silences every event.
+  const std::vector<std::tuple<NSPanelConfig_NSPanelSoundEvent, std::string, MQTT_MANAGER_SETTING>> sound_settings = {
+      {NSPanelConfig_NSPanelSoundEvent_TOUCH, "buzzer_sound_touch", MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH},
+      {NSPanelConfig_NSPanelSoundEvent_SCENE_ACTIVATED, "buzzer_sound_scene_activated", MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED},
+      {NSPanelConfig_NSPanelSoundEvent_SCENE_SAVED, "buzzer_sound_scene_saved", MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_SAVED},
+  };
+  for (const auto &[event, nspanel_setting_key, global_setting] : sound_settings) {
+    std::string rtttl = this->_get_nspanel_setting_with_default(nspanel_setting_key, MqttManagerConfig::get_setting_with_default<std::string>(global_setting));
+    if (!rtttl.empty() && !this->_buzzer_muted) {
+      NSPanelConfig_Sound *sound = config.add_sounds();
+      sound->set_event(event);
+      sound->set_rtttl(rtttl);
+    }
+  }
+
   SPDLOG_DEBUG("Sending updated NSPanelConfig to panel {}::{} over MQTT.", this->_id, this->_name);
   MQTT_Manager::publish_protobuf(this->_mqtt_config_topic, config, true);
 }
@@ -501,6 +525,7 @@ void NSPanel::reset_mqtt_topics() {
   MQTT_Manager::detach_callback(this->_mqtt_mac_log_topic, boost::bind(&NSPanel::mqtt_log_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
+  MQTT_Manager::detach_callback(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
 
   // This nspanel was removed. Clear any retain on any MQTT topic.
   MQTT_Manager::clear_retain(this->_mqtt_command_topic);
@@ -518,12 +543,16 @@ void NSPanel::reset_ha_mqtt_topics() {
   MQTT_Manager::clear_retain(this->_mqtt_number_screen_brightness_topic);
   MQTT_Manager::clear_retain(this->_mqtt_number_screensaver_brightness_topic);
   MQTT_Manager::clear_retain(this->_mqtt_select_screensaver_topic);
+  MQTT_Manager::clear_retain(this->_mqtt_switch_buzzer_mute_topic);
 }
 
 void NSPanel::erase() {
   this->reboot();
   this->reset_mqtt_topics();
   this->reset_ha_mqtt_topics();
+  // Not cleared in reset_mqtt_topics() as that runs on every config reload, and the retained command is what remembers the mute.
+  MQTT_Manager::clear_retain(this->_mqtt_buzzer_mute_command_topic);
+  MQTT_Manager::clear_retain(this->_mqtt_buzzer_mute_state_topic);
 }
 
 uint NSPanel::get_id() {
@@ -548,7 +577,19 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
   }
 
   try {
-    if (topic.compare(this->_mqtt_log_topic) == 0) {
+    if (topic.compare(this->_mqtt_buzzer_mute_command_topic) == 0) {
+      if (payload.compare("1") != 0 && payload.compare("0") != 0) {
+        SPDLOG_ERROR("Received unknown buzzer mute command '{}' for NSPanel {}::{}. Expected '1' or '0'.", payload, this->_id, this->_name);
+        return;
+      }
+      bool muted = payload.compare("1") == 0;
+      bool changed = this->_buzzer_muted.exchange(muted) != muted;
+      MQTT_Manager::publish(this->_mqtt_buzzer_mute_state_topic, payload, true);
+      if (changed) {
+        SPDLOG_INFO("NSPanel {}::{} buzzer {}. Sending config.", this->_id, this->_name, muted ? "muted" : "unmuted");
+        this->send_config();
+      }
+    } else if (topic.compare(this->_mqtt_log_topic) == 0) {
       // Split log message by semicolon to extract MAC, log level and message.
       std::string message = payload;
       std::vector<std::string> message_parts;
@@ -609,6 +650,8 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
       if (state.compare("online") == 0) {
         this->_state = MQTT_MANAGER_NSPANEL_STATE::ONLINE;
         SPDLOG_DEBUG("NSPanel {}::{} became ONLINE.", this->_id, this->_name);
+        // A panel that has just started or reconnected has no clock until it is told the time.
+        ManagerClock::publish_epoch();
       } else if (state.compare("offline") == 0) {
         this->_state = MQTT_MANAGER_NSPANEL_STATE::OFFLINE;
         SPDLOG_DEBUG("NSPanel {}::{} became OFFLINE.", this->_id, this->_name);
@@ -1574,6 +1617,25 @@ void NSPanel::register_to_home_assistant() {
   std::string screensaver_select_data_str = screensaver_select_data.dump();
   SPDLOG_DEBUG("Registring screensaver mode select for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
   MQTT_Manager::publish(this->_mqtt_select_screensaver_topic, screensaver_select_data_str, true);
+
+  // Register buzzer mute switch. Only the Sonoff panel has a buzzer.
+  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF) {
+    nlohmann::json buzzer_mute_data = nlohmann::json(base_json);
+    buzzer_mute_data["device_class"] = "switch";
+    buzzer_mute_data["name"] = "Mute sounds";
+    buzzer_mute_data["icon"] = "mdi:volume-off";
+    buzzer_mute_data["state_topic"] = this->_mqtt_buzzer_mute_state_topic;
+    buzzer_mute_data["command_topic"] = this->_mqtt_buzzer_mute_command_topic;
+    buzzer_mute_data["state_on"] = "1";
+    buzzer_mute_data["state_off"] = "0";
+    buzzer_mute_data["payload_on"] = "1";
+    buzzer_mute_data["payload_off"] = "0";
+    buzzer_mute_data["retain"] = true; // The retained command is what remembers the mute across manager restarts.
+    buzzer_mute_data["unique_id"] = fmt::format("{}_buzzer_mute", this->_mqtt_register_mac);
+    std::string buzzer_mute_data_str = buzzer_mute_data.dump();
+    SPDLOG_DEBUG("Registring buzzer mute switch for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
+    MQTT_Manager::publish(this->_mqtt_switch_buzzer_mute_topic, buzzer_mute_data_str, true);
+  }
 }
 
 void NSPanel::set_relay_state(uint8_t relay, bool state) {

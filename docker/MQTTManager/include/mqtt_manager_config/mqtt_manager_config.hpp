@@ -72,6 +72,9 @@ enum MQTT_MANAGER_SETTING {
   OPTIMISTIC_MODE,
   LIGHT_TURN_ON_BRIGHTNESS,
   DEFAULT_NSPANEL_TYPE,
+  BUZZER_SOUND_TOUCH,
+  BUZZER_SOUND_SCENE_ACTIVATED,
+  BUZZER_SOUND_SCENE_SAVED,
   LAST, // Keep last as to be able to reference the last element in the list.
 };
 
@@ -85,6 +88,15 @@ public:
   static void populate_default_and_clean();
 
   static inline std::string timezone;
+  // POSIX TZ rule for timezone, read from its tzdata file. Empty if it could not be read.
+  static inline std::string timezone_posix_rule;
+
+  /**
+   * Read the POSIX TZ rule from the end of a tzdata (TZif) file, ex. "CET-1CEST,M3.5.0,M10.5.0/3".
+   * @param tzif_path: Path of the file, ex. /usr/share/zoneinfo/Europe/Stockholm.
+   * @return The rule, or empty if the file is missing, not version 2 or later, or has no rule.
+   */
+  static std::string read_posix_tz_rule(const std::string &tzif_path);
 
   template <typename T>
   static T get_setting_with_default(MQTT_MANAGER_SETTING key);
@@ -228,6 +240,9 @@ private:
       {MQTT_MANAGER_SETTING::OPTIMISTIC_MODE, {"optimistic_mode", "True"}},
       {MQTT_MANAGER_SETTING::LIGHT_TURN_ON_BRIGHTNESS, {"light_turn_on_brightness", "50"}},
       {MQTT_MANAGER_SETTING::DEFAULT_NSPANEL_TYPE, {"default_nspanel_type", "eu"}},
+      {MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, {"buzzer_sound_touch", ""}}, // RTTTL, empty for no sound
+      {MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED, {"buzzer_sound_scene_activated", ""}},
+      {MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_SAVED, {"buzzer_sound_scene_saved", ""}},
 #if defined(TEST_MODE) && TEST_MODE == 1
       {MQTT_MANAGER_SETTING::LAST, {"last", "last_value"}},
 #endif
