@@ -41,5 +41,12 @@ if [ ! -x "$BUILD_DIR/nspm_mqttmanager" ]; then
   ) &
 fi
 
+# The devel nginx config forwards Host without the port, so Django's CSRF origin check only
+# passes on the origins CSRF_TRUSTED_ORIGINS lists (localhost:8000). Forward the port too, so
+# saving works on any NSPM_DEV_PORT and from any address.
+mkdir -p /etc/nginx/sites-templates
+sed 's/proxy_set_header Host \$host;/proxy_set_header Host $http_host;/' /nspm-nginx-templates/nspanelmanager_devel.template >/etc/nginx/sites-templates/nspanelmanager_devel.template
+grep -q 'proxy_set_header Host \$http_host;' /etc/nginx/sites-templates/nspanelmanager_devel.template || echo "--> WARNING: could not make nginx forward the port, saving may fail the CSRF check."
+
 cd /usr/src/app || exit 1
 exec bash ./runserver_devel.sh

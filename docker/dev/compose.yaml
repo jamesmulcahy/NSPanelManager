@@ -38,7 +38,8 @@ services:
       - ./:/dev-stack:ro
       - ../web:/usr/src/app
       - ../HMI_files:/usr/src/app/nspanelmanager/HMI_files:ro
-      - ../nginx/sites-templates:/etc/nginx/sites-templates:ro
+      # Mounted beside /etc/nginx/sites-templates, nspm-entrypoint.sh puts an adjusted copy there.
+      - ../nginx/sites-templates:/nspm-nginx-templates:ro
       - ../MQTTManager:/MQTTManager
       # Build output and Conan packages live in volumes, so they survive restarts and no
       # root-owned build files end up in the checkout. NSPM_CONAN_CACHE may name a host
