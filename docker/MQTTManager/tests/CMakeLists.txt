@@ -20,5 +20,7 @@ target_link_options(nspm_mqttmanager_tests PRIVATE "LINKER:--whole-archive" "$<T
 target_link_options(nspm_mqttmanager_tests PRIVATE -rdynamic)
 
 target_link_libraries(nspm_mqttmanager_tests PRIVATE nspm_core)
+# Its own copy rather than REUSE_FROM nspm_core: the tests are compiled with different flags.
+target_precompile_headers(nspm_mqttmanager_tests PRIVATE ${NSPM_PRECOMPILED_HEADERS} <gtest/gtest.h>)
 
 gtest_discover_tests(nspm_mqttmanager_tests DISCOVERY_TIMEOUT 60)

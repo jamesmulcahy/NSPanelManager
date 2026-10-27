@@ -97,13 +97,17 @@ target_link_libraries(nspm_core PUBLIC
     Boost::boost Boost::stacktrace_backtrace dl gtest::gtest
 )
 
-# Phase 2 metrics (latency, queueing, outcomes of long operations), see include/metrics/latency_metrics.hpp.
-add_library(MQTTManager_LatencyMetrics STATIC ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/latency_metrics.cpp ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/latency_metrics.hpp ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/ha_call_tracker.hpp ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/panel_update_tracker.hpp ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/drop_log_limiter.hpp)
-target_include_directories(MQTTManager_LatencyMetrics PUBLIC ${CMAKE_INCLUDE_SRC_DIRECTORY})
-target_link_libraries(MQTTManager_LatencyMetrics MQTTManager_Metrics prometheus-cpp::core)
-foreach(library MQTT_Manager MQTTManager_CommandManager MQTTManager_HomeAssistantManager MQTTManager_OpenhabManager MQTTManager_ManagerClock MQTTManager_Weather MQTTManager_NSPanel MQTTManager_EntityManager MQTTManager_NextionImageServer)
-    target_link_libraries(${library} MQTTManager_LatencyMetrics)
-endforeach()
+# Headers that most files include, parsed once per target instead of once per file. Each
+# library header costs 1-5 s to parse, and almost every file includes most of them.
+# (stb is left out: nextion_image_server.cpp sets macros before including it.)
+set(NSPM_PRECOMPILED_HEADERS
+    <algorithm> <chrono> <functional> <memory> <mutex> <optional> <string> <thread> <vector>
+    <spdlog/spdlog.h> <fmt/format.h> <nlohmann/json.hpp> <curl/curl.h> <ixwebsocket/IXWebSocket.h> <sqlite_orm/sqlite_orm.h>
+    <boost/algorithm/string.hpp> <boost/bind.hpp> <boost/exception/diagnostic_information.hpp> <boost/signals2.hpp> <boost/stacktrace.hpp>
+    <google/protobuf/util/message_differencer.h>
+    <protobuf/protobuf_formats.pb.h> <protobuf/protobuf_general.pb.h> <protobuf/protobuf_mqttmanager.pb.h> <protobuf/protobuf_nspanel.pb.h> <protobuf/protobuf_nspanel_entity.pb.h>
+)
+target_precompile_headers(nspm_core PRIVATE ${NSPM_PRECOMPILED_HEADERS})
 
 add_executable(${PROJECT_NAME} src/main.cpp)
 target_link_libraries(${PROJECT_NAME} nspm_core)
