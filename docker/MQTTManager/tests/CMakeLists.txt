@@ -11,14 +11,11 @@ target_include_directories(nspm_mqttmanager_tests PRIVATE ${CMAKE_INCLUDE_SRC_DI
 # Recorded data some tests load at runtime (see fixtures/).
 target_compile_definitions(nspm_mqttmanager_tests PRIVATE NSPM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 
-# nspm_core contains inline tests. It is a static library, and the linker only pulls in object
-# files something references, so it is linked whole to make sure every inline test registers
-# with GoogleTest.
-target_link_options(nspm_mqttmanager_tests PRIVATE "LINKER:--whole-archive" "$<TARGET_FILE:nspm_core>" "LINKER:--no-whole-archive")
-
 # Export the executable's symbols so the crash handler in main.cpp can name the functions in a backtrace.
 target_link_options(nspm_mqttmanager_tests PRIVATE -rdynamic)
 
+# nspm_core is an object library, so every one of its object files is linked in, including the
+# inline tests.
 target_link_libraries(nspm_mqttmanager_tests PRIVATE nspm_core)
 # Its own copy rather than REUSE_FROM nspm_core: the tests are compiled with different flags.
 target_precompile_headers(nspm_mqttmanager_tests PRIVATE ${NSPM_PRECOMPILED_HEADERS} <gtest/gtest.h>)

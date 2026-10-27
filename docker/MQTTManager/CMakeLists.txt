@@ -44,11 +44,13 @@ find_package(prometheus-cpp REQUIRED)
 # Load CMake google test module
 include(GoogleTest)
 
-# Everything except main() is one static library, so make can compile all of it in parallel.
+# Everything except main() is one object library, so make can compile all of it in parallel.
 # (With one library per module, make would not start compiling a library until every library it
-# links against was built, which left most of a clean build running on a single core.)
+# links against was built, which left most of a clean build running on a single core.) It is an
+# object library rather than a static one so that changing one file doesn't rewrite an archive of
+# every object file before both binaries relink.
 file(GLOB PROTOBUF_PB_CC_FILES "${CMAKE_INCLUDE_SRC_DIRECTORY}/protobuf/*.pb.cc")
-add_library(nspm_core STATIC
+add_library(nspm_core OBJECT
     ${PROTOBUF_PB_CC_FILES}
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/button.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/home_assistant_button.cpp
