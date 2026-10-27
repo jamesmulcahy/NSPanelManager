@@ -50,47 +50,49 @@ include(GoogleTest)
 # object library rather than a static one so that changing one file doesn't rewrite an archive of
 # every object file before both binaries relink.
 file(GLOB PROTOBUF_PB_CC_FILES "${CMAKE_INCLUDE_SRC_DIRECTORY}/protobuf/*.pb.cc")
+# Slowest to compile first: make starts the files in this order, so a slow file listed last
+# would still be compiling alone after everything else has finished.
 add_library(nspm_core OBJECT
-    ${PROTOBUF_PB_CC_FILES}
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/button.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/home_assistant_button.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/nspm_button.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/command_manager/command_manager.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/cover/cover.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/cover/home_assistant_cover.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/cover/openhab_cover.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/database_manager/database_manager.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/entity/entity.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/entity_manager/entity_manager.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/home_assistant_manager/home_assistant_manager.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/light/home_assistant_light.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/light/light.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/light/openhab_light.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/manager_clock/manager_clock.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/home_assistant_media_player.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/home_assistant_source_player.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/home_assistant_source_volume.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/media_player.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/mqtt_manager/mqtt_manager.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/mqtt_manager_config/mqtt_manager_config.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/nextion_image_server/nextion_image_server.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/nspanel/nspanel.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/openhab_manager/openhab_manager.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/database_manager/database_manager.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/light/openhab_light.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/entity_manager/entity_manager.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/room/room.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/room/room_entities_page.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/home_assistant_scene.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/nspm_scene.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/openhab_scene.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/scene.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/switch/home_assistant_switch.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/nextion_image_server/nextion_image_server.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/switch/openhab_switch.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/switch/switch.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/thermostat/home_assistant_thermostat.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/thermostat/openhab_thermostat.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/thermostat/thermostat.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/switch/home_assistant_switch.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/home_assistant_manager/home_assistant_manager.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/switch/switch.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/weather/weather.cpp
-    ${CMAKE_INCLUDE_SRC_DIRECTORY}/web_helper/WebHelper.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/light/light.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/thermostat/openhab_thermostat.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/mqtt_manager/mqtt_manager.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/room/room_entities_page.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/light/home_assistant_light.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/media_player.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/openhab_manager/openhab_manager.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/openhab_scene.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/thermostat/home_assistant_thermostat.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/home_assistant_scene.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/home_assistant_media_player.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/nspm_scene.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/button.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/command_manager/command_manager.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/manager_clock/manager_clock.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/home_assistant_button.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/mqtt_manager_config/mqtt_manager_config.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/websocket_server/websocket_server.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/scenes/scene.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/button/nspm_button.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/home_assistant_source_player.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/web_helper/WebHelper.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/home_assistant_source_volume.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/entity/entity.cpp
+    ${PROTOBUF_PB_CC_FILES}
 )
 target_include_directories(nspm_core PUBLIC ${CMAKE_INCLUDE_SRC_DIRECTORY} ${PROTOBUF_SRC_DIRECTORY} ${CURL_INCLUDE_DIR})
 target_link_libraries(nspm_core PUBLIC
