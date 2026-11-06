@@ -726,6 +726,14 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         this->_reported_display_mode = report.display_mode();
         this->_reported_lvgl_theme = report.lvgl_theme();
         this->_reported_lvgl_background = report.lvgl_background();
+        // metrics_port is repeated here so a restarted manager relearns it without waiting for a register_request.
+        // A valid port (1..65535) overrides. 0 is also what firmware that predates the field sends, so it never
+        // clears a port learned from register_request; anything else out of range is ignored.
+        if (report.metrics_port() > 0 && report.metrics_port() <= 65535) {
+          this->_metrics_port = static_cast<uint16_t>(report.metrics_port());
+        } else if (report.metrics_port() != 0) {
+          SPDLOG_DEBUG("Ignoring metrics_port {} in status report from NSPanel {}::{}.", report.metrics_port(), this->_id, this->_name);
+        }
 
         MQTT_Manager::publish(this->_mqtt_temperature_topic, fmt::format("{:.1f}", this->_temperature));
         if (report.has_humidity()) {
