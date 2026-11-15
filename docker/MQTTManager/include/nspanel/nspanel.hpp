@@ -222,6 +222,12 @@ private:
   std::string _lvgl_background;
   bool _lvgl_settings_loaded = false; // reload_config() has run once, so a later difference is a change.
   bool _lvgl_look_sent = false;       // The look has been sent since the manager started.
+  // The panel's last register_request listed the "lvgl_look" feature: its firmware applies the look in NSPanelConfig
+  // and reports a look chosen on the panel (_handle_lvgl_look_report), so it is sent no lvgl_theme/lvgl_background
+  // commands.
+  bool _panel_reports_lvgl_look = false;
+  // Guards the LVGL look members above: reloads, registrations and reports run on different threads.
+  std::recursive_mutex _lvgl_mutex;
   // What the panel reports in its status report. UNKNOWN from firmware that does not report it.
   NSPanelStatusReport_NSPanelDisplayMode _reported_display_mode = NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN;
   std::string _reported_lvgl_theme;
@@ -231,6 +237,10 @@ private:
   void _reload_lvgl_settings();
   // Send the lvgl_theme and/or lvgl_background command, each only when that part of the look is set.
   void _send_lvgl_look(bool theme, bool background);
+  // A look chosen on the panel (or set there by a command), on nspanel/<mac>/lvgl_look: {"theme": .., "background": ..}.
+  // Stored as the panel's lvgl_theme and lvgl_background settings, then confirmed by sending the config, whose look
+  // now matches the panel's. See docs/LVGL_PANEL_MODE.md, "A look chosen on the panel".
+  void _handle_lvgl_look_report(const std::string &payload);
 
   enum ButtonMode {
     DIRECT,
@@ -271,6 +281,7 @@ private:
   std::string _mqtt_status_topic;
   // The topic to capture status reports from MQTT
   std::string _mqtt_status_report_topic;
+  std::string _mqtt_lvgl_look_topic; // nspanel/<mac>/lvgl_look: a look chosen on the panel
   // The topic to capture logs from MQTT, based on MAC-address
   std::string _mqtt_mac_log_topic;
   // The old name based status and status report topics, still subscribed to for older firmware
