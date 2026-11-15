@@ -92,13 +92,18 @@ add_library(nspm_core OBJECT
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/web_helper/WebHelper.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/media_player/home_assistant_source_volume.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/entity/entity.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/latency_metrics.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/panel_metrics_collector.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/prometheus_targets.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/manager_metrics.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/metrics/metrics.cpp
     ${PROTOBUF_PB_CC_FILES}
 )
 target_include_directories(nspm_core PUBLIC ${CMAKE_INCLUDE_SRC_DIRECTORY} ${PROTOBUF_SRC_DIRECTORY} ${CURL_INCLUDE_DIR})
 target_link_libraries(nspm_core PUBLIC
     protobuf::protobuf PahoMqttCpp::paho-mqttpp3-static ixwebsocket::ixwebsocket ${CURL_LIBRARIES}
     spdlog::spdlog nlohmann_json::nlohmann_json sqlite_orm::sqlite_orm tz::tz date::date stb::stb
-    Boost::boost Boost::stacktrace_backtrace dl gtest::gtest
+    Boost::boost Boost::stacktrace_backtrace dl gtest::gtest prometheus-cpp::core
 )
 
 # Headers that most files include, parsed once per target instead of once per file. Each
