@@ -9,6 +9,10 @@ fi
 # Install tools needed for building MQTTManager
 apt-get install -y --no-install-recommends cmake build-essential gdb curl npm postgresql-client curl inotify-tools net-tools build-essential protobuf-c-compiler
 pip install conan conan-check-updates && conan profile detect --force
+# Conan before 2.9 defaults to center.conan.io, which was frozen in 2024: newer recipes (such as
+# paho-mqtt-cpp/1.5.3) are only on center2. The devel image gets web/requirements.txt's conan==2.7.0,
+# so name the remote explicitly instead of relying on the version's default.
+conan remote update conancenter --url https://center2.conan.io
 echo 'core.cache:storage_path=/MQTTManager/conan_cache/' > ~/.conan2/global.conf
 sed -i "s|cppstd=.*|cppstd=gnu23|g" /root/.conan2/profiles/default
 echo "alias ll='ls -lh --color=auto'" >> /etc/bash.bashrc
