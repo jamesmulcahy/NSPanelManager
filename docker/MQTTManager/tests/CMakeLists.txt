@@ -11,33 +11,13 @@ target_include_directories(nspm_mqttmanager_tests PRIVATE ${CMAKE_INCLUDE_SRC_DI
 # Recorded data some tests load at runtime (see fixtures/).
 target_compile_definitions(nspm_mqttmanager_tests PRIVATE NSPM_TEST_FIXTURES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 
-# Libraries containing inline tests. They are static libraries, and the linker only pulls in
-# object files something references, so they are linked whole to make sure every inline test
-# registers with GoogleTest. (CMake's WHOLE_ARCHIVE link feature cannot be used because the
-# same libraries are also linked transitively. This is a single call because
-# target_link_options drops repeated options, which would unwrap every library after the first.)
-set(NSPM_LIBRARIES_WITH_INLINE_TESTS
-    MQTTManager_Config
-    MQTTManager_Light
-)
-set(NSPM_INLINE_TEST_ARCHIVES)
-foreach(library ${NSPM_LIBRARIES_WITH_INLINE_TESTS})
-    list(APPEND NSPM_INLINE_TEST_ARCHIVES "$<TARGET_FILE:${library}>")
-endforeach()
-target_link_options(nspm_mqttmanager_tests PRIVATE "LINKER:--whole-archive" ${NSPM_INLINE_TEST_ARCHIVES} "LINKER:--no-whole-archive")
-
 # Export the executable's symbols so the crash handler in main.cpp can name the functions in a backtrace.
 target_link_options(nspm_mqttmanager_tests PRIVATE -rdynamic)
 
-target_link_libraries(nspm_mqttmanager_tests PRIVATE
-    ${NSPM_LIBRARIES_WITH_INLINE_TESTS}
-    MQTTManager_DatabaseManager MQTTManager_Entity
-    MQTT_Manager MQTTManager_ManagerClock MQTTManager_HomeAssistantManager MQTTManager_OpenhabManager MQTTManager_EntityManager
-    MQTTManager_Scene MQTTManager_Room MQTTManager_WebsocketServer MQTTManager_CommandManager
-    MQTTManager_Switch MQTTManager_Button MQTTManager_Thermostat MQTTManager_MediaPlayer
-    MQTTManager_Cover MQTTManager_Weather MQTTManager_NSPanel
-    MQTTManager_Metrics MQTTManager_PrometheusTargets
-    ixwebsocket::ixwebsocket gtest::gtest
-)
+# nspm_core is an object library, so every one of its object files is linked in, including the
+# inline tests.
+target_link_libraries(nspm_mqttmanager_tests PRIVATE nspm_core)
+# Its own copy rather than REUSE_FROM nspm_core: the tests are compiled with different flags.
+target_precompile_headers(nspm_mqttmanager_tests PRIVATE ${NSPM_PRECOMPILED_HEADERS} <gtest/gtest.h>)
 
 gtest_discover_tests(nspm_mqttmanager_tests DISCOVERY_TIMEOUT 60)
