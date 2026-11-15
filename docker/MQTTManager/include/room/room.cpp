@@ -436,6 +436,7 @@ void Room::_send_room_state_update() {
   uint16_t num_kelvin_lights_total = 0;   // Total number of lights with color temperature
   uint16_t num_kelvin_lights_ceiling = 0; // Total number of ceiling lights with color temperature
   uint16_t num_kelvin_lights_table = 0;   // Total number of table lights with color temperature
+  uint16_t num_color_temperature_lights = 0; // Main-page lights that can change colour temperature, on or off
 
   bool any_light_entity_on = false;
   std::lock_guard<std::mutex> mutex_guard(this->_entities_pages_mutex);
@@ -454,6 +455,9 @@ void Room::_send_room_state_update() {
       // Light is not controlled from main page, exclude it from calculations.
       if (!light->get_controlled_from_main_page()) {
         continue;
+      }
+      if (light->can_color_temperature()) {
+        num_color_temperature_lights++;
       }
 
       if ((any_light_entity_on && light->get_state()) || !any_light_entity_on) {
@@ -495,6 +499,8 @@ void Room::_send_room_state_update() {
   status.set_num_ceiling_lights(num_lights_ceiling);
   status.set_num_table_lights_on(num_lights_table_on);
   status.set_num_ceiling_lights_on(num_lights_ceiling_on);
+  status.set_num_color_temperature_lights(num_color_temperature_lights);
+  status.set_color_temperature_lights_known(true);
 
   if (num_lights_total > 0) {
     status.set_average_dim_level(total_light_level_all / num_lights_total);
