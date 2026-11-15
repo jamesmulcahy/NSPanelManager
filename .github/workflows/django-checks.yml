@@ -11,6 +11,7 @@ on:
       - "main"
       - "devel"
       - "beta"
+      - "fork"
     paths:
       - "docker/web/**"
       - "docker/ruff.toml"

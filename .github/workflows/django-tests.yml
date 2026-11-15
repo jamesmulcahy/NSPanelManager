@@ -12,6 +12,7 @@ on:
       - "main"
       - "devel"
       - "beta"
+      - "fork"
     paths:
       - "docker/web/**"
       # web/tests/test_rest_v2_settings.py checks /rest/v2/settings against MQTTManager's setting keys.

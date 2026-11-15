@@ -19,6 +19,7 @@ on:
       - "main"
       - "devel"
       - "beta"
+      - "fork"
     paths:
       - "docker/protobuf/**"
       - "docker/MQTTManager/include/protobuf/**"

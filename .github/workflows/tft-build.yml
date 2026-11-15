@@ -10,6 +10,7 @@ on:
       - "main"
       - "devel"
       - "beta"
+      - "fork"
     paths:
       - "docker/HMI_files/**"
       - ".github/workflows/tft-build.yml"

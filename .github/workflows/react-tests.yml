@@ -10,6 +10,7 @@ on:
       - "main"
       - "devel"
       - "beta"
+      - "fork"
     paths:
       - "docker/web/nspanelmanager/web/react-components/**"
       - ".github/workflows/react-tests.yml"
