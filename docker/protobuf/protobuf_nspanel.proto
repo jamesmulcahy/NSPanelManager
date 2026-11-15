@@ -347,6 +347,13 @@ message NSPanelMQTTManagerCommand {
     int32 tilt_position = 6; // 0-100
   }
 
+  // A look chosen on the panel (LVGL mode), to be saved as the panel's lvgl_theme and lvgl_background.
+  // The manager confirms it with a config that carries the same look (NSPanelConfig fields 49 and 50).
+  message LvglLook {
+    string theme = 1;      // auto, dark, grey, ocean, dusk, aurora or peaks
+    string background = 2; // none, ocean, dusk, aurora or peaks
+  }
+
   oneof CommandData {
     FirstPageTurnLightOn first_page_turn_on = 1;
     FirstPageTurnLightOff first_page_turn_off = 2;
@@ -359,6 +366,7 @@ message NSPanelMQTTManagerCommand {
     ThermostatCommand thermostat_command = 8;
     MediaPlayerCommand media_player_command = 9;
     CoverCommand cover_command = 10;
+    LvglLook lvgl_look = 11;
   }
 
   int32 nspanel_id = 100;
