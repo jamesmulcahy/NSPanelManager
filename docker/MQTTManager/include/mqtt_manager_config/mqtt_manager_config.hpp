@@ -89,6 +89,10 @@ public:
   // POSIX TZ rule for timezone, read from its tzdata file. Empty if it could not be read.
   static inline std::string timezone_posix_rule;
 
+  // Where Django keeps the terminal TFTs for panels in LVGL mode (settings.TERMINAL_TFT_ROOT): us/gui.tft and
+  // eu/gui.tft. A variable so that tests can point it elsewhere.
+  static inline std::string terminal_tft_directory = "/data/tft/terminal";
+
   /**
    * Read the POSIX TZ rule from the end of a tzdata (TZif) file, ex. "CET-1CEST,M3.5.0,M10.5.0/3".
    * @param tzif_path: Path of the file, ex. /usr/share/zoneinfo/Europe/Stockholm.
@@ -138,6 +142,8 @@ public:
   static std::expected<std::string, bool> get_us_horizontal_mirrored_tft2_checksum();
   static std::expected<std::string, bool> get_us_horizontal_mirrored_tft3_checksum();
   static std::expected<std::string, bool> get_us_horizontal_mirrored_tft4_checksum();
+  // The terminal TFT for the US (portrait) or EU (landscape) LVGL layout. Unexpected when it has not been uploaded.
+  static std::expected<std::string, bool> get_terminal_tft_checksum(bool us_layout);
 
   /**
    * Attach a callback to be called when config has been fully loaded.
@@ -185,6 +191,8 @@ private:
   static inline std::string _md5_checksum_us_horizontal_mirrored_tft2;
   static inline std::string _md5_checksum_us_horizontal_mirrored_tft3;
   static inline std::string _md5_checksum_us_horizontal_mirrored_tft4;
+  static inline std::string _md5_checksum_terminal_us;
+  static inline std::string _md5_checksum_terminal_eu;
 
   static inline std::unordered_map<MQTT_MANAGER_SETTING, std::string> _settings_values_cache;
 

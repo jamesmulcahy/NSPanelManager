@@ -269,6 +269,8 @@ void NSPanel::reload_config() {
       this->register_to_home_assistant();
     }
 
+    this->_reload_lvgl_settings();
+
     SPDLOG_DEBUG("Loaded NSPanel {}::{}, type: {}. Sending config.", this->_id, this->_name, this->_is_us_panel ? "US" : "EU");
 
     this->send_config();
@@ -306,6 +308,10 @@ void NSPanel::send_config() {
   config.set_screensaver_activation_timeout(std::stoi(this->_get_nspanel_setting_with_default("screensaver_activation_timeout", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_ACTIVATION_TIMEOUT))));
   config.set_clock_us_style(MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::CLOCK_US_STYLE));
   config.set_tz_posix(MqttManagerConfig::timezone_posix_rule);
+  // Empty when not managed: the panel keeps its own. Sent in either display mode, so the look is in place when the
+  // panel moves to LVGL.
+  config.set_lvgl_theme(this->_get_nspanel_setting_with_default("lvgl_theme", ""));
+  config.set_lvgl_background(this->_get_nspanel_setting_with_default("lvgl_background", ""));
   config.set_use_fahrenheit(MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT));
   config.set_is_us_panel(this->_get_nspanel_setting_with_default("is_us_panel", "False").compare("True") == 0);
   config.set_reverse_relays(this->_get_nspanel_setting_with_default("reverse_relays", "False").compare("True") == 0);
@@ -690,6 +696,9 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         this->_current_firmware_md5_checksum = report.md5_firmware();
         this->_current_littlefs_md5_checksum = report.md5_littlefs();
         this->_current_tft_md5_checksum = report.md5_tft_gui();
+        this->_reported_display_mode = report.display_mode();
+        this->_reported_lvgl_theme = report.lvgl_theme();
+        this->_reported_lvgl_background = report.lvgl_background();
 
         MQTT_Manager::publish(this->_mqtt_temperature_topic, fmt::format("{:.1f}", this->_temperature));
         if (report.has_humidity()) {
@@ -951,7 +960,25 @@ void NSPanel::send_websocket_status_update() {
       {"accepted", this->_state != MQTT_MANAGER_NSPANEL_STATE::AWAITING_ACCEPT},
       {"denied", this->_state == MQTT_MANAGER_NSPANEL_STATE::DENIED},
       {"default_room_id", this->get_default_room_id()},
+      {"display_mode_setting", this->_lvgl_mode ? "lvgl" : "nextion"},
+      {"lvgl_theme", this->_reported_lvgl_theme},
+      {"lvgl_background", this->_reported_lvgl_background},
   };
+  // What the panel reports it shows; "unknown" from firmware that does not say.
+  switch (this->_reported_display_mode) {
+  case NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION:
+    status_data["display_mode"] = "nextion";
+    break;
+  case NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_LVGL:
+    status_data["display_mode"] = "lvgl";
+    break;
+  case NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE:
+    status_data["display_mode"] = "terminal_idle";
+    break;
+  default:
+    status_data["display_mode"] = "unknown";
+    break;
+  }
   status_data["warnings"] = nlohmann::json::array({});
   for (NSPanelWarningWebsocketRepresentation warning : this->_nspanel_warnings) {
     status_data["warnings"].push_back(nlohmann::json{
@@ -990,6 +1017,15 @@ void NSPanel::send_websocket_status_update() {
       status_data["warnings"].push_back(nlohmann::json{
           {"level", "info"},
           {"text", "GUI update available. Perform GUI update to ensure optimal compatibility with new firmware."}});
+    } else if (this->_lvgl_mode && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
+      status_data["warnings"].push_back(nlohmann::json{
+          {"level", "warning"},
+          {"text", "Panel is set to LVGL and has the TFT for it, but shows NSPM's Nextion pages. Check that the uploaded terminal TFT is an nspanel-terminal TFT."}});
+    }
+    if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE) {
+      status_data["warnings"].push_back(nlohmann::json{
+          {"level", "warning"},
+          {"text", "Panel runs the terminal TFT with LVGL switched off (lvgl_ui), so the display only shows the TFT's waiting page. Switch it on again, or set the panel to Nextion and update its GUI."}});
     }
   }
 
@@ -1075,7 +1111,64 @@ bool NSPanel::has_littlefs_update() {
   return this->_current_littlefs_md5_checksum.compare(file_checksum) != 0;
 }
 
+bool NSPanel::is_lvgl_mode() {
+  return this->_lvgl_mode;
+}
+
+void NSPanel::_reload_lvgl_settings() {
+  bool lvgl_mode = this->_get_nspanel_setting_with_default("display_mode", "nextion").compare("lvgl") == 0;
+  std::string theme = this->_get_nspanel_setting_with_default("lvgl_theme", "");
+  std::string background = this->_get_nspanel_setting_with_default("lvgl_background", "");
+
+  // Only a change is sent here: a panel that has just started gets its look when it registers (register_to_manager).
+  // A panel that has just been moved to LVGL gets all of it, for when it already runs the terminal TFT.
+  bool send = this->_lvgl_settings_loaded && lvgl_mode;
+  bool entered_lvgl_mode = !this->_lvgl_mode;
+  bool theme_changed = entered_lvgl_mode || theme.compare(this->_lvgl_theme) != 0;
+  bool background_changed = entered_lvgl_mode || background.compare(this->_lvgl_background) != 0;
+
+  this->_lvgl_mode = lvgl_mode;
+  this->_lvgl_theme = theme;
+  this->_lvgl_background = background;
+  this->_lvgl_settings_loaded = true;
+
+  if (send && (theme_changed || background_changed)) {
+    this->_send_lvgl_look(theme_changed, background_changed);
+  }
+}
+
+void NSPanel::_send_lvgl_look(bool theme, bool background) {
+  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::WEB) {
+    return;
+  }
+  // The firmware saves each and applies it at once (lib/UpdateManager/UpdateManager.cpp).
+  if (theme && !this->_lvgl_theme.empty()) {
+    SPDLOG_INFO("Sending LVGL theme '{}' to nspanel {}::{}.", this->_lvgl_theme, this->_id, this->_name);
+    nlohmann::json cmd;
+    cmd["command"] = "lvgl_theme";
+    cmd["theme"] = this->_lvgl_theme;
+    this->send_command(cmd);
+  }
+  if (background && !this->_lvgl_background.empty()) {
+    SPDLOG_INFO("Sending LVGL background '{}' to nspanel {}::{}.", this->_lvgl_background, this->_id, this->_name);
+    nlohmann::json cmd;
+    cmd["command"] = "lvgl_background";
+    cmd["preset"] = this->_lvgl_background;
+    this->send_command(cmd);
+  }
+  this->_lvgl_look_sent = true;
+}
+
 bool NSPanel::has_tft_update() {
+  if (this->_lvgl_mode) {
+    // LVGL mode runs the terminal TFT for the panel's layout, which the firmware picks from is_us_panel alone.
+    auto file_checksum = MqttManagerConfig::get_terminal_tft_checksum(this->_is_us_panel);
+    if (file_checksum) {
+      return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
+    }
+    SPDLOG_DEBUG("NSPanel {}::{} is in LVGL mode but no {} terminal TFT has been uploaded.", this->_id, this->_name, this->_is_us_panel ? "US" : "EU");
+    return false;
+  }
   // Check if using EU file (we use EU file for US panel in landscape left orientation as it's the same screen and orientation as the EU panel).
   if (!this->_is_us_panel || (this->_is_us_panel && this->_us_panel_orientation == US_PANEL_ORIENTATION::LANDSCAPE_LEFT)) {
     if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft1") == 0) {
@@ -1456,6 +1549,12 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
       MQTT_Manager::publish(reply_topic, response.dump());
       reply_topic = fmt::format("nspanel/{}/command", this->_mac);
       MQTT_Manager::publish(reply_topic, response.dump());
+
+      // Once per manager run: the panel may have been reflashed or replaced while the manager was not running.
+      // Not on every reconnect, as each command is a flash write and a repaint on the panel.
+      if (this->_lvgl_mode && !this->_lvgl_look_sent) {
+        this->_send_lvgl_look(true, true);
+      }
     }
   } catch (const std::exception &e) {
     SPDLOG_ERROR("Caught exception when trying to register NSPanel: {}", boost::diagnostic_information(e, true));

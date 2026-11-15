@@ -356,6 +356,29 @@ void MqttManagerConfig::update_tft_checksums() {
     WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft4 (mirrored) was not able to be calculated.");
     SPDLOG_ERROR("Failed to calculate checksum for US landscape mirrored TFT4 Nextion GUI file!");
   }
+
+  // The terminal TFTs are optional: nothing ships them, and only panels in LVGL mode use them. A panel in LVGL mode
+  // without one gets "no checksum" from the web server and is not offered a GUI update.
+  for (bool us_layout : {true, false}) {
+    std::string path = fmt::format("{}/{}/gui.tft", MqttManagerConfig::terminal_tft_directory, us_layout ? "us" : "eu");
+    std::string &checksum = us_layout ? MqttManagerConfig::_md5_checksum_terminal_us : MqttManagerConfig::_md5_checksum_terminal_eu;
+    auto file_checksum = MqttManagerConfig::_get_file_md5_checksum(path);
+    checksum = file_checksum.value_or("");
+    if (file_checksum.has_value()) {
+      SPDLOG_INFO("{} terminal TFT checksum: {}", us_layout ? "US" : "EU", *file_checksum);
+    } else {
+      SPDLOG_INFO("No {} terminal TFT at {}.", us_layout ? "US" : "EU", path);
+    }
+  }
+}
+
+std::expected<std::string, bool> MqttManagerConfig::get_terminal_tft_checksum(bool us_layout) {
+  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
+  const std::string &checksum = us_layout ? MqttManagerConfig::_md5_checksum_terminal_us : MqttManagerConfig::_md5_checksum_terminal_eu;
+  if (checksum.empty()) {
+    return std::unexpected(false);
+  }
+  return checksum;
 }
 
 std::optional<std::string> MqttManagerConfig::_get_file_md5_checksum(std::string file_path) {
