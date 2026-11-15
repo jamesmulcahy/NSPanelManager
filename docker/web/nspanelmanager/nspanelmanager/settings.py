@@ -31,6 +31,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Persistent data (secret key, database). Overridable so that tests can run outside the container.
 DATA_DIR = environment("NSPM_DATA_DIR", default="/data")
 
+# Terminal TFTs for panels in LVGL mode (web/display_mode.py). Kept in DATA_DIR because nothing in the image ships
+# them, so an upload kept next to the background slots would be lost on every image update. MQTTManager reads the
+# same files from /data/tft/terminal (MqttManagerConfig::update_tft_checksums).
+TERMINAL_TFT_ROOT = os.path.join(DATA_DIR, "tft", "terminal")
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = ""
 SECRET_KEY_PATH = os.path.join(DATA_DIR, "secret.key")

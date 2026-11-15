@@ -296,6 +296,41 @@ inline bool NSPanelStatusReport_state_Parse(absl::string_view name, NSPanelStatu
   return ::google::protobuf::internal::ParseNamedEnum<NSPanelStatusReport_state>(
       NSPanelStatusReport_state_descriptor(), name, value);
 }
+enum NSPanelStatusReport_NSPanelDisplayMode : int {
+  NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN = 0,
+  NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION = 1,
+  NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_LVGL = 2,
+  NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE = 3,
+  NSPanelStatusReport_NSPanelDisplayMode_NSPanelStatusReport_NSPanelDisplayMode_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::min(),
+  NSPanelStatusReport_NSPanelDisplayMode_NSPanelStatusReport_NSPanelDisplayMode_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::max(),
+};
+
+bool NSPanelStatusReport_NSPanelDisplayMode_IsValid(int value);
+extern const uint32_t NSPanelStatusReport_NSPanelDisplayMode_internal_data_[];
+constexpr NSPanelStatusReport_NSPanelDisplayMode NSPanelStatusReport_NSPanelDisplayMode_NSPanelDisplayMode_MIN = static_cast<NSPanelStatusReport_NSPanelDisplayMode>(0);
+constexpr NSPanelStatusReport_NSPanelDisplayMode NSPanelStatusReport_NSPanelDisplayMode_NSPanelDisplayMode_MAX = static_cast<NSPanelStatusReport_NSPanelDisplayMode>(3);
+constexpr int NSPanelStatusReport_NSPanelDisplayMode_NSPanelDisplayMode_ARRAYSIZE = 3 + 1;
+const ::google::protobuf::EnumDescriptor*
+NSPanelStatusReport_NSPanelDisplayMode_descriptor();
+template <typename T>
+const std::string& NSPanelStatusReport_NSPanelDisplayMode_Name(T value) {
+  static_assert(std::is_same<T, NSPanelStatusReport_NSPanelDisplayMode>::value ||
+                    std::is_integral<T>::value,
+                "Incorrect type passed to NSPanelDisplayMode_Name().");
+  return NSPanelStatusReport_NSPanelDisplayMode_Name(static_cast<NSPanelStatusReport_NSPanelDisplayMode>(value));
+}
+template <>
+inline const std::string& NSPanelStatusReport_NSPanelDisplayMode_Name(NSPanelStatusReport_NSPanelDisplayMode value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<NSPanelStatusReport_NSPanelDisplayMode_descriptor,
+                                                 0, 3>(
+      static_cast<int>(value));
+}
+inline bool NSPanelStatusReport_NSPanelDisplayMode_Parse(absl::string_view name, NSPanelStatusReport_NSPanelDisplayMode* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<NSPanelStatusReport_NSPanelDisplayMode>(
+      NSPanelStatusReport_NSPanelDisplayMode_descriptor(), name, value);
+}
 enum NSPanelRoomEntitiesPage_EntitySlot_EntityType : int {
   NSPanelRoomEntitiesPage_EntitySlot_EntityType_ENTITY_TYPE_UNSPECIFIED = 0,
   NSPanelRoomEntitiesPage_EntitySlot_EntityType_ENTITY_TYPE_LIGHT = 1,
@@ -4612,6 +4647,27 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   static inline bool state_Parse(absl::string_view name, state* value) {
     return NSPanelStatusReport_state_Parse(name, value);
   }
+  using NSPanelDisplayMode = NSPanelStatusReport_NSPanelDisplayMode;
+  static constexpr NSPanelDisplayMode DISPLAY_MODE_UNKNOWN = NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN;
+  static constexpr NSPanelDisplayMode DISPLAY_MODE_NEXTION = NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION;
+  static constexpr NSPanelDisplayMode DISPLAY_MODE_LVGL = NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_LVGL;
+  static constexpr NSPanelDisplayMode DISPLAY_MODE_TERMINAL_IDLE = NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE;
+  static inline bool NSPanelDisplayMode_IsValid(int value) {
+    return NSPanelStatusReport_NSPanelDisplayMode_IsValid(value);
+  }
+  static constexpr NSPanelDisplayMode NSPanelDisplayMode_MIN = NSPanelStatusReport_NSPanelDisplayMode_NSPanelDisplayMode_MIN;
+  static constexpr NSPanelDisplayMode NSPanelDisplayMode_MAX = NSPanelStatusReport_NSPanelDisplayMode_NSPanelDisplayMode_MAX;
+  static constexpr int NSPanelDisplayMode_ARRAYSIZE = NSPanelStatusReport_NSPanelDisplayMode_NSPanelDisplayMode_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor* NSPanelDisplayMode_descriptor() {
+    return NSPanelStatusReport_NSPanelDisplayMode_descriptor();
+  }
+  template <typename T>
+  static inline const std::string& NSPanelDisplayMode_Name(T value) {
+    return NSPanelStatusReport_NSPanelDisplayMode_Name(value);
+  }
+  static inline bool NSPanelDisplayMode_Parse(absl::string_view name, NSPanelDisplayMode* value) {
+    return NSPanelStatusReport_NSPanelDisplayMode_Parse(name, value);
+  }
 
   // accessors -------------------------------------------------------
   enum : int {
@@ -4621,6 +4677,8 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     kMd5FirmwareFieldNumber = 9,
     kMd5LittlefsFieldNumber = 10,
     kMd5TftGuiFieldNumber = 11,
+    kLvglThemeFieldNumber = 17,
+    kLvglBackgroundFieldNumber = 18,
     kNspanelStateFieldNumber = 1,
     kUpdateProgressFieldNumber = 2,
     kRssiFieldNumber = 3,
@@ -4630,6 +4688,7 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     kHasHumidityFieldNumber = 12,
     kHasPressureFieldNumber = 14,
     kPressureFieldNumber = 15,
+    kDisplayModeFieldNumber = 16,
   };
   // repeated .NSPanelWarning warnings = 8;
   int warnings_size() const;
@@ -4728,6 +4787,38 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   std::string* _internal_mutable_md5_tft_gui();
 
   public:
+  // string lvgl_theme = 17;
+  void clear_lvgl_theme() ;
+  const std::string& lvgl_theme() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_lvgl_theme(Arg_&& arg, Args_... args);
+  std::string* mutable_lvgl_theme();
+  PROTOBUF_NODISCARD std::string* release_lvgl_theme();
+  void set_allocated_lvgl_theme(std::string* value);
+
+  private:
+  const std::string& _internal_lvgl_theme() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_lvgl_theme(
+      const std::string& value);
+  std::string* _internal_mutable_lvgl_theme();
+
+  public:
+  // string lvgl_background = 18;
+  void clear_lvgl_background() ;
+  const std::string& lvgl_background() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_lvgl_background(Arg_&& arg, Args_... args);
+  std::string* mutable_lvgl_background();
+  PROTOBUF_NODISCARD std::string* release_lvgl_background();
+  void set_allocated_lvgl_background(std::string* value);
+
+  private:
+  const std::string& _internal_lvgl_background() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_lvgl_background(
+      const std::string& value);
+  std::string* _internal_mutable_lvgl_background();
+
+  public:
   // .NSPanelStatusReport.state nspanel_state = 1;
   void clear_nspanel_state() ;
   ::NSPanelStatusReport_state nspanel_state() const;
@@ -4818,13 +4909,23 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   void _internal_set_pressure(float value);
 
   public:
+  // .NSPanelStatusReport.NSPanelDisplayMode display_mode = 16;
+  void clear_display_mode() ;
+  ::NSPanelStatusReport_NSPanelDisplayMode display_mode() const;
+  void set_display_mode(::NSPanelStatusReport_NSPanelDisplayMode value);
+
+  private:
+  ::NSPanelStatusReport_NSPanelDisplayMode _internal_display_mode() const;
+  void _internal_set_display_mode(::NSPanelStatusReport_NSPanelDisplayMode value);
+
+  public:
   // @@protoc_insertion_point(class_scope:NSPanelStatusReport)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 15, 1,
-      92, 2>
+      5, 18, 1,
+      125, 2>
       _table_;
 
   static constexpr const void* _raw_default_instance_ =
@@ -4850,6 +4951,8 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr md5_firmware_;
     ::google::protobuf::internal::ArenaStringPtr md5_littlefs_;
     ::google::protobuf::internal::ArenaStringPtr md5_tft_gui_;
+    ::google::protobuf::internal::ArenaStringPtr lvgl_theme_;
+    ::google::protobuf::internal::ArenaStringPtr lvgl_background_;
     int nspanel_state_;
     ::int32_t update_progress_;
     ::int32_t rssi_;
@@ -4859,6 +4962,7 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     bool has_humidity_;
     bool has_pressure_;
     float pressure_;
+    int display_mode_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -5752,6 +5856,8 @@ class NSPanelConfig final : public ::google::protobuf::Message
     kTzPosixFieldNumber = 46,
     kButton1EntityPageTopicFieldNumber = 47,
     kButton2EntityPageTopicFieldNumber = 48,
+    kLvglThemeFieldNumber = 49,
+    kLvglBackgroundFieldNumber = 50,
     kDefaultRoomFieldNumber = 2,
     kDefaultPageFieldNumber = 3,
     kScreensaverActivationTimeoutFieldNumber = 4,
@@ -5949,6 +6055,38 @@ class NSPanelConfig final : public ::google::protobuf::Message
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_button2_entity_page_topic(
       const std::string& value);
   std::string* _internal_mutable_button2_entity_page_topic();
+
+  public:
+  // string lvgl_theme = 49;
+  void clear_lvgl_theme() ;
+  const std::string& lvgl_theme() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_lvgl_theme(Arg_&& arg, Args_... args);
+  std::string* mutable_lvgl_theme();
+  PROTOBUF_NODISCARD std::string* release_lvgl_theme();
+  void set_allocated_lvgl_theme(std::string* value);
+
+  private:
+  const std::string& _internal_lvgl_theme() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_lvgl_theme(
+      const std::string& value);
+  std::string* _internal_mutable_lvgl_theme();
+
+  public:
+  // string lvgl_background = 50;
+  void clear_lvgl_background() ;
+  const std::string& lvgl_background() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_lvgl_background(Arg_&& arg, Args_... args);
+  std::string* mutable_lvgl_background();
+  PROTOBUF_NODISCARD std::string* release_lvgl_background();
+  void set_allocated_lvgl_background(std::string* value);
+
+  private:
+  const std::string& _internal_lvgl_background() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_lvgl_background(
+      const std::string& value);
+  std::string* _internal_mutable_lvgl_background();
 
   public:
   // int32 default_room = 2;
@@ -6256,8 +6394,8 @@ class NSPanelConfig final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 40, 2,
-      160, 7>
+      5, 42, 2,
+      185, 9>
       _table_;
 
   static constexpr const void* _raw_default_instance_ =
@@ -6290,6 +6428,8 @@ class NSPanelConfig final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr tz_posix_;
     ::google::protobuf::internal::ArenaStringPtr button1_entity_page_topic_;
     ::google::protobuf::internal::ArenaStringPtr button2_entity_page_topic_;
+    ::google::protobuf::internal::ArenaStringPtr lvgl_theme_;
+    ::google::protobuf::internal::ArenaStringPtr lvgl_background_;
     ::int32_t default_room_;
     int default_page_;
     ::int32_t screensaver_activation_timeout_;
@@ -7678,6 +7818,106 @@ inline void NSPanelConfig::set_allocated_button2_entity_page_topic(std::string* 
   // @@protoc_insertion_point(field_set_allocated:NSPanelConfig.button2_entity_page_topic)
 }
 
+// string lvgl_theme = 49;
+inline void NSPanelConfig::clear_lvgl_theme() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.ClearToEmpty();
+}
+inline const std::string& NSPanelConfig::lvgl_theme() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelConfig.lvgl_theme)
+  return _internal_lvgl_theme();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelConfig::set_lvgl_theme(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelConfig.lvgl_theme)
+}
+inline std::string* NSPanelConfig::mutable_lvgl_theme() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_lvgl_theme();
+  // @@protoc_insertion_point(field_mutable:NSPanelConfig.lvgl_theme)
+  return _s;
+}
+inline const std::string& NSPanelConfig::_internal_lvgl_theme() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lvgl_theme_.Get();
+}
+inline void NSPanelConfig::_internal_set_lvgl_theme(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.Set(value, GetArena());
+}
+inline std::string* NSPanelConfig::_internal_mutable_lvgl_theme() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.lvgl_theme_.Mutable( GetArena());
+}
+inline std::string* NSPanelConfig::release_lvgl_theme() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelConfig.lvgl_theme)
+  return _impl_.lvgl_theme_.Release();
+}
+inline void NSPanelConfig::set_allocated_lvgl_theme(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.lvgl_theme_.IsDefault()) {
+          _impl_.lvgl_theme_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelConfig.lvgl_theme)
+}
+
+// string lvgl_background = 50;
+inline void NSPanelConfig::clear_lvgl_background() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.ClearToEmpty();
+}
+inline const std::string& NSPanelConfig::lvgl_background() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelConfig.lvgl_background)
+  return _internal_lvgl_background();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelConfig::set_lvgl_background(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelConfig.lvgl_background)
+}
+inline std::string* NSPanelConfig::mutable_lvgl_background() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_lvgl_background();
+  // @@protoc_insertion_point(field_mutable:NSPanelConfig.lvgl_background)
+  return _s;
+}
+inline const std::string& NSPanelConfig::_internal_lvgl_background() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lvgl_background_.Get();
+}
+inline void NSPanelConfig::_internal_set_lvgl_background(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.Set(value, GetArena());
+}
+inline std::string* NSPanelConfig::_internal_mutable_lvgl_background() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.lvgl_background_.Mutable( GetArena());
+}
+inline std::string* NSPanelConfig::release_lvgl_background() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelConfig.lvgl_background)
+  return _impl_.lvgl_background_.Release();
+}
+inline void NSPanelConfig::set_allocated_lvgl_background(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.lvgl_background_.IsDefault()) {
+          _impl_.lvgl_background_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelConfig.lvgl_background)
+}
+
 // -------------------------------------------------------------------
 
 // NSPanelWarning
@@ -8253,6 +8493,128 @@ inline float NSPanelStatusReport::_internal_pressure() const {
 inline void NSPanelStatusReport::_internal_set_pressure(float value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.pressure_ = value;
+}
+
+// .NSPanelStatusReport.NSPanelDisplayMode display_mode = 16;
+inline void NSPanelStatusReport::clear_display_mode() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.display_mode_ = 0;
+}
+inline ::NSPanelStatusReport_NSPanelDisplayMode NSPanelStatusReport::display_mode() const {
+  // @@protoc_insertion_point(field_get:NSPanelStatusReport.display_mode)
+  return _internal_display_mode();
+}
+inline void NSPanelStatusReport::set_display_mode(::NSPanelStatusReport_NSPanelDisplayMode value) {
+  _internal_set_display_mode(value);
+  // @@protoc_insertion_point(field_set:NSPanelStatusReport.display_mode)
+}
+inline ::NSPanelStatusReport_NSPanelDisplayMode NSPanelStatusReport::_internal_display_mode() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::NSPanelStatusReport_NSPanelDisplayMode>(_impl_.display_mode_);
+}
+inline void NSPanelStatusReport::_internal_set_display_mode(::NSPanelStatusReport_NSPanelDisplayMode value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.display_mode_ = value;
+}
+
+// string lvgl_theme = 17;
+inline void NSPanelStatusReport::clear_lvgl_theme() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.ClearToEmpty();
+}
+inline const std::string& NSPanelStatusReport::lvgl_theme() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelStatusReport.lvgl_theme)
+  return _internal_lvgl_theme();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelStatusReport::set_lvgl_theme(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelStatusReport.lvgl_theme)
+}
+inline std::string* NSPanelStatusReport::mutable_lvgl_theme() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_lvgl_theme();
+  // @@protoc_insertion_point(field_mutable:NSPanelStatusReport.lvgl_theme)
+  return _s;
+}
+inline const std::string& NSPanelStatusReport::_internal_lvgl_theme() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lvgl_theme_.Get();
+}
+inline void NSPanelStatusReport::_internal_set_lvgl_theme(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.Set(value, GetArena());
+}
+inline std::string* NSPanelStatusReport::_internal_mutable_lvgl_theme() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.lvgl_theme_.Mutable( GetArena());
+}
+inline std::string* NSPanelStatusReport::release_lvgl_theme() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelStatusReport.lvgl_theme)
+  return _impl_.lvgl_theme_.Release();
+}
+inline void NSPanelStatusReport::set_allocated_lvgl_theme(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_theme_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.lvgl_theme_.IsDefault()) {
+          _impl_.lvgl_theme_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelStatusReport.lvgl_theme)
+}
+
+// string lvgl_background = 18;
+inline void NSPanelStatusReport::clear_lvgl_background() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.ClearToEmpty();
+}
+inline const std::string& NSPanelStatusReport::lvgl_background() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelStatusReport.lvgl_background)
+  return _internal_lvgl_background();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelStatusReport::set_lvgl_background(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelStatusReport.lvgl_background)
+}
+inline std::string* NSPanelStatusReport::mutable_lvgl_background() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_lvgl_background();
+  // @@protoc_insertion_point(field_mutable:NSPanelStatusReport.lvgl_background)
+  return _s;
+}
+inline const std::string& NSPanelStatusReport::_internal_lvgl_background() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lvgl_background_.Get();
+}
+inline void NSPanelStatusReport::_internal_set_lvgl_background(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.Set(value, GetArena());
+}
+inline std::string* NSPanelStatusReport::_internal_mutable_lvgl_background() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.lvgl_background_.Mutable( GetArena());
+}
+inline std::string* NSPanelStatusReport::release_lvgl_background() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelStatusReport.lvgl_background)
+  return _impl_.lvgl_background_.Release();
+}
+inline void NSPanelStatusReport::set_allocated_lvgl_background(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lvgl_background_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.lvgl_background_.IsDefault()) {
+          _impl_.lvgl_background_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelStatusReport.lvgl_background)
 }
 
 // -------------------------------------------------------------------
@@ -11693,6 +12055,12 @@ struct is_proto_enum<::NSPanelStatusReport_state> : std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor<::NSPanelStatusReport_state>() {
   return ::NSPanelStatusReport_state_descriptor();
+}
+template <>
+struct is_proto_enum<::NSPanelStatusReport_NSPanelDisplayMode> : std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor<::NSPanelStatusReport_NSPanelDisplayMode>() {
+  return ::NSPanelStatusReport_NSPanelDisplayMode_descriptor();
 }
 template <>
 struct is_proto_enum<::NSPanelRoomEntitiesPage_EntitySlot_EntityType> : std::true_type {};

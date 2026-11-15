@@ -20,6 +20,7 @@ from web.settings_helper import (
     set_setting_value,
 )
 
+from . import display_mode
 from .apps import send_mqttmanager_reload_command, start_mqtt_manager
 from .models import (
     Entity,
@@ -31,6 +32,7 @@ from .models import (
     RoomEntitiesPage,
     Scene,
     Settings,
+    TftUpload,
 )
 
 
@@ -196,15 +198,29 @@ def edit_nspanel(request, panel_id: int):
         "button2_relay_lower_temperature": get_nspanel_setting_with_default(panel_id, "button2_relay_lower_temperature", ""),
         "button2_relay_upper_temperature": get_nspanel_setting_with_default(panel_id, "button2_relay_upper_temperature", ""),
         "default_page": get_nspanel_setting_with_default(panel_id, "default_page", "0"),
+        "display_mode": display_mode.get_display_mode(panel_id),
+        "lvgl_theme": get_nspanel_setting_with_default(panel_id, "lvgl_theme", ""),
+        "lvgl_background": get_nspanel_setting_with_default(panel_id, "lvgl_background", ""),
     }
 
     nspanel = NSPanel.objects.get(id=panel_id)
     panel_info = {}
     panel_info["data"] = nspanel
 
+    terminal_tft_type = display_mode.terminal_tft_type(panel_id)
+    display_info = {
+        "modes": display_mode.DISPLAY_MODES,
+        "themes": display_mode.LVGL_THEMES,
+        "backgrounds": display_mode.LVGL_BACKGROUNDS,
+        "running": display_mode.describe_tft_md5(nspanel.md5_tft_file),
+        "terminal_tft_label": display_mode.TERMINAL_TFT_LABELS[terminal_tft_type],
+        "terminal_tft_staged": display_mode.file_md5(*display_mode.upload_tft_file(terminal_tft_type)) is not None,
+    }
+
     data = get_base_data(request)
     data = data | {
         "panel_info": panel_info,
+        "display_info": display_info,
         "rooms": Room.objects.all(),
         "settings": settings,
         "temperature_unit": temperature_unit,
@@ -357,6 +373,7 @@ def save_panel_settings(request, panel_id: int):
             set_nspanel_setting_value(panel_id, "us_panel_orientation", "vertical")
 
     set_nspanel_setting_value(panel_id, "selected_tft", request.POST.get("selected_tft"))
+    save_display_settings(panel_id, request.POST)
 
     set_nspanel_setting_value(panel_id, "relay1_is_light", request.POST["relay1_is_light"])
     set_nspanel_setting_value(panel_id, "relay2_is_light", request.POST["relay2_is_light"])
@@ -364,6 +381,20 @@ def save_panel_settings(request, panel_id: int):
     panel.save()
     send_mqttmanager_reload_command()
     return redirect("edit_nspanel", panel_id)
+
+
+def save_display_settings(panel_id, post):
+    """The Display card. A field that is not in the form is left as it is, so older clients keep working."""
+    if post.get("display_mode") in display_mode.DISPLAY_MODES:
+        set_nspanel_setting_value(panel_id, "display_mode", post["display_mode"])
+    # An empty theme or background means "keep the panel's own": the manager stops sending it.
+    for name, choices in (("lvgl_theme", display_mode.LVGL_THEMES), ("lvgl_background", display_mode.LVGL_BACKGROUNDS)):
+        if name not in post:
+            continue
+        if post[name] == "":
+            delete_nspanel_setting(panel_id, name)
+        elif post[name] in choices:
+            set_nspanel_setting_value(panel_id, name, post[name])
 
 
 def settings_page(request):
@@ -430,42 +461,22 @@ def save_new_merged_flash(request):
 def save_new_tft_file(request):
     if request.method == "POST":
         tft_file_type = request.POST["tft_file_type"]
-        file_path = ""
-
-        if tft_file_type == "eu1":
-            file_path = "HMI_files/tft_automation/eu/output_tft1/gui.tft"
-        elif tft_file_type == "eu2":
-            file_path = "HMI_files/tft_automation/eu/output_tft2/gui.tft"
-        elif tft_file_type == "eu3":
-            file_path = "HMI_files/tft_automation/eu/output_tft3/gui.tft"
-        elif tft_file_type == "eu4":
-            file_path = "HMI_files/tft_automation/eu/output_tft4/gui.tft"
-        elif tft_file_type == "us1":
-            file_path = "HMI_files/tft_automation/us/output_tft1/gui.tft"
-        elif tft_file_type == "us2":
-            file_path = "HMI_files/tft_automation/us/output_tft2/gui.tft"
-        elif tft_file_type == "us3":
-            file_path = "HMI_files/tft_automation/us/output_tft3/gui.tft"
-        elif tft_file_type == "us4":
-            file_path = "HMI_files/tft_automation/us/output_tft4/gui.tft"
-        elif tft_file_type == "us1_horizontal_mirrored":
-            file_path = "HMI_files/tft_automation/us_horizontal_mirrored/output_tft1/gui.tft"
-        elif tft_file_type == "us2_horizontal_mirrored":
-            file_path = "HMI_files/tft_automation/us_horizontal_mirrored/output_tft2/gui.tft"
-        elif tft_file_type == "us3_horizontal_mirrored":
-            file_path = "HMI_files/tft_automation/us_horizontal_mirrored/output_tft3/gui.tft"
-        elif tft_file_type == "us4_horizontal_mirrored":
-            file_path = "HMI_files/tft_automation/us_horizontal_mirrored/output_tft4/gui.tft"
-        else:
+        fs, file_path = display_mode.upload_tft_file(tft_file_type)
+        if fs is None:
             print("ERROR! Unknown TFT file type!")
             return HttpResponse("ERROR! Unknown TFT file type!", status=500)
 
         print("Saving new TFT file ", file_path)
 
         uploaded_file = request.FILES["tft_file"]
-        fs = FileSystemStorage()
         fs.delete(file_path)
         fs.save(file_path, uploaded_file)
+        # Remembered so that a panel still running this file can be named after the slot is overwritten.
+        TftUpload.objects.create(
+            md5=display_mode.file_md5(fs, file_path),
+            kind=TftUpload.Kind.TERMINAL if tft_file_type in display_mode.TERMINAL_TFT_PATHS else TftUpload.Kind.NEXTION,
+            target=tft_file_type,
+        )
         send_mqttmanager_reload_command()
     return redirect("/")
 
@@ -525,25 +536,12 @@ def download_data_file(request):
 
 
 def download_tft(request, panel_id):
-    selected_tft = get_nspanel_setting_with_default(panel_id, "selected_tft", "tft1")
-    is_us_panel = get_nspanel_setting_with_default(panel_id, "is_us_panel", "False")
-    us_panel_orientation = get_nspanel_setting_with_default(panel_id, "us_panel_orientation", "vertical")
+    # The terminal TFT in LVGL mode, the selected background slot otherwise (web/display_mode.py).
+    fs, tft_file = display_mode.panel_tft_file(panel_id)
+    if fs is None or not fs.exists(tft_file):
+        # Ex. a panel in LVGL mode before a terminal TFT for its layout has been uploaded.
+        return HttpResponse("", status=404)
 
-    tft_file = ""
-    if is_us_panel == "False":
-        tft_file = "HMI_files/tft_automation/eu/output_" + selected_tft + "/gui.tft"
-    elif is_us_panel == "True" and us_panel_orientation == "horizontal":
-        # We use EU tft file for horizontal US panel with buttons on left as it's the same screen and orientation
-        tft_file = "HMI_files/tft_automation/eu/output_" + selected_tft + "/gui.tft"
-    elif is_us_panel == "True" and us_panel_orientation == "horizontal_mirrored":
-        # We use EU tft file for horizontal US panel with buttons on left as it's the same screen and orientation
-        tft_file = "HMI_files/tft_automation/us_horizontal_mirrored/output_" + selected_tft + "/gui.tft"
-    elif is_us_panel == "True" and us_panel_orientation == "vertical":
-        tft_file = "HMI_files/tft_automation/us/output_" + selected_tft + "/gui.tft"
-    else:
-        print(f"ERROR! Could not determine TFT file for NSPanel with ID {panel_id}")
-
-    fs = FileSystemStorage()
     if "Range" in request.headers and request.headers["Range"].startswith("bytes="):
         parts = request.headers["Range"][6:].split("-")
         range_start = int(parts[0])
@@ -587,24 +585,7 @@ def checksum_data_file(request):
 
 
 def checksum_tft_file(request, panel_id):
-    selected_tft = get_nspanel_setting_with_default(panel_id, "selected_tft", "tft1")
-    is_us_panel = get_nspanel_setting_with_default(panel_id, "is_us_panel", "False")
-    us_panel_orientation = get_nspanel_setting_with_default(panel_id, "us_panel_orientation", "vertical")
-    tft_file = ""
-    if is_us_panel == "False":
-        tft_file = "HMI_files/tft_automation/eu/output_" + selected_tft + "/gui.tft"
-    elif is_us_panel == "True" and us_panel_orientation == "horizontal":
-        # We use EU tft file for horizontal US panel with buttons on left as it's the same screen and orientation
-        tft_file = "HMI_files/tft_automation/eu/output_" + selected_tft + "/gui.tft"
-    elif is_us_panel == "True" and us_panel_orientation == "horizontal_mirrored":
-        # We use EU tft file for horizontal US panel with buttons on left as it's the same screen and orientation
-        tft_file = "HMI_files/tft_automation/us_horizontal_mirrored/output_" + selected_tft + "/gui.tft"
-    elif is_us_panel == "True" and us_panel_orientation == "vertical":
-        tft_file = "HMI_files/tft_automation/us/output_" + selected_tft + "/gui.tft"
-    else:
-        print(f"ERROR! Could not determine TFT file for NSPanel with ID {panel_id}")
-
-    return checksum_response(get_file_md5sum(tft_file))
+    return checksum_response(display_mode.file_md5(*display_mode.panel_tft_file(panel_id)))
 
 
 def get_manual(request):

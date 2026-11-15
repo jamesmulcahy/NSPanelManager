@@ -129,3 +129,16 @@ class Message(models.Model):
     title = models.CharField(max_length=255)
     message = models.TextField()
     read = models.BooleanField(default=False)
+
+
+class TftUpload(models.Model):
+    """A TFT file the manager has been given, kept so that a panel's md5 can be named after the file has been replaced."""
+
+    class Kind(models.TextChoices):
+        NEXTION = "nextion"  # NSPM's Nextion TFT, uploaded into a background slot
+        TERMINAL = "terminal"  # An nspanel-terminal TFT, for panels in LVGL mode
+
+    md5 = models.CharField(max_length=32, db_index=True)
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    target = models.CharField(max_length=64)  # The upload's tft_file_type, ex. "us4" or "terminal_us"
+    uploaded_at = models.DateTimeField(auto_now_add=True)

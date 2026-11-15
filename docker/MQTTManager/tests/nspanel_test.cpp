@@ -1,6 +1,8 @@
 #include "test_helpers.hpp"
 #include <algorithm>
 #include <command_manager/command_manager.hpp>
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iterator>
 #include <gtest/gtest.h>
@@ -9,6 +11,7 @@
 #include <protobuf_nspanel.pb.h>
 #include <room/room.hpp>
 #include <room/room_entities_page.hpp>
+#include <unistd.h>
 #include <vector>
 
 using nspm_test::django_media_player_data;
@@ -94,6 +97,43 @@ protected:
       database_manager::database.remove<database_manager::NSPanelRelayGroupBinding>(id);
     }
     row.reset();
+  }
+
+  // Change a setting added with set_panel_setting, or add it.
+  void change_panel_setting(const std::string &name, const std::string &value) {
+    for (int id : setting_ids) {
+      auto setting = database_manager::database.get<database_manager::NSPanelSettingHolder>(id);
+      if (setting.name == name) {
+        setting.value = value;
+        database_manager::database.update(setting);
+        return;
+      }
+    }
+    set_panel_setting(name, value);
+  }
+
+  // The JSON commands published on the panel's MAC command topic since the last call to it or to last_published_config.
+  std::vector<nlohmann::json> commands_sent() {
+    std::vector<nlohmann::json> commands;
+    for (auto &message : nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/command")) {
+      commands.push_back(nlohmann::json::parse(message.payload));
+    }
+    return commands;
+  }
+
+  // The LVGL look commands among commands_sent().
+  std::vector<nlohmann::json> lvgl_commands_sent() {
+    std::vector<nlohmann::json> commands;
+    for (auto &command : commands_sent()) {
+      if (command["command"] == "lvgl_theme" || command["command"] == "lvgl_background") {
+        commands.push_back(command);
+      }
+    }
+    return commands;
+  }
+
+  bool register_panel() {
+    return panel->register_to_manager({{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}});
   }
 
   // A setting as web/settings_helper.py set_nspanel_setting_value() stores it.
@@ -1004,4 +1044,196 @@ TEST_F(NSPanelTest, renamed_panel_moves_its_legacy_subscriptions_to_the_new_name
     EXPECT_EQ(MQTT_Manager::test_callback_count("nspanel/" + PANEL_NAME + suffix), 0);
     EXPECT_EQ(MQTT_Manager::test_callback_count("nspanel/Renamed hall panel" + std::string(suffix)), 1);
   }
+}
+
+// LVGL mode, docs/LVGL_PANEL_MODE.md.
+
+namespace {
+nlohmann::json theme_command(const std::string &theme) {
+  return nlohmann::json{{"command", "lvgl_theme"}, {"theme", theme}};
+}
+nlohmann::json background_command(const std::string &preset) {
+  return nlohmann::json{{"command", "lvgl_background"}, {"preset", preset}};
+}
+} // namespace
+
+TEST_F(NSPanelTest, lvgl_look_is_empty_in_the_config_when_not_managed) {
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->lvgl_theme(), "");
+  EXPECT_EQ(config->lvgl_background(), "");
+}
+
+TEST_F(NSPanelTest, lvgl_look_is_sent_in_the_config) {
+  set_panel_setting("lvgl_theme", "ocean");
+  set_panel_setting("lvgl_background", "peaks");
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->lvgl_theme(), "ocean");
+  EXPECT_EQ(config->lvgl_background(), "peaks");
+}
+
+TEST_F(NSPanelTest, loading_a_panel_sends_no_lvgl_commands) {
+  // The manager starting is not a reason to repaint every panel; the panel gets its look when it registers.
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_theme", "dusk");
+
+  load_panel();
+
+  EXPECT_TRUE(lvgl_commands_sent().empty());
+  EXPECT_TRUE(panel->is_lvgl_mode());
+}
+
+TEST_F(NSPanelTest, changed_lvgl_theme_is_sent_to_a_panel_in_lvgl_mode) {
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_theme", "dusk");
+  set_panel_setting("lvgl_background", "dusk");
+  load_panel();
+  commands_sent();
+
+  change_panel_setting("lvgl_theme", "grey");
+  panel->reload_config();
+
+  EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{theme_command("grey")}));
+}
+
+TEST_F(NSPanelTest, changed_lvgl_background_is_sent_to_a_panel_in_lvgl_mode) {
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_background", "none");
+  load_panel();
+  commands_sent();
+
+  change_panel_setting("lvgl_background", "aurora");
+  panel->reload_config();
+
+  EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{background_command("aurora")}));
+}
+
+TEST_F(NSPanelTest, unchanged_lvgl_look_is_not_sent_again_on_reload) {
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_theme", "dusk");
+  load_panel();
+  commands_sent();
+
+  change_panel_setting("screen_dim_level", "42");
+  panel->reload_config();
+
+  EXPECT_TRUE(lvgl_commands_sent().empty());
+}
+
+TEST_F(NSPanelTest, panel_in_nextion_mode_is_sent_no_lvgl_commands) {
+  set_panel_setting("lvgl_theme", "dusk");
+  load_panel();
+  commands_sent();
+
+  change_panel_setting("lvgl_theme", "ocean");
+  panel->reload_config();
+  register_panel();
+
+  EXPECT_TRUE(lvgl_commands_sent().empty());
+  EXPECT_FALSE(panel->is_lvgl_mode());
+}
+
+TEST_F(NSPanelTest, moving_a_panel_to_lvgl_sends_its_whole_look) {
+  set_panel_setting("display_mode", "nextion");
+  set_panel_setting("lvgl_theme", "peaks");
+  set_panel_setting("lvgl_background", "peaks");
+  load_panel();
+  commands_sent();
+
+  change_panel_setting("display_mode", "lvgl");
+  panel->reload_config();
+
+  EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{theme_command("peaks"), background_command("peaks")}));
+}
+
+TEST_F(NSPanelTest, unmanaged_lvgl_look_is_never_sent) {
+  set_panel_setting("display_mode", "nextion");
+  set_panel_setting("lvgl_background", "ocean");
+  load_panel();
+  commands_sent();
+
+  change_panel_setting("display_mode", "lvgl");
+  panel->reload_config();
+  register_panel();
+
+  // Only the background is managed; the panel keeps its own theme.
+  EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{background_command("ocean")}));
+}
+
+TEST_F(NSPanelTest, lvgl_look_is_sent_after_the_first_registration_only) {
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_theme", "aurora");
+  load_panel();
+  commands_sent();
+
+  register_panel();
+  auto first = commands_sent();
+  register_panel();
+  auto second = commands_sent();
+
+  // register_accept first, then the look.
+  ASSERT_EQ(first.size(), 2);
+  EXPECT_EQ(first[0]["command"], "register_accept");
+  EXPECT_EQ(first[1], theme_command("aurora"));
+  ASSERT_EQ(second.size(), 1);
+  EXPECT_EQ(second[0]["command"], "register_accept");
+}
+
+TEST_F(NSPanelTest, panel_in_lvgl_mode_is_compared_with_the_terminal_tft_for_its_layout) {
+  auto directory = std::filesystem::temp_directory_path() / fmt::format("nspm-terminal-tft-{}", ::getpid());
+  std::filesystem::create_directories(directory / "us");
+  std::filesystem::create_directories(directory / "eu");
+  std::ofstream(directory / "us" / "gui.tft") << "us terminal tft";
+  std::ofstream(directory / "eu" / "gui.tft") << "eu terminal tft";
+  std::string previous_directory = MqttManagerConfig::terminal_tft_directory;
+  OnExit restore{[&] {
+    MqttManagerConfig::terminal_tft_directory = previous_directory;
+    MqttManagerConfig::update_tft_checksums();
+    std::filesystem::remove_all(directory);
+  }};
+  MqttManagerConfig::terminal_tft_directory = directory.string();
+  MqttManagerConfig::update_tft_checksums();
+  auto us_checksum = MqttManagerConfig::get_terminal_tft_checksum(true);
+  auto eu_checksum = MqttManagerConfig::get_terminal_tft_checksum(false);
+  ASSERT_TRUE(us_checksum.has_value());
+  ASSERT_TRUE(eu_checksum.has_value());
+  EXPECT_NE(*us_checksum, *eu_checksum);
+
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("is_us_panel", "True");
+  load_panel();
+  auto report_tft = [&](const std::string &md5) {
+    NSPanelStatusReport report;
+    report.set_md5_tft_gui(md5);
+    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+  };
+
+  report_tft(*eu_checksum);
+  EXPECT_TRUE(panel->has_tft_update());
+  report_tft(*us_checksum);
+  EXPECT_FALSE(panel->has_tft_update());
+}
+
+TEST_F(NSPanelTest, panel_in_lvgl_mode_without_a_terminal_tft_has_no_update) {
+  std::string previous_directory = MqttManagerConfig::terminal_tft_directory;
+  OnExit restore{[&] {
+    MqttManagerConfig::terminal_tft_directory = previous_directory;
+    MqttManagerConfig::update_tft_checksums();
+  }};
+  MqttManagerConfig::terminal_tft_directory = "/nonexistent/nspm-terminal-tft";
+  MqttManagerConfig::update_tft_checksums();
+  set_panel_setting("display_mode", "lvgl");
+  load_panel();
+
+  NSPanelStatusReport report;
+  report.set_md5_tft_gui("0123456789abcdef0123456789abcdef");
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+
+  EXPECT_FALSE(panel->has_tft_update());
 }

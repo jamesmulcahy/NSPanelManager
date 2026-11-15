@@ -141,6 +141,11 @@ public:
   bool has_tft_update();
 
   /**
+   * True when the panel's display_mode setting is "lvgl": it is served the terminal TFT and draws its pages with LVGL.
+   */
+  bool is_lvgl_mode();
+
+  /**
    * Register NSPanel to manager.
    */
   bool register_to_manager(const nlohmann::json &register_request_payload);
@@ -210,6 +215,22 @@ private:
   std::string _current_firmware_md5_checksum;
   std::string _current_littlefs_md5_checksum;
   std::string _current_tft_md5_checksum;
+
+  // LVGL mode (docs/LVGL_PANEL_MODE.md). The settings as of the last reload_config(); an empty look is not managed.
+  bool _lvgl_mode = false;
+  std::string _lvgl_theme;
+  std::string _lvgl_background;
+  bool _lvgl_settings_loaded = false; // reload_config() has run once, so a later difference is a change.
+  bool _lvgl_look_sent = false;       // The look has been sent since the manager started.
+  // What the panel reports in its status report. UNKNOWN from firmware that does not report it.
+  NSPanelStatusReport_NSPanelDisplayMode _reported_display_mode = NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN;
+  std::string _reported_lvgl_theme;
+  std::string _reported_lvgl_background;
+
+  // Read the LVGL settings and, when they changed for a panel in LVGL mode, send the panel what changed.
+  void _reload_lvgl_settings();
+  // Send the lvgl_theme and/or lvgl_background command, each only when that part of the look is set.
+  void _send_lvgl_look(bool theme, bool background);
 
   enum ButtonMode {
     DIRECT,
