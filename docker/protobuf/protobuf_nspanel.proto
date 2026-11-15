@@ -98,6 +98,11 @@ message NSPanelConfig {
   // State topic of the entity whose page a button opens when buttonN_mode is OPEN_ENTITY_PAGE. Empty otherwise.
   string button1_entity_page_topic = 47;
   string button2_entity_page_topic = 48;
+
+  // The look of a panel that draws its pages with LVGL (a terminal TFT, see docs/LVGL_PANEL_MODE.md). Empty means
+  // the manager does not manage it: keep the panel's own saved value. Panels without LVGL ignore these.
+  string lvgl_theme = 49;      // Palette: auto, dark, grey, ocean, dusk, aurora or peaks
+  string lvgl_background = 50; // Page background: none, ocean, dusk, aurora or peaks
 }
 
 enum NSPanelWarningLevel {
@@ -141,6 +146,17 @@ message NSPanelStatusReport {
   float humidity = 13;
   bool has_pressure = 14;
   float pressure = 15;
+
+  // What the display shows. Firmware that does not report it leaves it UNKNOWN.
+  enum NSPanelDisplayMode {
+    DISPLAY_MODE_UNKNOWN = 0;
+    DISPLAY_MODE_NEXTION = 1;       // NSPM's Nextion pages
+    DISPLAY_MODE_LVGL = 2;          // LVGL draws the pages through a terminal TFT
+    DISPLAY_MODE_TERMINAL_IDLE = 3; // A terminal TFT with LVGL switched off (lvgl_ui false): the TFT's own waiting page
+  }
+  NSPanelDisplayMode display_mode = 16;
+  string lvgl_theme = 17;      // The palette in use in LVGL mode ("light" reported as "grey"), empty otherwise
+  string lvgl_background = 18; // The page background in use in LVGL mode, empty otherwise
 }
 
 // Container of data shown on the "Entities page".
