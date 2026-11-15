@@ -207,12 +207,23 @@ message NSPanelRoomStatus {
   int32 average_color_temperature = 6;
   int32 ceiling_lights_color_temperature_value = 7;
   int32 table_lights_color_temperature_value = 8;
+  // The lights controlled from the main page, in the room (or in every room, for "All rooms").
+  // A panel hides a group's control when its count is 0; every manager that sends this message
+  // sends these.
   int32 num_ceiling_lights = 9;
   int32 num_table_lights = 10;
   int32 num_ceiling_lights_on = 11;
   int32 num_table_lights_on = 12;
 
   repeated int32 entity_page_ids = 13;
+
+  // How many of the lights counted in num_ceiling_lights and num_table_lights can change colour
+  // temperature. The panel hides the colour-temperature slider when this is 0, but only if
+  // color_temperature_lights_known is set: a manager from before these fields never sends either,
+  // and a missing count must read as "not known" (show the slider, as panels always have), not as
+  // "none". (Not proto3 `optional`: protoc-gen-c 1.4, which builds the firmware's code, can't.)
+  int32 num_color_temperature_lights = 14;
+  bool color_temperature_lights_known = 15;
 }
 
 message NSPanelWeatherUpdate {
