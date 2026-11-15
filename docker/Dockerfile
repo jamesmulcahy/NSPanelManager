@@ -3,13 +3,12 @@ FROM --platform=$BUILDPLATFORM node:20-alpine AS ui-builder
 ARG WEB_UI_REF=main
 WORKDIR /ui-app
 
-# Install git to clone your frontend repository
-RUN apk add --no-cache git
-
-# Clone the UI repo. The ADD fetches the commit WEB_UI_REF points at, so the clone and the UI
-# build below rerun when that changes and are reused from the cache otherwise.
-ADD https://api.github.com/repos/NSPManager/NSPanelManager-Web-UI/commits/${WEB_UI_REF} /ui-version.json
-RUN git clone https://github.com/NSPManager/NSPanelManager-Web-UI.git . && git fetch origin "$WEB_UI_REF" && git checkout --detach FETCH_HEAD
+# Fetch the UI repo at WEB_UI_REF with BuildKit's git source. BuildKit resolves the ref to a commit
+# and caches by it, so the UI build below reruns when the ref moves and is reused otherwise. This
+# goes over git, not the GitHub REST API, so it is not subject to the API's unauthenticated rate
+# limit (60 an hour per IP, shared by CI runners), which failed builds with "403" on load of the
+# cache key.
+ADD https://github.com/NSPManager/NSPanelManager-Web-UI.git#${WEB_UI_REF} .
 
 # Install dependencies and build
 RUN npm install
