@@ -1389,6 +1389,7 @@ TEST_F(NSPanelTest, panel_that_stops_listing_the_feature_is_sent_commands_again)
   panel->reload_config();
 
   EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{theme_command("peaks")}));
+}
 
 namespace {
 
