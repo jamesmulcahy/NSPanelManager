@@ -1096,6 +1096,8 @@ class NSPanelRoomStatus final : public ::google::protobuf::Message
     kNumTableLightsFieldNumber = 10,
     kNumCeilingLightsOnFieldNumber = 11,
     kNumTableLightsOnFieldNumber = 12,
+    kNumColorTemperatureLightsFieldNumber = 14,
+    kColorTemperatureLightsKnownFieldNumber = 15,
   };
   // repeated int32 entity_page_ids = 13;
   int entity_page_ids_size() const;
@@ -1241,12 +1243,32 @@ class NSPanelRoomStatus final : public ::google::protobuf::Message
   void _internal_set_num_table_lights_on(::int32_t value);
 
   public:
+  // int32 num_color_temperature_lights = 14;
+  void clear_num_color_temperature_lights() ;
+  ::int32_t num_color_temperature_lights() const;
+  void set_num_color_temperature_lights(::int32_t value);
+
+  private:
+  ::int32_t _internal_num_color_temperature_lights() const;
+  void _internal_set_num_color_temperature_lights(::int32_t value);
+
+  public:
+  // bool color_temperature_lights_known = 15;
+  void clear_color_temperature_lights_known() ;
+  bool color_temperature_lights_known() const;
+  void set_color_temperature_lights_known(bool value);
+
+  private:
+  bool _internal_color_temperature_lights_known() const;
+  void _internal_set_color_temperature_lights_known(bool value);
+
+  public:
   // @@protoc_insertion_point(class_scope:NSPanelRoomStatus)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      4, 13, 0,
+      4, 15, 0,
       38, 2>
       _table_;
 
@@ -1281,6 +1303,8 @@ class NSPanelRoomStatus final : public ::google::protobuf::Message
     ::int32_t num_table_lights_;
     ::int32_t num_ceiling_lights_on_;
     ::int32_t num_table_lights_on_;
+    ::int32_t num_color_temperature_lights_;
+    bool color_temperature_lights_known_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -9423,6 +9447,50 @@ NSPanelRoomStatus::_internal_entity_page_ids() const {
 inline ::google::protobuf::RepeatedField<::int32_t>* NSPanelRoomStatus::_internal_mutable_entity_page_ids() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.entity_page_ids_;
+}
+
+// int32 num_color_temperature_lights = 14;
+inline void NSPanelRoomStatus::clear_num_color_temperature_lights() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.num_color_temperature_lights_ = 0;
+}
+inline ::int32_t NSPanelRoomStatus::num_color_temperature_lights() const {
+  // @@protoc_insertion_point(field_get:NSPanelRoomStatus.num_color_temperature_lights)
+  return _internal_num_color_temperature_lights();
+}
+inline void NSPanelRoomStatus::set_num_color_temperature_lights(::int32_t value) {
+  _internal_set_num_color_temperature_lights(value);
+  // @@protoc_insertion_point(field_set:NSPanelRoomStatus.num_color_temperature_lights)
+}
+inline ::int32_t NSPanelRoomStatus::_internal_num_color_temperature_lights() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.num_color_temperature_lights_;
+}
+inline void NSPanelRoomStatus::_internal_set_num_color_temperature_lights(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.num_color_temperature_lights_ = value;
+}
+
+// bool color_temperature_lights_known = 15;
+inline void NSPanelRoomStatus::clear_color_temperature_lights_known() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.color_temperature_lights_known_ = false;
+}
+inline bool NSPanelRoomStatus::color_temperature_lights_known() const {
+  // @@protoc_insertion_point(field_get:NSPanelRoomStatus.color_temperature_lights_known)
+  return _internal_color_temperature_lights_known();
+}
+inline void NSPanelRoomStatus::set_color_temperature_lights_known(bool value) {
+  _internal_set_color_temperature_lights_known(value);
+  // @@protoc_insertion_point(field_set:NSPanelRoomStatus.color_temperature_lights_known)
+}
+inline bool NSPanelRoomStatus::_internal_color_temperature_lights_known() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.color_temperature_lights_known_;
+}
+inline void NSPanelRoomStatus::_internal_set_color_temperature_lights_known(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.color_temperature_lights_known_ = value;
 }
 
 // -------------------------------------------------------------------
