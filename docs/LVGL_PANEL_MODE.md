@@ -22,6 +22,7 @@ over a background slot (US "TFT 4"), point the panel at that slot, run a GUI upd
 | Pushing the look | Both: new `NSPanelConfig` fields (sent today, used by firmware once it reads them) and the existing `lvgl_theme` / `lvgl_background` commands (work with today's firmware) |
 | Screenshot | The settings page shows `http://<panel>/screenshot` straight from the panel, like the existing "open panel web page" link |
 | Global defaults | Designed, not built (see "Later") |
+| A look chosen on the panel | The firmware reports it on `nspanel/<MAC>/lvgl_look`; MQTTManager saves it as the panel's `lvgl_theme` / `lvgl_background` settings and confirms it with a config push. See "A look chosen on the panel" |
 
 ## Data model
 
@@ -136,6 +137,75 @@ The kill switch `lvgl_ui` is not a manager setting. The way back to the Nextion 
 panel to `nextion` and update its GUI, which leaves no hidden state on the panel. `lvgl_ui` stays an
 emergency tool for a panel whose terminal TFT is broken and cannot be reflashed.
 
+## A look chosen on the panel
+
+LVGL firmware (`feat/lvgl-look-picker`, `firmware_espidf/docs/LVGL.md`, "The look") has a look
+picker in the swipe-down menu: six background + palette combinations (Ocean, Dusk, Aurora, Peaks
+with `theme: auto`; Dark and Grey with `background: none`). A pick must become the panel's configured
+look, so the settings page shows it and the next config push does not undo it.
+
+### Protocol
+
+| | |
+|---|---|
+| Panel → manager | `nspanel/<MAC>/lvgl_look`, JSON `{"background": "ocean", "theme": "auto"}`, QoS 0, not retained. Sent on a pick and on an `lvgl_theme` / `lvgl_background` command (from the MCP, say), and again while unconfirmed (below) |
+| Manager → panel | Nothing new: the confirmation is an ordinary `NSPanelConfig` push whose fields 49/50 equal the reported look |
+| Capability | `register_request` gains `"features": ["lvgl_look"]` |
+
+**Why a topic of its own** and not the status report or `nspanel/mqttmanager/command`:
+
+- The status report's `lvgl_theme` / `lvgl_background` (17/18) say what the panel *draws*, not that
+  someone *chose* it. After the manager changed the look while a panel was offline, the panel's first
+  status reports still carry the old look; persisting those would revert the manager's change. A
+  report is an event, so it has its own message.
+- `nspanel/mqttmanager/command` is shared by every manager; an older one logs
+  `Got command but no handler for it exists` at ERROR for an unknown command, and the panel resends
+  while unconfirmed. Nobody older subscribes to `nspanel/<MAC>/lvgl_look`, so it costs them nothing.
+- JSON, like the commands it answers; no proto change, so no renumbering risk and no regeneration
+  for this part.
+
+**What MQTTManager does** (`NSPanel::_handle_lvgl_look_report`, on its MQTT thread): checks the
+names against the values the firmware draws (`auto dark grey ocean dusk aurora peaks`,
+`none ocean dusk aurora peaks`, the same lists as `display_mode.LVGL_THEMES` / `LVGL_BACKGROUNDS`);
+ignores a panel awaiting accept or denied; writes both rows with
+`MqttManagerConfig::set_nspanel_setting_value()` (update or insert, the name/value rows Django owns, so
+no migration; the database's busy timeout covers a concurrent save in the web interface); sets its
+in-memory look to match, so the next `reload_config()` sees no change and sends nothing back; then
+pushes the config (the confirmation, which also replaces the retained config that still had the old
+look) and a websocket status update. Both settings are written even if only one changed, so a panel
+whose look was "Keep the panel's own" becomes managed with what it shows. A malformed or unknown look,
+or a failed database write, is logged and not confirmed (the panel keeps its look and asks again).
+This happens in either display mode setting.
+
+### Conflicts and loops
+
+The panel keeps a reported look **unconfirmed** (saved on the panel) until a config with the same look
+arrives. While unconfirmed it does not apply a config with a different look, and answers it by
+reporting again, at most every 10 s. Cases (new firmware, new manager):
+
+| Sequence | Result |
+|---|---|
+| Pick; report; manager saves, pushes config with the pick | Confirmed. One round trip, one flash write on the panel |
+| Pick crosses a settings save in the web UI (config with the old look arrives first) | The stale config is ignored and the pick reported again; the report then overwrites the web save. Last writer at the panel wins |
+| Pick while MQTT is down, or the manager is down | Unconfirmed survives; after reconnecting, the retained config (old look) is ignored, the report sent; the manager saves it when it is up. A change made in the manager meanwhile loses (the panel cannot tell which was later) |
+| Manager restarts | Panel re-registers. A panel that lists `lvgl_look` gets **no** `lvgl_theme` / `lvgl_background` commands (only the config): a command sent on registration would overtake a report still in flight, and commands are not answers to anything |
+| Manager changes the look (settings save) when nothing is pending | Config push; the panel applies it; no report (nothing changed on the panel) |
+| Report → save → config: could it ping-pong? | No. A config never triggers a report unless the panel is unconfirmed *and* the config differs; the manager answers a valid report with exactly that look, so the second step always confirms. The manager answers an invalid report with nothing. The 10 s spacing bounds any remaining mismatch (e.g. a manager that rewrote names) to one message per 10 s, not a loop |
+| A save in the web UI with a stale form (opened before the pick) | Overwrites the pick, as any later explicit save does. The page says so next to the pickers |
+
+### Compatibility
+
+| Firmware | Manager | Behaviour |
+|---|---|---|
+| New | New | As above |
+| New | `feat/lvgl-panel-mode` (fields 49/50 and commands, no report) | Picks work and survive reboots. The report is published to a topic nobody reads. The panel stays unconfirmed, so configs carrying the manager's look are ignored; a command (sent when the look is changed in the manager, and once per manager start) replaces the pick. Leaving the panel on "Keep the panel's own" keeps picks |
+| New | Upstream NSPM (no 49/50) | Picks work and survive reboots; the config's empty fields never replace them; no log noise |
+| Old (no `features`) | New | Exactly as before: never reports; the manager keeps sending commands as `feat/lvgl-panel-mode` does |
+| NSPM's Nextion TFT, any firmware | Any | No menu item and no page (`LookPage` returns unless LVGL is the UI). Config fields are still stored for when the panel moves to LVGL |
+
+Payload sizes: the report is under 60 bytes; `NSPanelConfig` grows by two short strings (~20 bytes);
+the firmware's MQTT buffer is 4 KB.
+
 ## TFT provisioning
 
 ### Files
@@ -231,6 +301,8 @@ matters; see "Later".
 
 ## Firmware follow-up (branch `test/lvgl-qemu-terminal`)
 
+Items 1-4 are done in firmware `feat/lvgl-look-picker` (with the look picker); 5 and 6 are open.
+
 1. **Protobuf.** Regenerate `lib/ProtoBuf/protobuf_nspanel.pb-c.{c,h}` from this branch's
    `docker/protobuf/protobuf_nspanel.proto` (or copy `protobuf_firmware/`). New fields:
    `NSPanelConfig.lvgl_theme` (49), `NSPanelConfig.lvgl_background` (50),
@@ -265,4 +337,7 @@ matters; see "Later".
   for HTTPS/ingress and for browsers that cannot reach the panel subnets.
 - **A "switch and update" action** that saves the mode and starts the GUI update in one step, once
   the reported `display_mode` lets the manager confirm the result.
-- **Drop the `lvgl_*` commands** once the fleet's firmware reads the config fields.
+- **Drop the `lvgl_*` commands** once the fleet's firmware reads the config fields. Panels listing
+  the `lvgl_look` feature already get none.
+- **Live settings page.** The page shows the look as of when it was loaded; it could follow the
+  websocket status (which carries the reported look) and update its pickers.

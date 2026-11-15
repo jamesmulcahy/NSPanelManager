@@ -205,6 +205,26 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         self.assertContains(response, 'Running now: <span id="display_running">Terminal TFT (US)</span>')
         self.assertNotContains(response, "has been uploaded yet")
 
+    def test_settings_page_shows_a_look_chosen_on_the_panel(self):
+        # As MQTTManager stores a look the panel reports (NSPanel::_handle_lvgl_look_report): plain name/value rows.
+        self.configure_panel(mode="lvgl", is_us_panel="True", orientation="vertical")
+        set_nspanel_setting_value(self.panel.id, "lvgl_theme", "auto")
+        set_nspanel_setting_value(self.panel.id, "lvgl_background", "ocean")
+
+        response = self.client.get(reverse("edit_nspanel", kwargs={"panel_id": self.panel.id}))
+
+        self.assertContains(response, '<option value="auto" selected>', html=False)
+        self.assertContains(response, '<option value="ocean" selected>Ocean</option>', html=False)
+        self.assertContains(response, 'A look chosen on the panel itself')
+
+    def test_every_look_the_panel_offers_can_be_shown_and_saved(self):
+        # The firmware's look picker (LookView.cpp, Looks::ALL) and what MQTTManager accepts in a report.
+        for theme, background in (("auto", "ocean"), ("auto", "dusk"), ("auto", "aurora"), ("auto", "peaks"), ("dark", "none"), ("grey", "none")):
+            self.assertIn(theme, display_mode.LVGL_THEMES)
+            self.assertIn(background, display_mode.LVGL_BACKGROUNDS)
+            self.save(display_mode="lvgl", lvgl_theme=theme, lvgl_background=background)
+            self.assertEqual((self.setting("lvgl_theme"), self.setting("lvgl_background")), (theme, background))
+
     def test_settings_page_warns_when_the_terminal_tft_is_missing(self):
         self.configure_panel(mode="lvgl")
 

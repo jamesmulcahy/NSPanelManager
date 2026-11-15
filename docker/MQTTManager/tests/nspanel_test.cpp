@@ -93,6 +93,9 @@ protected:
     for (int id : setting_ids) {
       database_manager::database.remove<database_manager::NSPanelSettingHolder>(id);
     }
+    // And any the panel object wrote itself (an LVGL look reported by the panel).
+    database_manager::database.remove_all<database_manager::NSPanelSettingHolder>(
+        sqlite_orm::where(sqlite_orm::c(&database_manager::NSPanelSettingHolder::nspanel_id) == row->id));
     for (int id : relay_group_binding_ids) {
       database_manager::database.remove<database_manager::NSPanelRelayGroupBinding>(id);
     }
@@ -132,8 +135,50 @@ protected:
     return commands;
   }
 
-  bool register_panel() {
-    return panel->register_to_manager({{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}});
+  bool register_panel(nlohmann::json features = nullptr) {
+    nlohmann::json request = {{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
+    if (!features.is_null()) {
+      request["features"] = features;
+    }
+    return panel->register_to_manager(request);
+  }
+
+  // The panel's settings rows named `name`, as Django and MQTTManager read them.
+  std::vector<std::string> panel_setting_values(const std::string &name) {
+    std::vector<std::string> values;
+    for (auto &setting : database_manager::database.get_all<database_manager::NSPanelSettingHolder>(
+             sqlite_orm::where(sqlite_orm::c(&database_manager::NSPanelSettingHolder::name) == name and
+                               sqlite_orm::c(&database_manager::NSPanelSettingHolder::nspanel_id) == row->id))) {
+      values.push_back(setting.value);
+    }
+    return values;
+  }
+
+  // Both the LVGL look commands and the last config published since the last take (the capture is shared, so taking
+  // one with commands_sent() or last_published_config() would drop the other).
+  struct Published {
+    std::vector<nlohmann::json> lvgl_commands;
+    std::optional<NSPanelConfig> config;
+  };
+  Published take_published() {
+    Published published;
+    for (auto &message : MQTT_Manager::test_take_published_messages()) {
+      if (message.topic == "nspanel/" + PANEL_MAC + "/command") {
+        auto command = nlohmann::json::parse(message.payload);
+        if (command["command"] == "lvgl_theme" || command["command"] == "lvgl_background") {
+          published.lvgl_commands.push_back(command);
+        }
+      } else if (message.topic == "nspanel/" + PANEL_MAC + "/config") {
+        published.config.emplace();
+        EXPECT_TRUE(published.config->ParseFromString(message.payload));
+      }
+    }
+    return published;
+  }
+
+  // The panel reports a look chosen on it (firmware LvglLook).
+  void report_look(const std::string &payload) {
+    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/lvgl_look", payload);
   }
 
   // A setting as web/settings_helper.py set_nspanel_setting_value() stores it.
@@ -1236,4 +1281,108 @@ TEST_F(NSPanelTest, panel_in_lvgl_mode_without_a_terminal_tft_has_no_update) {
   panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
 
   EXPECT_FALSE(panel->has_tft_update());
+}
+
+// A look chosen on the panel, docs/LVGL_PANEL_MODE.md.
+
+TEST_F(NSPanelTest, look_chosen_on_the_panel_is_saved_and_confirmed_by_the_config) {
+  load_panel();
+  last_published_config();
+
+  report_look(R"({"theme": "auto", "background": "ocean"})");
+
+  EXPECT_EQ(panel_setting_values("lvgl_theme"), std::vector<std::string>{"auto"});
+  EXPECT_EQ(panel_setting_values("lvgl_background"), std::vector<std::string>{"ocean"});
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->lvgl_theme(), "auto");
+  EXPECT_EQ(config->lvgl_background(), "ocean");
+}
+
+TEST_F(NSPanelTest, look_chosen_on_the_panel_replaces_the_managed_look) {
+  set_panel_setting("lvgl_theme", "dusk");
+  set_panel_setting("lvgl_background", "dusk");
+  load_panel();
+  last_published_config();
+
+  report_look(R"({"theme": "grey", "background": "none"})");
+
+  // The same rows, changed: Django reads the first row of a name.
+  EXPECT_EQ(panel_setting_values("lvgl_theme"), std::vector<std::string>{"grey"});
+  EXPECT_EQ(panel_setting_values("lvgl_background"), std::vector<std::string>{"none"});
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->lvgl_theme(), "grey");
+  EXPECT_EQ(config->lvgl_background(), "none");
+}
+
+TEST_F(NSPanelTest, look_chosen_on_the_panel_is_not_sent_back_as_commands) {
+  // Even to a panel whose firmware takes commands only: the report proves the panel has the look already.
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_theme", "dusk");
+  set_panel_setting("lvgl_background", "dusk");
+  load_panel();
+  register_panel();
+  commands_sent();
+
+  report_look(R"({"theme": "auto", "background": "peaks"})");
+  // And a later reload (a save in the web interface) finds nothing changed.
+  panel->reload_config();
+
+  auto published = take_published();
+  EXPECT_TRUE(published.lvgl_commands.empty());
+  ASSERT_TRUE(published.config.has_value());
+  EXPECT_EQ(published.config->lvgl_background(), "peaks");
+}
+
+TEST_F(NSPanelTest, unknown_or_malformed_look_report_is_ignored) {
+  load_panel();
+  last_published_config();
+
+  for (const char *payload : {R"({"theme": "pink", "background": "ocean"})", R"({"theme": "dark", "background": "space"})",
+                              R"({"theme": "dark"})", R"({"theme": 1, "background": "none"})", "not json", "[]"}) {
+    report_look(payload);
+  }
+
+  EXPECT_TRUE(panel_setting_values("lvgl_theme").empty());
+  EXPECT_TRUE(panel_setting_values("lvgl_background").empty());
+  // No config either: nothing for the panel to take as a confirmation, or to answer.
+  EXPECT_FALSE(last_published_config().has_value());
+}
+
+TEST_F(NSPanelTest, panel_that_reports_its_look_is_sent_no_lvgl_commands) {
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_theme", "aurora");
+  set_panel_setting("lvgl_background", "aurora");
+  load_panel();
+  commands_sent();
+
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  auto after_register = commands_sent();
+  change_panel_setting("lvgl_theme", "grey");
+  panel->reload_config();
+
+  // register_accept only; the look travels in the config.
+  ASSERT_EQ(after_register.size(), 1);
+  EXPECT_EQ(after_register[0]["command"], "register_accept");
+  auto published = take_published();
+  EXPECT_TRUE(published.lvgl_commands.empty());
+  ASSERT_TRUE(published.config.has_value());
+  EXPECT_EQ(published.config->lvgl_theme(), "grey");
+}
+
+TEST_F(NSPanelTest, panel_that_stops_listing_the_feature_is_sent_commands_again) {
+  // Firmware rolled back to a build that only knows the commands.
+  set_panel_setting("display_mode", "lvgl");
+  set_panel_setting("lvgl_theme", "aurora");
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  commands_sent();
+
+  register_panel(nlohmann::json::array({"something_else"}));
+  commands_sent();
+  change_panel_setting("lvgl_theme", "peaks");
+  panel->reload_config();
+
+  EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{theme_command("peaks")}));
 }

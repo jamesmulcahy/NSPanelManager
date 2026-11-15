@@ -237,6 +237,7 @@ void NSPanel::reload_config() {
     this->_mqtt_buzzer_mute_state_topic = fmt::format("nspanel/{}/buzzer_mute_state", this->_mac);
     this->_mqtt_status_topic = fmt::format("nspanel/{}/status", this->_mac);
     this->_mqtt_status_report_topic = fmt::format("nspanel/{}/status_report", this->_mac);
+    this->_mqtt_lvgl_look_topic = fmt::format("nspanel/{}/lvgl_look", this->_mac);
     this->_mqtt_mac_log_topic = fmt::format("nspanel/{}/log", this->_mac);
     this->_mqtt_legacy_status_topic = fmt::format("nspanel/{}/status", this->_name);               // TODO: Remove me and use only topic based on MAC-address instead
     this->_mqtt_legacy_status_report_topic = fmt::format("nspanel/{}/status_report", this->_name); // TODO: Remove me and use only topic based on MAC-address instead
@@ -262,6 +263,7 @@ void NSPanel::reload_config() {
       MQTT_Manager::subscribe(this->_mqtt_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
+      MQTT_Manager::subscribe(this->_mqtt_lvgl_look_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
     }
 
     if (name_changed || reregister_to_ha_mqtt_discovery) {
@@ -551,6 +553,7 @@ void NSPanel::reset_mqtt_topics() {
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
+  MQTT_Manager::detach_callback(this->_mqtt_lvgl_look_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
 
   // This nspanel was removed. Clear any retain on any MQTT topic.
   MQTT_Manager::clear_retain(this->_mqtt_command_topic);
@@ -614,6 +617,8 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         SPDLOG_INFO("NSPanel {}::{} buzzer {}. Sending config.", this->_id, this->_name, muted ? "muted" : "unmuted");
         this->send_config();
       }
+    } else if (topic.compare(this->_mqtt_lvgl_look_topic) == 0) {
+      this->_handle_lvgl_look_report(payload);
     } else if (topic.compare(this->_mqtt_log_topic) == 0) {
       // Split log message by semicolon to extract MAC, log level and message.
       std::string message = payload;
@@ -1116,6 +1121,7 @@ bool NSPanel::is_lvgl_mode() {
 }
 
 void NSPanel::_reload_lvgl_settings() {
+  std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
   bool lvgl_mode = this->_get_nspanel_setting_with_default("display_mode", "nextion").compare("lvgl") == 0;
   std::string theme = this->_get_nspanel_setting_with_default("lvgl_theme", "");
   std::string background = this->_get_nspanel_setting_with_default("lvgl_background", "");
@@ -1138,7 +1144,15 @@ void NSPanel::_reload_lvgl_settings() {
 }
 
 void NSPanel::_send_lvgl_look(bool theme, bool background) {
+  std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
   if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::WEB) {
+    return;
+  }
+  if (this->_panel_reports_lvgl_look) {
+    // Its firmware takes the look from NSPanelConfig, which every reload sends. A command as well would be a second
+    // flash write, and one that can overtake a look chosen on the panel that the manager has not seen yet.
+    SPDLOG_DEBUG("NSPanel {}::{} takes its LVGL look from the config: no lvgl_theme/lvgl_background commands.", this->_id, this->_name);
+    this->_lvgl_look_sent = true;
     return;
   }
   // The firmware saves each and applies it at once (lib/UpdateManager/UpdateManager.cpp).
@@ -1157,6 +1171,49 @@ void NSPanel::_send_lvgl_look(bool theme, bool background) {
     this->send_command(cmd);
   }
   this->_lvgl_look_sent = true;
+}
+
+void NSPanel::_handle_lvgl_look_report(const std::string &payload) {
+  // The names the firmware draws (lib/LvglRenderer: Theme.hpp, Background.hpp), and so the values the settings page offers.
+  static const std::vector<std::string> themes = {"auto", "dark", "grey", "ocean", "dusk", "aurora", "peaks"};
+  static const std::vector<std::string> backgrounds = {"none", "ocean", "dusk", "aurora", "peaks"};
+  nlohmann::json report = nlohmann::json::parse(payload, nullptr, false);
+  if (report.is_discarded() || !report.is_object() || !report.contains("theme") || !report.at("theme").is_string() ||
+      !report.contains("background") || !report.at("background").is_string()) {
+    SPDLOG_WARN("NSPanel {}::{} sent an LVGL look report that is not {{\"theme\": .., \"background\": ..}}: {}", this->_id, this->_name, payload);
+    return;
+  }
+  std::string theme = report.at("theme").get<std::string>();
+  std::string background = report.at("background").get<std::string>();
+  // Not stored, and not confirmed: a panel that keeps sending it is answered by nothing, so nothing can go back and forth.
+  if (std::find(themes.begin(), themes.end(), theme) == themes.end() || std::find(backgrounds.begin(), backgrounds.end(), background) == backgrounds.end()) {
+    SPDLOG_WARN("NSPanel {}::{} reported an unknown LVGL look '{}'/'{}'. Ignoring it.", this->_id, this->_name, background, theme);
+    return;
+  }
+  if (this->_state == MQTT_MANAGER_NSPANEL_STATE::AWAITING_ACCEPT || this->_state == MQTT_MANAGER_NSPANEL_STATE::DENIED) {
+    return;
+  }
+
+  SPDLOG_INFO("NSPanel {}::{} reports LVGL look {}/{} chosen on the panel. Saving it as the panel's setting.", this->_id, this->_name, background, theme);
+  try {
+    // Django owns the table (web_nspanelsettings, name/value rows); the database's busy timeout covers a save in the web
+    // interface at the same moment. Both rows, so a panel whose look was not managed now is.
+    MqttManagerConfig::set_nspanel_setting_value(this->_id, "lvgl_theme", theme);
+    MqttManagerConfig::set_nspanel_setting_value(this->_id, "lvgl_background", background);
+  } catch (const std::exception &e) {
+    // Not confirmed: the panel keeps its look and reports it again with the next config it gets.
+    SPDLOG_ERROR("Failed to save the LVGL look reported by NSPanel {}::{}: {}", this->_id, this->_name, e.what());
+    return;
+  }
+  {
+    // As if a reload had read them: the next reload sees no change, so nothing is sent back for this.
+    std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+    this->_lvgl_theme = theme;
+    this->_lvgl_background = background;
+  }
+  // The confirmation: a config whose look is the panel's. Also replaces the retained config, which still had the old look.
+  this->send_config();
+  this->send_websocket_status_update();
 }
 
 bool NSPanel::has_tft_update() {
@@ -1423,6 +1480,20 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
       return false;
     }
 
+    // Features the firmware lists (absent from older firmware). Before reload_config() below, which may send the look.
+    bool reports_lvgl_look = false;
+    if (register_request_payload.contains("features") && register_request_payload.at("features").is_array()) {
+      for (const auto &feature : register_request_payload.at("features")) {
+        if (feature.is_string() && feature.get<std::string>() == "lvgl_look") {
+          reports_lvgl_look = true;
+        }
+      }
+    }
+    {
+      std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+      this->_panel_reports_lvgl_look = reports_lvgl_look;
+    }
+
     if (!register_request_payload.contains("friendly_name") || !register_request_payload.at("friendly_name").is_string()) {
       SPDLOG_ERROR("Failed to get friendly name from register request. Cannot register to manager!");
       return false;
@@ -1552,6 +1623,7 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
 
       // Once per manager run: the panel may have been reflashed or replaced while the manager was not running.
       // Not on every reconnect, as each command is a flash write and a repaint on the panel.
+      std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
       if (this->_lvgl_mode && !this->_lvgl_look_sent) {
         this->_send_lvgl_look(true, true);
       }
