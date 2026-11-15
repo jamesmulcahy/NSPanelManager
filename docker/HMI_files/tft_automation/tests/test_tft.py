@@ -57,8 +57,11 @@ class OrientationTest(unittest.TestCase):
         data = read('eu', 1)
         turned = tft.with_orientation(data, 90)
         self.assertTrue(tft.checksums_ok(turned))
-        self.assertEqual({i for i in range(len(data)) if data[i] != turned[i]} - {tft.ORIENTATION},
-                         set(range(0xC4, 0xC8)) | set(range(len(data) - 4, len(data))))
+        self.assertEqual(tft.orientation(turned), 90)
+        # Any one checksum byte can come out the same by chance (1 in 256), so check that
+        # nothing else changed, not that every checksum byte did.
+        self.assertLessEqual({i for i in range(len(data)) if data[i] != turned[i]} - {tft.ORIENTATION},
+                             set(range(0xC4, 0xC8)) | set(range(len(data) - 4, len(data))))
 
     def test_build_refuses_a_template_with_the_wrong_orientation(self):
         with self.assertRaises(SystemExit):
