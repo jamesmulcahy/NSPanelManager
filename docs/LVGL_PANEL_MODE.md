@@ -92,10 +92,12 @@ string lvgl_theme = 17;       // As applied, after "light" -> "grey"; empty outs
 string lvgl_background = 18;
 ```
 
-When `display_mode` is not `UNKNOWN`, MQTTManager trusts it over the md5 and warns when it disagrees
-with the panel's setting (an `lvgl` panel reporting `NEXTION` or `TERMINAL_IDLE`, or a `nextion` panel
-reporting `LVGL`). It also publishes the mode in the panel's websocket status, which the settings page
-shows.
+When `display_mode` is not `UNKNOWN`, MQTTManager adds the warnings md5 cannot give: an `lvgl` panel
+whose TFT is up to date but which reports `NEXTION` (the uploaded "terminal" TFT is not one), and any
+panel reporting `TERMINAL_IDLE` (the display is stuck on the waiting page). A disagreement md5 can see,
+such as a `nextion` panel still on the terminal TFT, already shows as "GUI update available". The
+reported mode, theme and background are in the panel's websocket status (`display_mode`,
+`lvgl_theme`, `lvgl_background`, next to `display_mode_setting`), and the settings page shows the mode.
 
 Why both: md5 works for every panel in the field today and is what decides whether to offer a GUI
 update. The reported mode is the only thing that proves LVGL is drawing, and it is cheap for the
@@ -120,8 +122,9 @@ Two ways, with different tradeoffs:
   panel's settings on every config push. Empty means "not managed". Older firmware ignores unknown
   fields, so sending them is safe now.
 - MQTTManager also sends the existing commands on `nspanel/<MAC>/command`, but only to panels in
-  `lvgl` mode and only when needed: when a reload changes the panel's theme or background, and the
-  first time a panel registers after the manager starts (which also covers a panel re-provisioned
+  `lvgl` mode and only when needed: when a reload changes the panel's theme or background, or moves
+  the panel into `lvgl` mode (all of the look, for a panel that already runs the terminal TFT), and
+  after `register_accept` the first time a panel registers after the manager starts (which also covers a panel re-provisioned
   while the manager was down). Not on every reconnect: weak-signal panels reconnect often, and each
   command is an NVS write and a full repaint.
 
