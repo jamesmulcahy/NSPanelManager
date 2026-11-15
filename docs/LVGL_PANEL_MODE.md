@@ -22,7 +22,7 @@ over a background slot (US "TFT 4"), point the panel at that slot, run a GUI upd
 | Pushing the look | Both: new `NSPanelConfig` fields (sent today, used by firmware once it reads them) and the existing `lvgl_theme` / `lvgl_background` commands (work with today's firmware) |
 | Screenshot | The settings page shows `http://<panel>/screenshot` straight from the panel, like the existing "open panel web page" link |
 | Global defaults | Designed, not built (see "Later") |
-| A look chosen on the panel | The firmware reports it on `nspanel/<MAC>/lvgl_look`; MQTTManager saves it as the panel's `lvgl_theme` / `lvgl_background` settings and confirms it with a config push. See "A look chosen on the panel" |
+| A look chosen on the panel | The firmware reports it as an `NSPanelMQTTManagerCommand` (`lvgl_look`, field 11); MQTTManager saves it as the panel's `lvgl_theme` / `lvgl_background` settings and confirms it with a config push. See "A look chosen on the panel" |
 
 ## Data model
 
@@ -148,23 +148,24 @@ look, so the settings page shows it and the next config push does not undo it.
 
 | | |
 |---|---|
-| Panel → manager | `nspanel/<MAC>/lvgl_look`, JSON `{"background": "ocean", "theme": "auto"}`, QoS 0, not retained. Sent on a pick and on an `lvgl_theme` / `lvgl_background` command (from the MCP, say), and again while unconfirmed (below) |
+| Panel → manager | `NSPanelMQTTManagerCommand` with `lvgl_look` (`LvglLook { theme, background }`, oneof field 11) on the manager's protobuf command topic, like every other panel action. Sent on a pick and on an `lvgl_theme` / `lvgl_background` command (from the MCP, say), and again while unconfirmed (below) |
 | Manager → panel | Nothing new: the confirmation is an ordinary `NSPanelConfig` push whose fields 49/50 equal the reported look |
 | Capability | `register_request` gains `"features": ["lvgl_look"]` |
 
-**Why a topic of its own** and not the status report or `nspanel/mqttmanager/command`:
+**Why a command** and not the status report or a topic of its own:
 
 - The status report's `lvgl_theme` / `lvgl_background` (17/18) say what the panel *draws*, not that
   someone *chose* it. After the manager changed the look while a panel was offline, the panel's first
   status reports still carry the old look; persisting those would revert the manager's change. A
-  report is an event, so it has its own message.
-- `nspanel/mqttmanager/command` is shared by every manager; an older one logs
-  `Got command but no handler for it exists` at ERROR for an unknown command, and the panel resends
-  while unconfirmed. Nobody older subscribes to `nspanel/<MAC>/lvgl_look`, so it costs them nothing.
-- JSON, like the commands it answers; no proto change, so no renumbering risk and no regeneration
-  for this part.
+  report is an event, so it is a command, like the panel's other actions.
+- On the protobuf command topic an older manager parses the command, finds no oneof case it knows,
+  and every `CommandManager` callback passes it by: nothing is logged or done. (The JSON topic,
+  `nspanel/mqttmanager/command`, would not do: an older manager logs `Got command but no handler for it
+  exists` at ERROR for anything but `register_request`, and the panel resends while unconfirmed.)
+- No topic to subscribe to per panel; the command reaches `NSPanel::command_callback`, which acts on it
+  only when `nspanel_id` is its own.
 
-**What MQTTManager does** (`NSPanel::_handle_lvgl_look_report`, on its MQTT thread): checks the
+**What MQTTManager does** (`NSPanel::_handle_lvgl_look_report`, from `command_callback`): checks the
 names against the values the firmware draws (`auto dark grey ocean dusk aurora peaks`,
 `none ocean dusk aurora peaks`, the same lists as `display_mode.LVGL_THEMES` / `LVGL_BACKGROUNDS`);
 ignores a panel awaiting accept or denied; writes both rows with

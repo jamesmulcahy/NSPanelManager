@@ -243,7 +243,6 @@ void NSPanel::reload_config(const char *reason) {
     this->_mqtt_buzzer_mute_state_topic = fmt::format("nspanel/{}/buzzer_mute_state", this->_mac);
     this->_mqtt_status_topic = fmt::format("nspanel/{}/status", this->_mac);
     this->_mqtt_status_report_topic = fmt::format("nspanel/{}/status_report", this->_mac);
-    this->_mqtt_lvgl_look_topic = fmt::format("nspanel/{}/lvgl_look", this->_mac);
     this->_mqtt_mac_log_topic = fmt::format("nspanel/{}/log", this->_mac);
     this->_mqtt_legacy_status_topic = fmt::format("nspanel/{}/status", this->_name);               // TODO: Remove me and use only topic based on MAC-address instead
     this->_mqtt_legacy_status_report_topic = fmt::format("nspanel/{}/status_report", this->_name); // TODO: Remove me and use only topic based on MAC-address instead
@@ -269,7 +268,6 @@ void NSPanel::reload_config(const char *reason) {
       MQTT_Manager::subscribe(this->_mqtt_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
-      MQTT_Manager::subscribe(this->_mqtt_lvgl_look_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
     }
 
     if (name_changed || reregister_to_ha_mqtt_discovery) {
@@ -571,7 +569,6 @@ void NSPanel::reset_mqtt_topics() {
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
-  MQTT_Manager::detach_callback(this->_mqtt_lvgl_look_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
 
   // This nspanel was removed. Clear any retain on any MQTT topic.
   MQTT_Manager::clear_retain(this->_mqtt_command_topic);
@@ -635,8 +632,6 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         SPDLOG_INFO("NSPanel {}::{} buzzer {}. Sending config.", this->_id, this->_name, muted ? "muted" : "unmuted");
         this->send_config("buzzer_mute");
       }
-    } else if (topic.compare(this->_mqtt_lvgl_look_topic) == 0) {
-      this->_handle_lvgl_look_report(payload);
     } else if (topic.compare(this->_mqtt_log_topic) == 0) {
       // Split log message by semicolon to extract MAC, log level and message.
       std::string message = payload;
@@ -1211,18 +1206,10 @@ void NSPanel::_send_lvgl_look(bool theme, bool background) {
   this->_lvgl_look_sent = true;
 }
 
-void NSPanel::_handle_lvgl_look_report(const std::string &payload) {
+void NSPanel::_handle_lvgl_look_report(const std::string &theme, const std::string &background) {
   // The names the firmware draws (lib/LvglRenderer: Theme.hpp, Background.hpp), and so the values the settings page offers.
   static const std::vector<std::string> themes = {"auto", "dark", "grey", "ocean", "dusk", "aurora", "peaks"};
   static const std::vector<std::string> backgrounds = {"none", "ocean", "dusk", "aurora", "peaks"};
-  nlohmann::json report = nlohmann::json::parse(payload, nullptr, false);
-  if (report.is_discarded() || !report.is_object() || !report.contains("theme") || !report.at("theme").is_string() ||
-      !report.contains("background") || !report.at("background").is_string()) {
-    SPDLOG_WARN("NSPanel {}::{} sent an LVGL look report that is not {{\"theme\": .., \"background\": ..}}: {}", this->_id, this->_name, payload);
-    return;
-  }
-  std::string theme = report.at("theme").get<std::string>();
-  std::string background = report.at("background").get<std::string>();
   // Not stored, and not confirmed: a panel that keeps sending it is answered by nothing, so nothing can go back and forth.
   if (std::find(themes.begin(), themes.end(), theme) == themes.end() || std::find(backgrounds.begin(), backgrounds.end(), background) == backgrounds.end()) {
     SPDLOG_WARN("NSPanel {}::{} reported an unknown LVGL look '{}'/'{}'. Ignoring it.", this->_id, this->_name, background, theme);
@@ -1973,6 +1960,12 @@ void NSPanel::set_relay_state(uint8_t relay, bool state) {
 }
 
 void NSPanel::command_callback(NSPanelMQTTManagerCommand &command) {
+  if (command.has_lvgl_look()) {
+    if (command.nspanel_id() == this->_id) {
+      this->_handle_lvgl_look_report(command.lvgl_look().theme(), command.lvgl_look().background());
+    }
+    return;
+  }
   if (command.has_button_pressed()) {
     if (command.nspanel_id() == this->_id) {
       SPDLOG_DEBUG("NSPanel {}::{} got button {} press,", this->_id, this->_name, command.button_pressed().button_id());

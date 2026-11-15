@@ -279,10 +279,10 @@ private:
   void _reload_lvgl_settings();
   // Send the lvgl_theme and/or lvgl_background command, each only when that part of the look is set.
   void _send_lvgl_look(bool theme, bool background);
-  // A look chosen on the panel (or set there by a command), on nspanel/<mac>/lvgl_look: {"theme": .., "background": ..}.
+  // A look chosen on the panel (or set there by a command): NSPanelMQTTManagerCommand.lvgl_look.
   // Stored as the panel's lvgl_theme and lvgl_background settings, then confirmed by sending the config, whose look
   // now matches the panel's. See docs/LVGL_PANEL_MODE.md, "A look chosen on the panel".
-  void _handle_lvgl_look_report(const std::string &payload);
+  void _handle_lvgl_look_report(const std::string &theme, const std::string &background);
 
   enum ButtonMode {
     DIRECT,
@@ -323,7 +323,6 @@ private:
   std::string _mqtt_status_topic;
   // The topic to capture status reports from MQTT
   std::string _mqtt_status_report_topic;
-  std::string _mqtt_lvgl_look_topic; // nspanel/<mac>/lvgl_look: a look chosen on the panel
   // The topic to capture logs from MQTT, based on MAC-address
   std::string _mqtt_mac_log_topic;
   // The old name based status and status report topics, still subscribed to for older firmware

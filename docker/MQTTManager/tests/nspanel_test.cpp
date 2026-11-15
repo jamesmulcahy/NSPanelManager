@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <iterator>
+#include <optional>
 #include <gtest/gtest.h>
 #include <media_player/media_player.hpp>
 #include <metrics/metrics.hpp>
@@ -180,9 +181,13 @@ protected:
     return published;
   }
 
-  // The panel reports a look chosen on it (firmware LvglLook).
-  void report_look(const std::string &payload) {
-    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/lvgl_look", payload);
+  // The panel reports a look chosen on it (firmware LvglLook), as CommandManager hands every panel a command.
+  void report_look(const std::string &theme, const std::string &background, std::optional<int> nspanel_id = std::nullopt) {
+    NSPanelMQTTManagerCommand command;
+    command.set_nspanel_id(nspanel_id.value_or(row->id));
+    command.mutable_lvgl_look()->set_theme(theme);
+    command.mutable_lvgl_look()->set_background(background);
+    panel->command_callback(command);
   }
 
   // A setting as web/settings_helper.py set_nspanel_setting_value() stores it.
@@ -1293,7 +1298,7 @@ TEST_F(NSPanelTest, look_chosen_on_the_panel_is_saved_and_confirmed_by_the_confi
   load_panel();
   last_published_config();
 
-  report_look(R"({"theme": "auto", "background": "ocean"})");
+  report_look("auto", "ocean");
 
   EXPECT_EQ(panel_setting_values("lvgl_theme"), std::vector<std::string>{"auto"});
   EXPECT_EQ(panel_setting_values("lvgl_background"), std::vector<std::string>{"ocean"});
@@ -1309,7 +1314,7 @@ TEST_F(NSPanelTest, look_chosen_on_the_panel_replaces_the_managed_look) {
   load_panel();
   last_published_config();
 
-  report_look(R"({"theme": "grey", "background": "none"})");
+  report_look("grey", "none");
 
   // The same rows, changed: Django reads the first row of a name.
   EXPECT_EQ(panel_setting_values("lvgl_theme"), std::vector<std::string>{"grey"});
@@ -1329,7 +1334,7 @@ TEST_F(NSPanelTest, look_chosen_on_the_panel_is_not_sent_back_as_commands) {
   register_panel();
   commands_sent();
 
-  report_look(R"({"theme": "auto", "background": "peaks"})");
+  report_look("auto", "peaks");
   // And a later reload (a save in the web interface) finds nothing changed.
   panel->reload_config();
 
@@ -1339,18 +1344,28 @@ TEST_F(NSPanelTest, look_chosen_on_the_panel_is_not_sent_back_as_commands) {
   EXPECT_EQ(published.config->lvgl_background(), "peaks");
 }
 
-TEST_F(NSPanelTest, unknown_or_malformed_look_report_is_ignored) {
+TEST_F(NSPanelTest, unknown_look_report_is_ignored) {
   load_panel();
   last_published_config();
 
-  for (const char *payload : {R"({"theme": "pink", "background": "ocean"})", R"({"theme": "dark", "background": "space"})",
-                              R"({"theme": "dark"})", R"({"theme": 1, "background": "none"})", "not json", "[]"}) {
-    report_look(payload);
-  }
+  report_look("pink", "ocean");
+  report_look("dark", "space");
+  report_look("dark", "");
+  report_look("", "");
 
   EXPECT_TRUE(panel_setting_values("lvgl_theme").empty());
   EXPECT_TRUE(panel_setting_values("lvgl_background").empty());
   // No config either: nothing for the panel to take as a confirmation, or to answer.
+  EXPECT_FALSE(last_published_config().has_value());
+}
+
+TEST_F(NSPanelTest, look_reported_for_another_panel_is_ignored) {
+  load_panel();
+  last_published_config();
+
+  report_look("auto", "ocean", row->id + 1);
+
+  EXPECT_TRUE(panel_setting_values("lvgl_theme").empty());
   EXPECT_FALSE(last_published_config().has_value());
 }
 
