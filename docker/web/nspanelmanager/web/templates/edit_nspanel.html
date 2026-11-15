@@ -45,6 +45,55 @@
     select_background_modal.close();
   }
 
+  // Display section: show the LVGL fields in LVGL mode, the NSPM TFT backgrounds in Nextion mode.
+  var lvgl_panel_ip = "";
+  function update_display_fields() {
+    var lvgl = $("#display_mode").val() == "lvgl";
+    $("#lvgl_settings").toggleClass("hidden", !lvgl);
+    $("#nextion_tft_examples").toggleClass("hidden", lvgl);
+    var panel_type = $("#panel_type").val();
+    $("#lvgl_orientation_note").toggleClass("hidden", panel_type == "eu" || panel_type == "us_vertical");
+    if (lvgl && !$("#lvgl_screenshot").attr("src")) {
+      refresh_lvgl_screenshot();
+    }
+  }
+
+  function refresh_lvgl_screenshot() {
+    if ($("#display_mode").val() != "lvgl") return;
+    if (!lvgl_panel_ip) {
+      $("#lvgl_screenshot_status").text("Waiting for the panel's address.");
+      return;
+    }
+    $("#lvgl_screenshot_status").text("Loading...");
+    // The panel renders the screen again for each request; the timestamp keeps the browser from reusing one.
+    $("#lvgl_screenshot").attr("src", "http://" + lvgl_panel_ip + "/screenshot?format=png&t=" + Date.now());
+  }
+
+  const display_mode_names = {nextion: "Nextion pages", lvgl: "LVGL", terminal_idle: "terminal TFT with LVGL off"};
+  $(document).ready(function () {
+    $("#display_mode").on("change", update_display_fields);
+    $("#panel_type").on("change", update_display_fields);
+    $("#lvgl_screenshot").on("load", function () {
+      $(this).removeClass("hidden");
+      $("#lvgl_screenshot_status").text("Taken " + new Date().toLocaleTimeString() + ".");
+    });
+    $("#lvgl_screenshot").on("error", function () {
+      $(this).addClass("hidden");
+      $("#lvgl_screenshot_status").text("Screenshot unavailable: the panel shows its Nextion pages (until its GUI is updated), is busy, or cannot be reached from this browser at " + lvgl_panel_ip + ".");
+    });
+    stomp_subscribe("nspanel/" + nspanel_mac + "/status", function (message) {
+      var status = JSON.parse(message.body);
+      var first_address = !lvgl_panel_ip && status.ip_address;
+      lvgl_panel_ip = status.ip_address || "";
+      var reported = display_mode_names[status.display_mode];
+      $("#display_reported_mode").toggleClass("hidden", !reported);
+      $("#display_reported_mode_value").text(reported || "");
+      if (first_address) {
+        refresh_lvgl_screenshot();
+      }
+    });
+  });
+
   function openBackgroundSelector() {
       const modal = document.getElementById('select_background_modal');
 
@@ -191,7 +240,8 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-center">
+        <!-- NSPM TFT background examples: Nextion mode only (see the Display section below) -->
+        <div id="nextion_tft_examples" class="flex items-center justify-center {% if settings.display_mode == 'lvgl' %}hidden{% endif %}">
             <!-- 81 x 81mm without frame -->
             <div id="eu-panel-example" class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[300px] mt-4 {% if settings.is_us_panel != 'False' %}hidden{% endif %}">
                 <div class="rounded-[0.2rem] w-full h-[77%] bg-black flex justify-center items-center">
@@ -246,6 +296,76 @@
                     <span class="mdi mdi-image-size-select-actual"></span>
                 </div> <!-- Select background overlay -->
             </div>
+        </div>
+
+        <!-- Display: Nextion pages on NSPM's TFT, or LVGL on a terminal TFT. See docs/LVGL_PANEL_MODE.md -->
+        <div class="mt-4" id="display_settings">
+          <label for="display_mode" class="block mb-2 text-sm font-medium">Display</label>
+          <div class="flex flex-row-reverse">
+            <select name="display_mode" id="display_mode" class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 focus:ring-0 focus:border-accent block flex-1 min-w-0 w-full text-sm p-2.5 peer/display_mode">
+              {% for value, label in display_info.modes.items %}
+              <option value="{{ value }}" {% if settings.display_mode == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md peer-focus/display_mode:border-accent">
+              <span class="mdi mdi-monitor-dashboard"></span>
+            </span>
+          </div>
+          <p class="text-xs font-light mt-2">
+            Running now: <span id="display_running">{{ display_info.running.label }}</span>
+            <span id="display_reported_mode" class="hidden">; panel reports <span id="display_reported_mode_value"></span></span>.
+            Changing the display changes the TFT the panel is served: save, then run <i>Update GUI</i>.
+          </p>
+
+          <div id="lvgl_settings" class="{% if settings.display_mode != 'lvgl' %}hidden{% endif %}">
+            {% if not display_info.terminal_tft_staged %}
+            <p class="text-xs text-warning mt-2">No {{ display_info.terminal_tft_label }} has been uploaded yet. Upload one (Upload TFT, "Terminal TFT") before updating this panel's GUI.</p>
+            {% endif %}
+            <p id="lvgl_orientation_note" class="text-xs text-warning mt-2 {% if settings.is_us_panel != 'True' or settings.us_panel_orientation == 'vertical' %}hidden{% endif %}">LVGL draws US panels in portrait whatever the orientation set above.</p>
+            <p class="text-xs font-light mt-2">LVGL mode needs panel firmware with LVGL. Firmware without it leaves a terminal TFT on its waiting page; switch back to Nextion and update the GUI to recover.</p>
+
+            <div class="mt-4">
+              <label for="lvgl_theme" class="block mb-2 text-sm font-medium">LVGL theme</label>
+              <div class="flex flex-row-reverse">
+                <select name="lvgl_theme" id="lvgl_theme" class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 focus:ring-0 focus:border-accent block flex-1 min-w-0 w-full text-sm p-2.5 peer/lvgl_theme">
+                  <option value="" {% if not settings.lvgl_theme %}selected{% endif %}>Keep the panel's own</option>
+                  {% for value, label in display_info.themes.items %}
+                  <option value="{{ value }}" {% if settings.lvgl_theme == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md peer-focus/lvgl_theme:border-accent">
+                  <span class="mdi mdi-palette"></span>
+                </span>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <label for="lvgl_background" class="block mb-2 text-sm font-medium">LVGL background</label>
+              <div class="flex flex-row-reverse">
+                <select name="lvgl_background" id="lvgl_background" class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 focus:ring-0 focus:border-accent block flex-1 min-w-0 w-full text-sm p-2.5 peer/lvgl_background">
+                  <option value="" {% if not settings.lvgl_background %}selected{% endif %}>Keep the panel's own</option>
+                  {% for value, label in display_info.backgrounds.items %}
+                  <option value="{{ value }}" {% if settings.lvgl_background == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md peer-focus/lvgl_background:border-accent">
+                  <span class="mdi mdi-image"></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Screen preview, loaded by the browser from the panel's own web server (GET /screenshot) -->
+            <div class="mt-4">
+              <div class="flex items-center justify-between">
+                <span class="block text-sm font-medium">Screen</span>
+                <button type="button" class="btn btn-sm btn-outline" onclick="refresh_lvgl_screenshot();">Refresh</button>
+              </div>
+              <div class="flex items-center justify-center mt-2">
+                <img id="lvgl_screenshot" class="hidden rounded-md" style="max-width: 100%; image-rendering: pixelated;" alt="The panel's screen">
+              </div>
+              <p id="lvgl_screenshot_status" class="text-xs font-light mt-2">Waiting for the panel's address.</p>
+            </div>
+          </div>
         </div>
 
         <!-- Default room -->
