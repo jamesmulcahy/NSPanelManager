@@ -26,16 +26,20 @@ protected:
     HomeAssistantManager::test_set_authenticated(false);
   }
 
-  long call(std::vector<Reply> &replies) {
+  // Members rather than locals in the tests: TearDown fails what a test left pending, which calls back into these.
+  std::vector<Reply> replies;
+  std::vector<Reply> first;
+  std::vector<Reply> second;
+
+  long call(std::vector<Reply> &into) {
     return HomeAssistantManager::call_service_with_response("calendar", "get_events", {{"entity_id", {"calendar.family"}}}, {{"duration", {{"hours", 48}}}},
-                                                            [&replies](bool success, const nlohmann::json &result) { replies.push_back({success, result}); });
+                                                            [&into](bool success, const nlohmann::json &result) { into.push_back({success, result}); });
   }
 };
 
 } // namespace
 
 TEST_F(HomeAssistantCallTest, sends_a_call_service_asking_for_the_response) {
-  std::vector<Reply> replies;
 
   long id = call(replies);
 
@@ -53,7 +57,6 @@ TEST_F(HomeAssistantCallTest, sends_a_call_service_asking_for_the_response) {
 }
 
 TEST_F(HomeAssistantCallTest, the_callback_fires_once_for_its_own_id) {
-  std::vector<Reply> first, second;
   long first_id = call(first);
   long second_id = call(second);
   EXPECT_NE(first_id, second_id);
@@ -73,7 +76,6 @@ TEST_F(HomeAssistantCallTest, the_callback_fires_once_for_its_own_id) {
 }
 
 TEST_F(HomeAssistantCallTest, a_reply_to_an_unknown_id_is_ignored) {
-  std::vector<Reply> replies;
   call(replies);
 
   HomeAssistantManager::test_deliver_result(987654, {{"ignored", true}});
@@ -83,7 +85,6 @@ TEST_F(HomeAssistantCallTest, a_reply_to_an_unknown_id_is_ignored) {
 }
 
 TEST_F(HomeAssistantCallTest, an_error_reply_fails_the_call_with_the_error) {
-  std::vector<Reply> replies;
   long id = call(replies);
 
   HomeAssistantManager::test_deliver_result(id, {{"code", "home_assistant_error"}, {"message", "boom"}}, false);
@@ -98,7 +99,6 @@ TEST_F(HomeAssistantCallTest, a_reply_that_arrives_before_the_send_returns_is_de
   HomeAssistantManager::test_set_send_hook([](const nlohmann::json &message) {
     HomeAssistantManager::test_deliver_result(message["id"].get<long>(), {{"fast", true}});
   });
-  std::vector<Reply> replies;
 
   call(replies);
 
@@ -108,7 +108,6 @@ TEST_F(HomeAssistantCallTest, a_reply_that_arrives_before_the_send_returns_is_de
 }
 
 TEST_F(HomeAssistantCallTest, disconnecting_fails_every_pending_call) {
-  std::vector<Reply> first, second;
   call(first);
   call(second);
 
@@ -124,7 +123,6 @@ TEST_F(HomeAssistantCallTest, disconnecting_fails_every_pending_call) {
 
 TEST_F(HomeAssistantCallTest, a_call_while_disconnected_fails_at_once_without_sending) {
   HomeAssistantManager::test_set_authenticated(false);
-  std::vector<Reply> replies;
 
   long id = call(replies);
 
@@ -136,7 +134,6 @@ TEST_F(HomeAssistantCallTest, a_call_while_disconnected_fails_at_once_without_se
 }
 
 TEST_F(HomeAssistantCallTest, calls_without_a_reply_expire_after_30_seconds) {
-  std::vector<Reply> replies;
   call(replies);
   auto now = std::chrono::steady_clock::now();
 
@@ -150,7 +147,6 @@ TEST_F(HomeAssistantCallTest, calls_without_a_reply_expire_after_30_seconds) {
 }
 
 TEST_F(HomeAssistantCallTest, other_results_are_left_alone) {
-  std::vector<Reply> replies;
   call(replies);
 
   // A reply to a plain send_json() request, which is not in the pending map.
