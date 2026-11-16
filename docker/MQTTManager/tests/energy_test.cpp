@@ -167,7 +167,8 @@ TEST(EnergyTemplates, ids_and_labels_cannot_break_out_of_their_strings) {
   std::string lights = MQTTManagerEnergy::lights_template({"x'] }}{{ 2", "caf\xC3\xA9"});
 
   EXPECT_NE(energy.find(R"(["sensor.a\"}} {{ 1"])"), std::string::npos) << energy;
-  EXPECT_NE(lights.find(R"(["x'] }}{{ 2","café"])"), std::string::npos) << lights;
+  // Non-ASCII goes in as a JSON escape, which Jinja reads as the same character.
+  EXPECT_NE(lights.find(R"(["x'] }}{{ 2","caf\u00e9"])"), std::string::npos) << lights;
 }
 
 TEST(EnergyTemplates, the_lights_template_skips_groups_hidden_lights_and_labels) {
