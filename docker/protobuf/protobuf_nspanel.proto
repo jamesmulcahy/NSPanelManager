@@ -103,6 +103,21 @@ message NSPanelConfig {
   // the manager does not manage it: keep the panel's own saved value. Panels without LVGL ignore these.
   string lvgl_theme = 49;      // Palette: auto, dark, grey, ocean, dusk, aurora or peaks
   string lvgl_background = 50; // Page background: none, ocean, dusk, aurora or peaks
+
+  // Extra screensaver cards. The screensaver keeps its clock at the top and rotates the area below it: the
+  // weather (WEATHER_* modes) for screensaver_base_card_seconds, then each card here in order, for its own
+  // seconds. Empty: the screensaver as before. Ignored with NO_SCREENSAVER, and by panels that do not draw
+  // with LVGL. Panels skip card types they do not know.
+  enum NSPanelScreensaverCardType {
+    SCREENSAVER_CARD_UNSPECIFIED = 0;
+    SCREENSAVER_CARD_CALENDAR = 1; // Upcoming events, from NSPanelCalendarUpdate on nspanel/mqttmanager_<address>/status/calendar
+  }
+  message ScreensaverCard {
+    NSPanelScreensaverCardType type = 1;
+    int32 seconds = 2; // How long the card shows. 0: the panel's default (10 s)
+  }
+  repeated ScreensaverCard screensaver_cards = 51;
+  int32 screensaver_base_card_seconds = 52; // How long the weather shows in WEATHER_* modes. 0: the panel's default (10 s)
 }
 
 enum NSPanelWarningLevel {
@@ -242,6 +257,21 @@ message NSPanelWeatherUpdate {
   string sunrise_string = 6;
   string sunset_string = 7;
   string current_precipitation_string = 8;
+}
+
+// Upcoming calendar events, for the screensaver's calendar card. Published retained by the manager on
+// nspanel/mqttmanager_<address>/status/calendar, one list for every panel.
+message NSPanelCalendarUpdate {
+  message Event {
+    string summary = 1;     // The event's title, UTF-8, at most 64 bytes (cut on a character boundary)
+    int64 start = 2;        // Unix seconds. All-day events: local midnight of the first day, in the manager's timezone
+    int64 end = 3;          // Unix seconds, exclusive. All-day events: local midnight after the last day
+    bool all_day = 4;
+    string when_string = 5; // When it is, as the manager would show it ("Today 3:00 PM", "Tomorrow", "Sat 9:00 AM"), for panels whose clock is not set
+  }
+  repeated Event events = 1; // Events that have not ended, sorted by start, at most the manager's configured maximum
+  int32 lookahead_hours = 2; // How far ahead the list looks, for "No events in the next 48 hours"
+  int64 generated_at = 3;    // Unix seconds. Always set, so a list with no events never serialises to an empty payload
 }
 
 // Command send from NSPanel to MQTTManager
