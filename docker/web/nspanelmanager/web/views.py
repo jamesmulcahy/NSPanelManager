@@ -214,7 +214,7 @@ def edit_nspanel(request, panel_id: int):
         "backgrounds": display_mode.LVGL_BACKGROUNDS,
         "running": display_mode.describe_tft_md5(nspanel.md5_tft_file),
         "terminal_tft_label": display_mode.TERMINAL_TFT_LABELS[terminal_tft_type],
-        "terminal_tft_staged": display_mode.file_md5(*display_mode.upload_tft_file(terminal_tft_type)) is not None,
+        "terminal_tft_staged": display_mode.file_md5(*display_mode.staged_terminal_tft_file(terminal_tft_type)) is not None,
     }
 
     data = get_base_data(request)

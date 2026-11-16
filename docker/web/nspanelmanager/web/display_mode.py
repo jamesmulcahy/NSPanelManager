@@ -33,6 +33,9 @@ for _slot_number in range(1, 5):
 
 # tft_file_type of each terminal TFT upload -> its path in terminal_storage().
 TERMINAL_TFT_PATHS = {"terminal_us": "us/gui.tft", "terminal_eu": "eu/gui.tft"}
+# The terminal TFTs the image ships (HMI_files/terminal/README.md), in the default storage like the slots. Served
+# when nothing was uploaded for that layout, so a new install can put panels in LVGL mode without an upload.
+BUNDLED_TERMINAL_TFT_PATHS = {"terminal_us": "HMI_files/terminal/us/gui.tft", "terminal_eu": "HMI_files/terminal/eu/gui.tft"}
 TERMINAL_TFT_LABELS = {"terminal_us": "Terminal TFT (US)", "terminal_eu": "Terminal TFT (EU)"}
 
 
@@ -69,10 +72,23 @@ def slot_tft_type(panel_id):
     return None
 
 
+def staged_terminal_tft_file(tft_file_type):
+    """(storage, path) of the terminal TFT served for this layout: the upload if there is one, else the bundled file."""
+    storage, path = terminal_storage(), TERMINAL_TFT_PATHS[tft_file_type]
+    if storage.exists(path):
+        return storage, path
+    return FileSystemStorage(), BUNDLED_TERMINAL_TFT_PATHS[tft_file_type]
+
+
+def is_bundled_terminal_tft(tft_file_type) -> bool:
+    """Whether this layout's terminal TFT is the bundled one (nothing was uploaded)."""
+    return not terminal_storage().exists(TERMINAL_TFT_PATHS[tft_file_type])
+
+
 def panel_tft_file(panel_id):
     """(storage, path) of the TFT this panel should run, or (None, None) when it cannot be worked out."""
     if get_display_mode(panel_id) == DISPLAY_MODE_LVGL:
-        return terminal_storage(), TERMINAL_TFT_PATHS[terminal_tft_type(panel_id)]
+        return staged_terminal_tft_file(terminal_tft_type(panel_id))
     tft_type = slot_tft_type(panel_id)
     if tft_type is None:
         print(f"ERROR! Could not determine TFT file for NSPanel with ID {panel_id}")
@@ -128,8 +144,11 @@ def describe_tft_md5(md5):
     if not md5:
         return {"kind": "unknown", "label": "Not reported yet", "current": False}
     for tft_file_type in TERMINAL_TFT_PATHS:
-        if file_md5(*upload_tft_file(tft_file_type)) == md5:
-            return {"kind": "terminal", "label": tft_type_label(tft_file_type), "current": True}
+        if file_md5(*staged_terminal_tft_file(tft_file_type)) == md5:
+            label = tft_type_label(tft_file_type)
+            if is_bundled_terminal_tft(tft_file_type):
+                label += ", bundled"
+            return {"kind": "terminal", "label": label, "current": True}
     for tft_file_type in SLOT_TFT_PATHS:
         if file_md5(*upload_tft_file(tft_file_type)) == md5:
             return {"kind": "nextion", "label": tft_type_label(tft_file_type), "current": True}
