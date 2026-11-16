@@ -34,6 +34,10 @@ from .schema import extend_schema
 
 logger = logging.getLogger(__name__)
 
+# The "Alarm" preset: four C7 beeps over about a second. Unlike the other sounds this one isn't blank, because
+# a timer with no sound would be useless. Blank still means silent.
+BUZZER_SOUND_TIMER_FIRED_DEFAULT = "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7"
+
 # MQTTManager parses integers with std::stoi.
 INT32_MAX = 2**31 - 1
 
@@ -42,6 +46,11 @@ SECRETS = ("home_assistant_token", "openhab_token", "mqtt_password")
 
 # Set by the add-on (web/apps.py) when running as a Home Assistant add-on, so not editable then.
 ADDON_MANAGED = ("home_assistant_address", "home_assistant_token")
+
+# What a GET reports for a key with no stored row yet (MQTTManager writes missing keys with the default of its
+# _setting_key_map at startup), so the UI and the panel agree before that has happened. Keep in sync with
+# the _setting_key_map entries; test_rest_v2_settings checks them. Only the keys whose default isn't blank.
+DEFAULTS = {"buzzer_sound_timer_fired": BUZZER_SOUND_TIMER_FIRED_DEFAULT}
 
 ADDRESSES = ("home_assistant_address", "openhab_address")
 
@@ -238,6 +247,7 @@ class SettingsUpdateSerializer(serializers.Serializer):
     buzzer_sound_touch = _rtttl("RTTTL played on a screen touch. Blank for no sound.")
     buzzer_sound_scene_activated = _rtttl("RTTTL played when a scene is activated from the panel. Blank plays the touch sound instead.")
     buzzer_sound_scene_saved = _rtttl("RTTTL played when a scene is saved from the panel. Blank for no sound.")
+    buzzer_sound_timer_fired = _rtttl("RTTTL played, repeating, when a timer started on the panel finishes. Blank for no sound.")
 
     # MQTT
     mqtt_server = _trimmed()
@@ -351,7 +361,7 @@ def _stored_rows():
 def read_settings():
     """Every setting this API knows, decoded. Secrets are included (callers must not return them)."""
     rows = _stored_rows()
-    return {name: (rows.get(name) if name in SECRETS else _decode(name, rows.get(name))) for name in _FIELDS}
+    return {name: (rows.get(name) if name in SECRETS else _decode(name, rows.get(name, DEFAULTS.get(name)))) for name in _FIELDS}
 
 
 def representation():

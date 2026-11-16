@@ -87,6 +87,7 @@ enum MQTT_MANAGER_SETTING {
   BUZZER_SOUND_TOUCH,
   BUZZER_SOUND_SCENE_ACTIVATED,
   BUZZER_SOUND_SCENE_SAVED,
+  BUZZER_SOUND_TIMER_FIRED,
   LAST, // Keep last as to be able to reference the last element in the list.
 };
 
@@ -278,6 +279,9 @@ private:
       {MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH, {"buzzer_sound_touch", ""}}, // RTTTL, empty for no sound
       {MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED, {"buzzer_sound_scene_activated", ""}},
       {MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_SAVED, {"buzzer_sound_scene_saved", ""}},
+      // Unlike the other sounds this one is not empty: a timer without a sound would be useless. Keep in sync with
+      // BUZZER_SOUND_TIMER_FIRED_DEFAULT in rest_v2/global_settings.py. Empty still means silent.
+      {MQTT_MANAGER_SETTING::BUZZER_SOUND_TIMER_FIRED, {"buzzer_sound_timer_fired", "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7"}},
 #if defined(TEST_MODE) && TEST_MODE == 1
       {MQTT_MANAGER_SETTING::LAST, {"last", "last_value"}},
 #endif

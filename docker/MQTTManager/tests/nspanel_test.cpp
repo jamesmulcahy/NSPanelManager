@@ -702,7 +702,22 @@ TEST_F(NSPanelTest, panel_locked_to_its_room_only_gets_that_room) {
   EXPECT_EQ(std::vector<int>(config->room_infos(0).entity_page_ids().begin(), config->room_infos(0).entity_page_ids().end()), std::vector<int>({panel_rooms().entities_page_id}));
 }
 
-TEST_F(NSPanelTest, config_has_no_sounds_without_buzzer_settings) {
+TEST_F(NSPanelTest, config_only_has_the_default_timer_sound_without_buzzer_settings) {
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  ASSERT_EQ(config->sounds_size(), 1);
+  EXPECT_EQ(config->sounds(0).event(), NSPanelConfig_NSPanelSoundEvent_TIMER_FIRED);
+  EXPECT_EQ(config->sounds(0).rtttl(), "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7");
+}
+
+TEST_F(NSPanelTest, an_empty_timer_sound_is_not_sent) {
+  OnExit reset{[] {
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TIMER_FIRED, "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7");
+  }};
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::BUZZER_SOUND_TIMER_FIRED, "");
+
   load_panel();
 
   auto config = last_published_config();
@@ -724,13 +739,15 @@ TEST_F(NSPanelTest, global_buzzer_sounds_are_sent_per_event) {
 
   auto config = last_published_config();
   ASSERT_TRUE(config.has_value());
-  ASSERT_EQ(config->sounds_size(), 3);
+  ASSERT_EQ(config->sounds_size(), 4);
   EXPECT_EQ(config->sounds(0).event(), NSPanelConfig_NSPanelSoundEvent_TOUCH);
   EXPECT_EQ(config->sounds(0).rtttl(), "touch:d=32,o=6,b=190:g6");
   EXPECT_EQ(config->sounds(1).event(), NSPanelConfig_NSPanelSoundEvent_SCENE_ACTIVATED);
   EXPECT_EQ(config->sounds(1).rtttl(), "activated:d=16,o=6,b=180:c,e,g");
   EXPECT_EQ(config->sounds(2).event(), NSPanelConfig_NSPanelSoundEvent_SCENE_SAVED);
   EXPECT_EQ(config->sounds(2).rtttl(), "saved:d=8,o=5,b=120:c6");
+  EXPECT_EQ(config->sounds(3).event(), NSPanelConfig_NSPanelSoundEvent_TIMER_FIRED);
+  EXPECT_EQ(config->sounds(3).rtttl(), "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7");
 }
 
 TEST_F(NSPanelTest, panel_buzzer_settings_override_the_global_sounds) {
@@ -743,6 +760,7 @@ TEST_F(NSPanelTest, panel_buzzer_settings_override_the_global_sounds) {
   set_panel_setting("buzzer_sound_touch", "panel_touch:d=32,o=7,b=200:c");
   set_panel_setting("buzzer_sound_scene_activated", ""); // Silences the event on this panel only.
   set_panel_setting("buzzer_sound_scene_saved", "panel_saved:d=8,o=5,b=120:e");
+  set_panel_setting("buzzer_sound_timer_fired", ""); // The timer default is silenced on this panel only.
 
   load_panel();
 
@@ -780,7 +798,7 @@ TEST_F(NSPanelTest, muting_the_buzzer_sends_no_sounds_until_unmuted) {
 
   auto unmuted_config = last_published_config();
   ASSERT_TRUE(unmuted_config.has_value());
-  ASSERT_EQ(unmuted_config->sounds_size(), 1);
+  ASSERT_EQ(unmuted_config->sounds_size(), 2); // The touch sound and the default timer sound.
   EXPECT_EQ(unmuted_config->sounds(0).rtttl(), "touch:d=32,o=6,b=190:g6");
 }
 

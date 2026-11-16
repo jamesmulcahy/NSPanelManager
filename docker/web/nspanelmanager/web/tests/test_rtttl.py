@@ -11,12 +11,13 @@ from unittest import TestCase
 
 from web.models import Settings
 from web.rest_v2 import rtttl
+from web.rest_v2.global_settings import BUZZER_SOUND_TIMER_FIRED_DEFAULT
 
 from .harness import NSPMTestCase
 from .test_rest_v2_settings import URL
 
 VECTORS = json.loads((Path(__file__).resolve().parent / "rtttl_vectors.json").read_text())["vectors"]
-BUZZER_SETTINGS = ("buzzer_sound_touch", "buzzer_sound_scene_activated", "buzzer_sound_scene_saved")
+BUZZER_SETTINGS = ("buzzer_sound_touch", "buzzer_sound_scene_activated", "buzzer_sound_scene_saved", "buzzer_sound_timer_fired")
 
 
 class RtttlParserTests(TestCase):
@@ -57,6 +58,14 @@ class RtttlParserTests(TestCase):
             with self.subTest(text=text), self.assertRaises(rtttl.RtttlError) as caught:
                 rtttl.parse(text)
             self.assertIn(message, str(caught.exception))
+
+
+class TimerDefaultTests(TestCase):
+    def test_default_is_in_the_vectors_and_plays_about_a_second(self):
+        steps = rtttl.parse(BUZZER_SOUND_TIMER_FIRED_DEFAULT)
+        self.assertIn(BUZZER_SOUND_TIMER_FIRED_DEFAULT, [vector["rtttl"] for vector in VECTORS])
+        self.assertEqual(len(steps), 7)
+        self.assertEqual(sum(duration for _, duration in steps), 1050)
 
 
 class BuzzerSettingsApiTests(NSPMTestCase):
