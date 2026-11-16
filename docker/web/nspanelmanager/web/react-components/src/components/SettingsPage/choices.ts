@@ -18,4 +18,23 @@ export const SCREENSAVER_MODES = {
   no_screensaver: "No screensaver (turn off screen)",
 } satisfies Choices<"screensaver_mode">;
 
+export const ENERGY_POWER_SOURCES = {
+  home_assistant_energy: "Home Assistant's Energy settings",
+  entities: "These power sensors",
+  off: "Off",
+} satisfies Choices<"energy_power_source">;
+
+export const ENERGY_PRICE_SOURCES = {
+  home_assistant_energy: "Home Assistant's Energy settings",
+  entity: "An entity",
+  fixed: "A fixed price",
+  off: "Off",
+} satisfies Choices<"energy_price_source">;
+
+export const LIGHTS_ON_SOURCES = {
+  home_assistant: "Home Assistant's lights",
+  nspanelmanager: "NSPanel Manager's lights",
+  off: "Off",
+} satisfies Choices<"lights_on_source">;
+
 export const options = <T extends string>(choices: Record<T, string>) => Object.entries(choices) as [T, string][];
