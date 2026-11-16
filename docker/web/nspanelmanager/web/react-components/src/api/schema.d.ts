@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/rest/v2/nspanels/{id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description An APIView whose errors are {"status": "error", "message": ...} instead of {"detail": ...}. */
+        get: operations["nspanels_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description An APIView whose errors are {"status": "error", "message": ...} instead of {"detail": ...}. */
+        patch: operations["nspanels_settings_partial_update"];
+        trace?: never;
+    };
     "/rest/v2/rooms": {
         parameters: {
             query?: never;
@@ -75,6 +93,32 @@ export interface components {
             detail: string;
         };
         /**
+         * @description * `nextion` - nextion
+         *     * `lvgl` - lvgl
+         * @enum {string}
+         */
+        DisplayModeEnum: "nextion" | "lvgl";
+        /**
+         * @description * `none` - none
+         *     * `ocean` - ocean
+         *     * `dusk` - dusk
+         *     * `aurora` - aurora
+         *     * `peaks` - peaks
+         * @enum {string}
+         */
+        LvglBackgroundEnum: "none" | "ocean" | "dusk" | "aurora" | "peaks";
+        /**
+         * @description * `auto` - auto
+         *     * `dark` - dark
+         *     * `grey` - grey
+         *     * `ocean` - ocean
+         *     * `dusk` - dusk
+         *     * `aurora` - aurora
+         *     * `peaks` - peaks
+         * @enum {string}
+         */
+        LvglThemeEnum: "auto" | "dark" | "grey" | "ocean" | "dusk" | "aurora" | "peaks";
+        /**
          * @description * `error` - error
          *     * `warning` - warning
          *     * `info` - info
@@ -83,6 +127,51 @@ export interface components {
          * @enum {string}
          */
         MqttmanagerLogLevelEnum: "error" | "warning" | "info" | "debug" | "trace";
+        /** @description The error body for a missing panel, or a request rejected before validation (invalid JSON, a failed CSRF check). */
+        NSPanelDetail: {
+            status: string;
+            message: string;
+        };
+        /** @description A panel's settings, for reading and (with partial=True) for PATCH. */
+        NSPanelSettings: {
+            /**
+             * @description Which TFT the manager serves this panel, and so which UI it runs: NSPM's Nextion pages, or LVGL on the terminal TFT.
+             *
+             *     * `nextion` - nextion
+             *     * `lvgl` - lvgl
+             */
+            display_mode: components["schemas"]["DisplayModeEnum"];
+            /**
+             * @description LVGL palette. null: keep the panel's own (the manager never sends one).
+             *
+             *     * `auto` - auto
+             *     * `dark` - dark
+             *     * `grey` - grey
+             *     * `ocean` - ocean
+             *     * `dusk` - dusk
+             *     * `aurora` - aurora
+             *     * `peaks` - peaks
+             */
+            lvgl_theme: (components["schemas"]["LvglThemeEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * @description LVGL page background. null: keep the panel's own (the manager never sends one).
+             *
+             *     * `none` - none
+             *     * `ocean` - ocean
+             *     * `dusk` - dusk
+             *     * `aurora` - aurora
+             *     * `peaks` - peaks
+             */
+            lvgl_background: (components["schemas"]["LvglBackgroundEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
+        /** @description A 400 from PATCH: error messages by field name. Maps onto react-hook-form's setError(). */
+        NSPanelSettingsErrors: {
+            display_mode?: string[];
+            lvgl_theme?: string[];
+            lvgl_background?: string[];
+            non_field_errors?: string[];
+            detail?: string;
+        };
         /** @enum {unknown} */
         NullEnum: null;
         /**
@@ -91,6 +180,38 @@ export interface components {
          * @enum {string}
          */
         OutsideTempSensorProviderEnum: "home_assistant" | "openhab";
+        /** @description A panel's settings, for reading and (with partial=True) for PATCH. */
+        PatchedNSPanelSettingsRequest: {
+            /**
+             * @description Which TFT the manager serves this panel, and so which UI it runs: NSPM's Nextion pages, or LVGL on the terminal TFT.
+             *
+             *     * `nextion` - nextion
+             *     * `lvgl` - lvgl
+             */
+            display_mode?: components["schemas"]["DisplayModeEnum"];
+            /**
+             * @description LVGL palette. null: keep the panel's own (the manager never sends one).
+             *
+             *     * `auto` - auto
+             *     * `dark` - dark
+             *     * `grey` - grey
+             *     * `ocean` - ocean
+             *     * `dusk` - dusk
+             *     * `aurora` - aurora
+             *     * `peaks` - peaks
+             */
+            lvgl_theme?: (components["schemas"]["LvglThemeEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * @description LVGL page background. null: keep the panel's own (the manager never sends one).
+             *
+             *     * `none` - none
+             *     * `ocean` - ocean
+             *     * `dusk` - dusk
+             *     * `aurora` - aurora
+             *     * `peaks` - peaks
+             */
+            lvgl_background?: (components["schemas"]["LvglBackgroundEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
         PatchedRoomOrderRequest: {
             rooms?: components["schemas"]["RoomOrderItemRequest"][];
         };
@@ -367,6 +488,92 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    nspanels_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NSPanelSettings"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NSPanelDetail"];
+                };
+            };
+        };
+    };
+    nspanels_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedNSPanelSettingsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NSPanelSettings"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NSPanelSettingsErrors"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NSPanelDetail"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NSPanelDetail"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NSPanelDetail"];
+                };
+            };
+        };
+    };
     rooms_list: {
         parameters: {
             query?: never;
