@@ -705,7 +705,8 @@ components:
         calendar_entity_ids:
           type: string
           description: Leading and trailing whitespace is removed. Comma-separated
-            Home Assistant calendar.* entity ids. Blank turns the calendar off.
+            Home Assistant calendar.* entity ids, or "all" for every calendar (including
+            ones added later). Blank turns the calendar off.
           maxLength: 255
         calendar_max_events:
           type: integer

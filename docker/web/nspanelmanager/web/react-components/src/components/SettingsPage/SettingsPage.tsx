@@ -4,6 +4,7 @@ import { api, type Settings, type SettingsErrors } from "../../api/client";
 import { getIpByHostname, testHomeAssistant, testManager, testOpenhab } from "../../api/connectionTests";
 import { Notify } from "../NSPanelToastContainer";
 import { BuzzerCard } from "./BuzzerCard";
+import { CalendarPicker } from "./CalendarPicker";
 import { ENERGY_POWER_SOURCES, ENERGY_PRICE_SOURCES, LIGHTS_ON_SOURCES, LOG_LEVELS, NSPANEL_TYPES, options, SCREENSAVER_MODES, TURN_ON_BEHAVIORS } from "./choices";
 import { JoinButton, TestButton } from "../common/buttons";
 import { Alert, Card, Row } from "../common/layout";
@@ -227,7 +228,7 @@ function SettingsForm({ settings: loaded, logDownloadUrl }: { settings: Settings
         <Card title="Calendar">
           {homeAssistantConfigured ? (
             <>
-              <TextInput name="calendar_entity_ids" label="Calendars" hint="Home Assistant calendar entities, comma-separated. Blank turns the calendar off." placeholder="calendar.family, calendar.school" />
+              <CalendarPicker />
               <Row>
                 <NumberInput name="calendar_max_events" label="Most events shown" hint="1 to 10." />
                 <NumberInput name="calendar_lookahead_hours" label="Look ahead (hours)" hint="1 to 336." />

@@ -281,7 +281,7 @@ export interface components {
             screensaver_cards?: string;
             /** @description Seconds the weather or clock card shows before the next card. */
             screensaver_base_card_seconds?: number;
-            /** @description Leading and trailing whitespace is removed. Comma-separated Home Assistant calendar.* entity ids. Blank turns the calendar off. */
+            /** @description Leading and trailing whitespace is removed. Comma-separated Home Assistant calendar.* entity ids, or "all" for every calendar (including ones added later). Blank turns the calendar off. */
             calendar_entity_ids?: string;
             /** @description Most events shown. */
             calendar_max_events?: number;
