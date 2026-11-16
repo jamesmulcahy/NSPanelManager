@@ -1,5 +1,6 @@
 #include "command_manager/command_manager.hpp"
 #include "database_manager/database_manager.hpp"
+#include "energy/energy.hpp"
 #include "entity/entity.hpp"
 #include "manager_clock/manager_clock.hpp"
 #include "openhab_manager/openhab_manager.hpp"
@@ -138,6 +139,7 @@ int main(int argc, char *argv[]) {
   MqttManagerConfig::load();   // Load all entities, rooms and panels.
   MQTTManagerWeather::start(); // Start thread to handle weather updates
   MQTTManagerCalendar::start(); // Start thread to fetch calendar events from Home Assistant
+  MQTTManagerEnergy::start();   // Start thread to publish power, cost and lights on for the energy card
 
   std::thread home_assistant_manager_thread;
   std::thread openhab_manager_thread;

@@ -329,14 +329,14 @@ TEST_F(NSPanelTest, panel_screensaver_cards_override_the_global_ones) {
     MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_CARDS, "");
     MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS, "10");
   }};
-  set_panel_setting("screensaver_cards", "energy:5,calendar:bad");
+  set_panel_setting("screensaver_cards", "doorbell:5,calendar:bad");
   set_panel_setting("screensaver_base_card_seconds", "45");
 
   load_panel();
 
   auto config = last_published_config();
   ASSERT_TRUE(config.has_value());
-  ASSERT_EQ(config->screensaver_cards_size(), 1); // energy is not known and is skipped
+  ASSERT_EQ(config->screensaver_cards_size(), 1); // doorbell is not known and is skipped
   EXPECT_EQ(config->screensaver_cards(0).seconds(), 10);
   EXPECT_EQ(config->screensaver_base_card_seconds(), 45);
 }

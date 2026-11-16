@@ -19,6 +19,15 @@ TEST(ScreensaverCards, calendar_with_seconds) {
   EXPECT_EQ(cards[0].seconds, 15);
 }
 
+TEST(ScreensaverCards, energy_after_the_calendar) {
+  auto cards = parse_cards("calendar:10, Energy:20");
+
+  ASSERT_EQ(cards.size(), 2u);
+  EXPECT_EQ(cards[0].type, NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR);
+  EXPECT_EQ(cards[1].type, NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_ENERGY);
+  EXPECT_EQ(cards[1].seconds, 20);
+}
+
 TEST(ScreensaverCards, missing_or_bad_seconds_fall_back_to_ten) {
   for (const char *setting : {"calendar", "calendar:", "calendar:abc", "calendar:12x", "calendar:1.5"}) {
     auto cards = parse_cards(setting);
@@ -36,7 +45,7 @@ TEST(ScreensaverCards, seconds_are_limited_to_3_to_300) {
 }
 
 TEST(ScreensaverCards, unknown_types_are_skipped_and_the_rest_kept) {
-  auto cards = parse_cards("energy:5, calendar:20 ,bogus,Calendar:7");
+  auto cards = parse_cards("doorbell:5, calendar:20 ,bogus,Calendar:7");
 
   ASSERT_EQ(cards.size(), 2u);
   EXPECT_EQ(cards[0].seconds, 20);
