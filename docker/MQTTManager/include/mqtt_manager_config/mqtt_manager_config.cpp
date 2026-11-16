@@ -357,17 +357,25 @@ void MqttManagerConfig::update_tft_checksums() {
     SPDLOG_ERROR("Failed to calculate checksum for US landscape mirrored TFT4 Nextion GUI file!");
   }
 
-  // The terminal TFTs are optional: nothing ships them, and only panels in LVGL mode use them. A panel in LVGL mode
-  // without one gets "no checksum" from the web server and is not offered a GUI update.
+  // The terminal TFTs, used only by panels in LVGL mode: an uploaded one if there is one, else the one the image ships
+  // (as Django's display_mode.staged_terminal_tft_file() picks). A panel in LVGL mode with neither gets "no checksum"
+  // from the web server and is not offered a GUI update.
   for (bool us_layout : {true, false}) {
-    std::string path = fmt::format("{}/{}/gui.tft", MqttManagerConfig::terminal_tft_directory, us_layout ? "us" : "eu");
+    std::string layout = us_layout ? "us" : "eu";
     std::string &checksum = us_layout ? MqttManagerConfig::_md5_checksum_terminal_us : MqttManagerConfig::_md5_checksum_terminal_eu;
-    auto file_checksum = MqttManagerConfig::_get_file_md5_checksum(path);
+    std::string uploaded = fmt::format("{}/{}/gui.tft", MqttManagerConfig::terminal_tft_directory, layout);
+    std::string bundled = fmt::format("{}/{}/gui.tft", MqttManagerConfig::bundled_terminal_tft_directory, layout);
+    std::string path = uploaded;
+    auto file_checksum = MqttManagerConfig::_get_file_md5_checksum(uploaded);
+    if (!file_checksum.has_value()) {
+      path = bundled;
+      file_checksum = MqttManagerConfig::_get_file_md5_checksum(bundled);
+    }
     checksum = file_checksum.value_or("");
     if (file_checksum.has_value()) {
-      SPDLOG_INFO("{} terminal TFT checksum: {}", us_layout ? "US" : "EU", *file_checksum);
+      SPDLOG_INFO("{} terminal TFT checksum: {} ({})", us_layout ? "US" : "EU", *file_checksum, path == uploaded ? "uploaded" : "bundled");
     } else {
-      SPDLOG_INFO("No {} terminal TFT at {}.", us_layout ? "US" : "EU", path);
+      SPDLOG_INFO("No {} terminal TFT at {} or {}.", us_layout ? "US" : "EU", uploaded, bundled);
     }
   }
 }

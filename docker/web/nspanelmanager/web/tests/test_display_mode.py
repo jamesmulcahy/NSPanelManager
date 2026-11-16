@@ -231,3 +231,62 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         response = self.client.get(reverse("edit_nspanel", kwargs={"panel_id": self.panel.id}))
 
         self.assertContains(response, "No Terminal TFT (EU) has been uploaded yet")
+
+
+US_BUNDLED = b"bundled terminal tft for us panels"
+
+
+class BundledTerminalTftTests(DisplayModeTestCase):
+    """The terminal TFTs the image ships (HMI_files/terminal), served when nothing was uploaded."""
+
+    def bundle(self, layout, data):
+        from django.conf import settings
+        import os
+
+        path = os.path.join(settings.MEDIA_ROOT, "HMI_files", "terminal", layout, "gui.tft")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as file:
+            file.write(data)
+
+    def test_lvgl_panel_gets_the_bundled_tft_without_an_upload(self):
+        self.bundle("us", US_BUNDLED)
+        self.configure_panel(mode="lvgl", is_us_panel="True", orientation="vertical")
+
+        self.assertEqual(self.served(), (200, US_BUNDLED, 200, md5(US_BUNDLED)))
+
+    def test_upload_replaces_the_bundled_tft(self):
+        self.bundle("us", US_BUNDLED)
+        self.upload_tft("terminal_us", US_TERMINAL)
+        self.configure_panel(mode="lvgl", is_us_panel="True", orientation="vertical")
+
+        self.assertEqual(self.served(), (200, US_TERMINAL, 200, md5(US_TERMINAL)))
+
+    def test_each_layout_falls_back_on_its_own(self):
+        # An upload for one layout leaves the other on its bundled file.
+        self.bundle("eu", EU_TERMINAL)
+        self.upload_tft("terminal_us", US_TERMINAL)
+        self.configure_panel(mode="lvgl")
+
+        self.assertEqual(self.served()[1], EU_TERMINAL)
+
+    def test_bundled_tft_is_named_as_bundled(self):
+        self.bundle("us", US_BUNDLED)
+
+        self.assertEqual(display_mode.describe_tft_md5(md5(US_BUNDLED)), {"kind": "terminal", "label": "Terminal TFT (US), bundled", "current": True})
+
+    def test_the_image_ships_both_terminal_tfts(self):
+        # The files themselves, as docker/HMI_files/terminal/README.md lists them: a replacement must update both.
+        import hashlib
+        import os
+
+        here = os.path.dirname(os.path.abspath(__file__))
+        candidates = [
+            os.path.join(here, "..", "..", "..", "..", "HMI_files", "terminal"),  # the repository: docker/web/nspanelmanager/web/tests
+            os.path.join(here, "..", "..", "HMI_files", "terminal"),  # the image: /usr/src/app/nspanelmanager/web/tests
+        ]
+        root = next((path for path in candidates if os.path.isdir(path)), None)
+        self.assertIsNotNone(root, "HMI_files/terminal not found")
+        expected = {"us": "ee73878729a0757704a86d136ddcdf33", "eu": "c873a214b53a10269138c6c81b9ee57e"}
+        for layout, checksum in expected.items():
+            with open(os.path.join(root, layout, "gui.tft"), "rb") as file:
+                self.assertEqual(hashlib.md5(file.read()).hexdigest(), checksum, layout)

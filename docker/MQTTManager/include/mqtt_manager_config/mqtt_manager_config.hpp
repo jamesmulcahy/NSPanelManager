@@ -92,6 +92,9 @@ public:
   // Where Django keeps the terminal TFTs for panels in LVGL mode (settings.TERMINAL_TFT_ROOT): us/gui.tft and
   // eu/gui.tft. A variable so that tests can point it elsewhere.
   static inline std::string terminal_tft_directory = "/data/tft/terminal";
+  // The terminal TFTs the image ships (HMI_files/terminal), used for a layout when nothing was uploaded. A variable
+  // so that tests can point it elsewhere.
+  static inline std::string bundled_terminal_tft_directory = "/usr/src/app/nspanelmanager/HMI_files/terminal";
 
   /**
    * Read the POSIX TZ rule from the end of a tzdata (TZif) file, ex. "CET-1CEST,M3.5.0,M10.5.0/3".

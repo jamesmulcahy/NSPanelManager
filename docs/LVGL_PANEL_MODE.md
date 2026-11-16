@@ -224,10 +224,15 @@ layout uses the US receiver (320x480, `terminal_us_state2.py`), the EU layout us
 `terminal-eu.tft` (454x320). LVGL ignores `us_panel_orientation`, so a US panel set to a horizontal
 orientation still gets the portrait US layout; the settings page says so.
 
-Under `/data` rather than next to the slots (`HMI_files/tft_automation/...` inside the image):
-the slots ship NSPM's own TFTs, so losing an upload there on an image update falls back to a
-working TFT. Nothing ships a terminal TFT, so the same loss would leave every LVGL panel with no file
-behind `checksum_tft_file` (404). `/data` is the volume that already holds the database.
+Under `/data` rather than next to the slots (`HMI_files/tft_automation/...` inside the image), so an
+upload survives an image update. `/data` is the volume that already holds the database.
+
+**Bundled terminal TFTs.** The image ships one terminal TFT per layout, in `HMI_files/terminal/{us,eu}/gui.tft`
+(provenance, checksums and how the US file is built: `HMI_files/terminal/README.md`). A layout with no upload
+is served its bundled file (`display_mode.staged_terminal_tft_file()`; MQTTManager falls back the same way when
+it computes the checksum), so a new install can put a panel in LVGL mode without uploading anything, and a
+lost upload falls back to a working TFT. An upload replaces the bundled file for its layout. The settings page
+names a panel running the bundled file "Terminal TFT (US), bundled".
 
 The upload modal lists the two new types under "Terminal TFT (LVGL mode)". `nspm-mcp`'s `upload_gui`
 and any script that posts `tft_file_type` keep working; they gain two values.
