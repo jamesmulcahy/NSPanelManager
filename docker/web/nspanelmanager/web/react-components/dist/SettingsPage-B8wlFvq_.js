@@ -1,8 +1,8 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-FKp56mKw.js";
-import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm } from "./index.esm-CnTf2rLv.js";
-import { n as Notify } from "./NSPanelToastContainer-D677tDZJ.js";
-import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-HS0oHCMJ.js";
-import { a as TextInput$1, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-Dr1KI0Cj.js";
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-odd6o1_K.js";
+import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm } from "./index.esm-B18mY3iZ.js";
+import { n as Notify } from "./NSPanelToastContainer-B3O_RKU1.js";
+import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-CU_luxze.js";
+import { a as TextInput$1, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-DMiG7CRs.js";
 //#region src/api/connectionTests.ts
 var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
 async function errorMessage(response) {
@@ -674,6 +674,117 @@ function typedFields() {
 		SecretInput: SecretInput$1
 	};
 }
+var CARD_TYPES = { calendar: "Calendar" };
+/** Entries with a missing or unreadable time get the default; blank entries are dropped. */
+function parseCards(value) {
+	const cards = [];
+	for (const entry of (value ?? "").split(",")) {
+		const [rawType = "", rawSeconds = ""] = entry.split(":");
+		const type = rawType.trim();
+		if (!type) continue;
+		const seconds = Number(rawSeconds.trim());
+		cards.push({
+			type,
+			seconds: rawSeconds.trim() !== "" && Number.isInteger(seconds) && seconds > 0 ? seconds : 10
+		});
+	}
+	return cards;
+}
+function serializeCards(cards) {
+	return cards.map(({ type, seconds }) => `${type}:${seconds}`).join(",");
+}
+var clampSeconds = (seconds) => Math.min(300, Math.max(3, Math.round(seconds)));
+/** Turns a type on (at `seconds`, or its current time) or off, leaving every other entry and the order alone. */
+function setCardEnabled(value, type, enabled, seconds = 10) {
+	const cards = parseCards(value);
+	const has = cards.some((card) => card.type === type);
+	if (enabled) return serializeCards(has ? cards : [...cards, {
+		type,
+		seconds
+	}]);
+	return serializeCards(cards.filter((card) => card.type !== type));
+}
+/** Sets the time of a type's first entry, if it has one. */
+function setCardSeconds(value, type, seconds) {
+	let done = false;
+	return serializeCards(parseCards(value).map((card) => {
+		if (card.type === type && !done) {
+			done = true;
+			return {
+				type,
+				seconds
+			};
+		}
+		return card;
+	}));
+}
+//#endregion
+//#region src/components/SettingsPage/ScreensaverCardsRow.tsx
+/** "Also show" rows: a checkbox and a time in seconds per card type, edited into the screensaver_cards setting. */
+function ScreensaverCardsRows() {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", {
+		className: "mb-2 w-full",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+			className: "block mb-1 text-sm font-medium",
+			children: "Also show"
+		}), Object.entries(CARD_TYPES).map(([type, label]) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CardRow, {
+			type,
+			label
+		}, type))]
+	});
+}
+function CardRow({ type, label }) {
+	const { control, setValue } = useFormContext();
+	const value = useWatch({
+		control,
+		name: "screensaver_cards"
+	});
+	const card = parseCards(value).find((entry) => entry.type === type);
+	const update = (next) => setValue("screensaver_cards", next, { shouldDirty: true });
+	const [draft, setDraft] = (0, import_react.useState)(null);
+	const seconds = card?.seconds;
+	const shown = draft ?? String(seconds ?? 10);
+	const commit = () => {
+		const typed = Number(draft);
+		if (card && draft !== null && draft.trim() !== "" && !Number.isNaN(typed)) update(setCardSeconds(value, type, clampSeconds(typed)));
+		setDraft(null);
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "flex items-center gap-4 mb-1",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+				className: "flex items-center gap-2 flex-1 text-sm font-medium cursor-pointer",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+					type: "checkbox",
+					className: "checkbox checkbox-accent checkbox-sm",
+					"aria-label": `Show ${label.toLowerCase()} card`,
+					checked: card !== void 0,
+					onChange: (event) => update(setCardEnabled(value, type, event.target.checked, clampSeconds(seconds ?? 10)))
+				}), label]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+				type: "number",
+				step: 1,
+				min: 3,
+				max: 300,
+				className: "input w-32",
+				"aria-label": `${label} card seconds`,
+				disabled: card === void 0,
+				value: shown,
+				onChange: (event) => {
+					setDraft(event.target.value);
+					const typed = Number(event.target.value);
+					if (card && event.target.value.trim() !== "" && Number.isInteger(typed) && typed >= 3 && typed <= 300) update(setCardSeconds(value, type, typed));
+				},
+				onBlur: commit
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+				className: "text-sm opacity-60",
+				children: "seconds"
+			})
+		]
+	});
+}
 //#endregion
 //#region src/components/SettingsPage/form.ts
 var PAGE_FIELDS = [
@@ -698,6 +809,12 @@ var PAGE_FIELDS = [
 	"screensaver_mode",
 	"show_screensaver_inside_temperature",
 	"show_screensaver_outside_temperature",
+	"screensaver_base_card_seconds",
+	"screensaver_cards",
+	"calendar_entity_ids",
+	"calendar_max_events",
+	"calendar_lookahead_hours",
+	"calendar_update_interval",
 	"optimistic_mode",
 	"room_status_backoff_time",
 	"all_rooms_status_backoff_time",
@@ -803,6 +920,7 @@ function SettingsForm({ settings: loaded, logDownloadUrl }) {
 	const form = useForm({ defaultValues: toFormValues(loaded) });
 	const { handleSubmit, reset, setError, setValue, getValues, control, formState: { isDirty, isSubmitting, dirtyFields } } = form;
 	const addon = settings.is_home_assistant_addon;
+	const homeAssistantConfigured = Boolean(settings.home_assistant_address) && settings.home_assistant_token_set;
 	const onSubmit = async (values) => {
 		const body = buildPatch(values, dirtyFields, addon);
 		if (Object.keys(body).length === 0) {
@@ -995,6 +1113,12 @@ function SettingsForm({ settings: loaded, logDownloadUrl }) {
 							label: "Screensaver outside temperature",
 							options: [[true, "Show outside temperature"], [false, "Hide outside temperature"]]
 						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberInput, {
+							name: "screensaver_base_card_seconds",
+							label: "Weather card seconds",
+							hint: "How long the weather (or clock) card shows before the next card. 3 to 300."
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ScreensaverCardsRows, {}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RadioGroup, {
 							name: "optimistic_mode",
 							label: "Entity update mode",
@@ -1010,6 +1134,33 @@ function SettingsForm({ settings: loaded, logDownloadUrl }) {
 					]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BuzzerCard, {}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, {
+					title: "Calendar",
+					children: homeAssistantConfigured ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
+						name: "calendar_entity_ids",
+						label: "Calendars",
+						hint: "Home Assistant calendar entities, comma-separated. Blank turns the calendar off.",
+						placeholder: "calendar.family, calendar.school"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Row, { children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberInput, {
+							name: "calendar_max_events",
+							label: "Most events shown",
+							hint: "1 to 10."
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberInput, {
+							name: "calendar_lookahead_hours",
+							label: "Look ahead (hours)",
+							hint: "1 to 336."
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberInput, {
+							name: "calendar_update_interval",
+							label: "Refresh every (minutes)"
+						})
+					] })] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Alert, {
+						level: "info",
+						children: "Calendars come from Home Assistant. Set the Home Assistant address and token below to use them."
+					})
+				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
 					title: "MQTT",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Row, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {

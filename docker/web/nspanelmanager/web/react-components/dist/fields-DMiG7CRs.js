@@ -1,5 +1,5 @@
-import { r as require_react, t as require_jsx_runtime } from "./main-FKp56mKw.js";
-import { c as useFormContext, i as get, l as useWatch, t as Controller } from "./index.esm-CnTf2rLv.js";
+import { r as require_react, t as require_jsx_runtime } from "./main-odd6o1_K.js";
+import { c as useFormContext, i as get, l as useWatch, t as Controller } from "./index.esm-B18mY3iZ.js";
 require_react();
 var import_jsx_runtime = require_jsx_runtime();
 function Field({ name, label, hint, children }) {
@@ -38,7 +38,7 @@ function useInvalid(name) {
 		"aria-describedby": invalid ? `${name}-error` : void 0
 	};
 }
-function TextInput({ name, label, hint, disabled, button }) {
+function TextInput({ name, label, hint, disabled, button, placeholder }) {
 	const { register } = useFormContext();
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Field, {
 		name,
@@ -49,6 +49,7 @@ function TextInput({ name, label, hint, disabled, button }) {
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
 				id: name,
 				type: "text",
+				placeholder,
 				className: `${inputClass} join-item`,
 				disabled,
 				...useInvalid(name),
