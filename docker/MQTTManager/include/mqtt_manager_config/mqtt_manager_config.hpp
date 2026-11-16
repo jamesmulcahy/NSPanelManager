@@ -25,6 +25,10 @@ enum LightTurnOnBehaviour {
 
 enum MQTT_MANAGER_SETTING {
   BUTTON_LONG_PRESS_TIME,
+  CALENDAR_ENTITY_IDS,
+  CALENDAR_LOOKAHEAD_HOURS,
+  CALENDAR_MAX_EVENTS,
+  CALENDAR_UPDATE_INTERVAL,
   CLOCK_US_STYLE,
   COLOR_TEMP_MAX,
   COLOR_TEMP_MIN,
@@ -56,6 +60,8 @@ enum MQTT_MANAGER_SETTING {
   REVERSE_COLOR_TEMP,
   SCREEN_DIM_LEVEL,
   SCREENSAVER_ACTIVATION_TIMEOUT,
+  SCREENSAVER_BASE_CARD_SECONDS,
+  SCREENSAVER_CARDS,
   SCREENSAVER_DIM_LEVEL,
   SCREENSAVER_MODE,
   SHOW_SCREENSAVER_INSIDE_TEMPERATURE,
@@ -203,6 +209,10 @@ private:
   static inline std::unordered_map<MQTT_MANAGER_SETTING, std::pair<std::string, std::string>> _setting_key_map = {
       {MQTT_MANAGER_SETTING::IS_HOME_ASSISTANT_ADDON, {"is_home_assistant_addon", "false"}},
       {MQTT_MANAGER_SETTING::BUTTON_LONG_PRESS_TIME, {"button_long_press_time", "5000"}},
+      {MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, {"calendar_entity_ids", ""}}, // Comma-separated calendar.* entity ids, empty turns the calendar off
+      {MQTT_MANAGER_SETTING::CALENDAR_LOOKAHEAD_HOURS, {"calendar_lookahead_hours", "48"}},
+      {MQTT_MANAGER_SETTING::CALENDAR_MAX_EVENTS, {"calendar_max_events", "5"}},
+      {MQTT_MANAGER_SETTING::CALENDAR_UPDATE_INTERVAL, {"calendar_update_interval", "5"}}, // Minutes
       {MQTT_MANAGER_SETTING::CLOCK_US_STYLE, {"clock_us_style", "False"}},
       {MQTT_MANAGER_SETTING::COLOR_TEMP_MAX, {"color_temp_max", "6000"}},
       {MQTT_MANAGER_SETTING::COLOR_TEMP_MIN, {"color_temp_min", "2000"}},
@@ -233,6 +243,8 @@ private:
       {MQTT_MANAGER_SETTING::REVERSE_COLOR_TEMP, {"reverse_color_temp", "False"}},
       {MQTT_MANAGER_SETTING::SCREEN_DIM_LEVEL, {"screen_dim_level", "100"}},
       {MQTT_MANAGER_SETTING::SCREENSAVER_ACTIVATION_TIMEOUT, {"screensaver_activation_timeout", "30000"}},
+      {MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS, {"screensaver_base_card_seconds", "10"}},
+      {MQTT_MANAGER_SETTING::SCREENSAVER_CARDS, {"screensaver_cards", ""}}, // Comma-separated type:seconds, for example "calendar:10"
       {MQTT_MANAGER_SETTING::SCREENSAVER_DIM_LEVEL, {"screensaver_dim_level", "1"}},
       {MQTT_MANAGER_SETTING::SCREENSAVER_MODE, {"screensaver_mode", "with_background"}},
       {MQTT_MANAGER_SETTING::SHOW_SCREENSAVER_INSIDE_TEMPERATURE, {"show_screensaver_inside_temperature", "True"}},
