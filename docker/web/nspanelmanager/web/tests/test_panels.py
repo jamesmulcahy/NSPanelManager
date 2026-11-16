@@ -114,6 +114,9 @@ PANEL_FORM = {
     "screensaver_dim_level": "",
     "screensaver_activation_timeout": "",
     "screensaver_mode": "global",
+    "screensaver_cards_mode": "global",
+    "screensaver_cards": "",
+    "screensaver_base_card_seconds": "",
     "show_screensaver_inside_temperature": "global",
     "show_screensaver_outside_temperature": "global",
     "temperature_calibration": "",
@@ -175,6 +178,35 @@ class PanelSettingsFormTests(NSPMTestCase):
         self.assertEqual(self.panel_setting("screen_dim_level"), "40")
         self.assertEqual(self.panel_setting("screensaver_mode"), "no_background")
         self.assertEqual(self.panel_setting("show_screensaver_inside_temperature"), "False")
+
+    def test_screensaver_cards_are_stored_per_panel(self):
+        self.save(screensaver_cards_mode="custom", screensaver_cards=" calendar:15 ", screensaver_base_card_seconds="20")
+
+        self.assertEqual(self.panel_setting("screensaver_cards"), "calendar:15")
+        self.assertEqual(self.panel_setting("screensaver_base_card_seconds"), "20")
+
+    def test_screensaver_cards_back_to_global_removes_the_overrides(self):
+        set_nspanel_setting_value(self.panel.id, "screensaver_cards", "calendar:15")
+        set_nspanel_setting_value(self.panel.id, "screensaver_base_card_seconds", "20")
+
+        self.save()
+
+        self.assertIsNone(self.panel_setting("screensaver_cards"))
+        self.assertIsNone(self.panel_setting("screensaver_base_card_seconds"))
+
+    def test_empty_custom_screensaver_cards_is_an_explicit_none(self):
+        self.save(screensaver_cards_mode="custom", screensaver_cards="")
+
+        # A row that exists and is empty, so it wins over the global cards.
+        self.assertEqual(self.panel_setting("screensaver_cards", None), "")
+
+    def test_edit_page_shows_the_cards_override(self):
+        url = reverse("edit_nspanel", kwargs={"panel_id": self.panel.id})
+        self.assertContains(self.client.get(url), '<option value="global" selected>Global (use global setting)</option>', count=2)
+
+        self.save(screensaver_cards_mode="custom", screensaver_cards="")
+
+        self.assertContains(self.client.get(url), '<option value="custom" selected>')
 
     def test_panel_types(self):
         cases = {

@@ -183,6 +183,10 @@ def edit_nspanel(request, panel_id: int):
         "show_screensaver_outside_temperature": get_nspanel_setting_with_default(panel_id, "show_screensaver_outside_temperature", "global"),
         "screensaver_activation_timeout": get_nspanel_setting_with_default(panel_id, "screensaver_activation_timeout", ""),
         "screensaver_mode": get_nspanel_setting_with_default(panel_id, "screensaver_mode", "global"),
+        # A panel's own cards setting wins even when empty (no cards on this panel): "global" means there is no row.
+        "screensaver_cards_mode": "global" if get_nspanel_setting_with_default(panel_id, "screensaver_cards", None) is None else "custom",
+        "screensaver_cards": get_nspanel_setting_with_default(panel_id, "screensaver_cards", ""),
+        "screensaver_base_card_seconds": get_nspanel_setting_with_default(panel_id, "screensaver_base_card_seconds", ""),
         "reverse_relays": get_nspanel_setting_with_default(panel_id, "reverse_relays", "False"),
         "relay1_default_mode": get_nspanel_setting_with_default(panel_id, "relay1_default_mode", "False"),
         "relay1_is_light": get_nspanel_setting_with_default(panel_id, "relay1_is_light", "False"),
@@ -227,6 +231,8 @@ def edit_nspanel(request, panel_id: int):
         "multiple": [1, 2, 3, 4],
         "max_live_log_messages": get_setting_with_default("max_live_log_messages"),
         "screensaver_mode_global": get_setting_with_default("screensaver_mode"),
+        "screensaver_cards_global": get_setting_with_default("screensaver_cards"),
+        "screensaver_base_card_seconds_global": get_setting_with_default("screensaver_base_card_seconds"),
     }
 
     return render(request, "edit_nspanel.html", data)
@@ -297,6 +303,17 @@ def save_panel_settings(request, panel_id: int):
         delete_nspanel_setting(panel_id, "screensaver_mode")
     else:
         set_nspanel_setting_value(panel_id, "screensaver_mode", request.POST["screensaver_mode"])
+
+    if request.POST.get("screensaver_cards_mode", "global") == "global":
+        delete_nspanel_setting(panel_id, "screensaver_cards")
+    else:
+        # An empty value is kept: it means no cards on this panel, whatever the global setting is.
+        set_nspanel_setting_value(panel_id, "screensaver_cards", request.POST.get("screensaver_cards", "").strip())
+
+    if request.POST.get("screensaver_base_card_seconds", "").strip():
+        set_nspanel_setting_value(panel_id, "screensaver_base_card_seconds", request.POST["screensaver_base_card_seconds"].strip())
+    else:
+        delete_nspanel_setting(panel_id, "screensaver_base_card_seconds")
 
     if request.POST["show_screensaver_inside_temperature"] == "global":
         delete_nspanel_setting(panel_id, "show_screensaver_inside_temperature")
