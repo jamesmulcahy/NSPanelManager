@@ -211,9 +211,9 @@ protected:
   uint32_t _entity_page_id;
   uint8_t _entity_page_slot;
 
-  bool _can_dim;
-  bool _can_color_temperature;
-  bool _can_rgb;
+  bool _can_dim = false;
+  bool _can_color_temperature = false;
+  bool _can_rgb = false;
 
   bool _current_state;
   uint8_t _current_brightness = 0;
