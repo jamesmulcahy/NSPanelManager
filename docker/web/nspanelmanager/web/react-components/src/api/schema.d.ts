@@ -352,6 +352,8 @@ export interface components {
             buzzer_sound_scene_activated?: string;
             /** @description RTTTL played when a scene is saved from the panel. Blank for no sound. */
             buzzer_sound_scene_saved?: string;
+            /** @description RTTTL played, repeating, when a timer started on the panel finishes. Blank for no sound. */
+            buzzer_sound_timer_fired?: string;
             /** @description Leading and trailing whitespace is removed. */
             mqtt_server?: string;
             mqtt_port?: number;
@@ -471,6 +473,7 @@ export interface components {
             buzzer_sound_touch: string | null;
             buzzer_sound_scene_activated: string | null;
             buzzer_sound_scene_saved: string | null;
+            buzzer_sound_timer_fired: string | null;
             mqtt_server: string | null;
             mqtt_port: number | null;
             mqtt_username: string | null;
@@ -545,6 +548,7 @@ export interface components {
             buzzer_sound_touch?: string[];
             buzzer_sound_scene_activated?: string[];
             buzzer_sound_scene_saved?: string[];
+            buzzer_sound_timer_fired?: string[];
             mqtt_server?: string[];
             mqtt_port?: string[];
             mqtt_username?: string[];

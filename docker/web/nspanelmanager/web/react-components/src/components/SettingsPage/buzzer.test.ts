@@ -15,6 +15,11 @@ describe("buzzer presets", () => {
     expect(parseRtttl(PRESETS.tock.rtttl)).toMatchObject({ steps: [[880, 4]] });
   });
 
+  it("plays the Alarm as four beeps, and offers it first for the timer", () => {
+    expect(parseRtttl(PRESETS.alarm.rtttl)).toMatchObject({ steps: [[2093, 150], [0, 150], [2093, 150], [0, 150], [2093, 150], [0, 150], [2093, 150]] });
+    expect(BUZZER_EVENTS.find((event) => event.name === "buzzer_sound_timer_fired")?.presets[0]).toBe(PRESETS.alarm);
+  });
+
   it("offers every sounding preset for every event", () => {
     const sounding = Object.values(PRESETS).filter((preset) => preset !== PRESETS.silent);
     for (const event of BUZZER_EVENTS) {

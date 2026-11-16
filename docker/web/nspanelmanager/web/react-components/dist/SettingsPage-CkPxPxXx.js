@@ -1,8 +1,8 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-CxSwuLl2.js";
-import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm } from "./index.esm-AKyCAyDZ.js";
-import { n as Notify } from "./NSPanelToastContainer-BkRzSHMA.js";
-import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-CkRoEtYi.js";
-import { a as TextInput$1, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-DXZNryqA.js";
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-BuM1aTkv.js";
+import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm } from "./index.esm-BJESMUdv.js";
+import { n as Notify } from "./NSPanelToastContainer-DKXAAJPZ.js";
+import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-CdXeToUn.js";
+import { a as TextInput$1, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-Cb5EBc98.js";
 //#region src/api/connectionTests.ts
 var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
 async function errorMessage(response) {
@@ -384,6 +384,11 @@ var PRESETS = {
 		name: "Saved",
 		rtttl: "saved:d=16,o=6,b=200:c,e,g,8c7"
 	},
+	alarm: {
+		id: "alarm",
+		name: "Alarm",
+		rtttl: "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7"
+	},
 	silent: {
 		id: "silent",
 		name: "Silent",
@@ -405,7 +410,8 @@ var BUZZER_EVENTS = [
 			PRESETS.chime,
 			PRESETS.confirm,
 			PRESETS.rising,
-			PRESETS.saved
+			PRESETS.saved,
+			PRESETS.alarm
 		]
 	},
 	{
@@ -423,7 +429,8 @@ var BUZZER_EVENTS = [
 			PRESETS.midTick,
 			PRESETS.tuk,
 			PRESETS.tock,
-			PRESETS.saved
+			PRESETS.saved,
+			PRESETS.alarm
 		]
 	},
 	{
@@ -436,6 +443,25 @@ var BUZZER_EVENTS = [
 			PRESETS.rising,
 			PRESETS.confirm,
 			PRESETS.chime,
+			PRESETS.tick,
+			PRESETS.pip,
+			PRESETS.midTick,
+			PRESETS.tuk,
+			PRESETS.tock,
+			PRESETS.alarm
+		]
+	},
+	{
+		name: "buzzer_sound_timer_fired",
+		label: "Timer finished",
+		blankLabel: "Off",
+		hint: "Played when a timer started on the panel finishes, and repeated every few seconds until it is dismissed.",
+		presets: [
+			PRESETS.alarm,
+			PRESETS.rising,
+			PRESETS.chime,
+			PRESETS.confirm,
+			PRESETS.saved,
 			PRESETS.tick,
 			PRESETS.pip,
 			PRESETS.midTick,
@@ -468,7 +494,7 @@ function BuzzerCard() {
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 				className: "mb-2 text-sm opacity-80",
-				children: "Sonoff NSPanels only. Panels make no sound unless you choose one here. Each panel also has a buzzer mute switch in Home Assistant."
+				children: "Sonoff NSPanels only. Panels make no sound unless you choose one here, except the timer, which plays the Alarm unless you change it. Each panel also has a buzzer mute switch in Home Assistant."
 			}),
 			BUZZER_EVENTS.map((event) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(BuzzerSoundField, {
 				event,
@@ -853,7 +879,8 @@ var PAGE_FIELDS = [
 	"openhab_address",
 	"buzzer_sound_touch",
 	"buzzer_sound_scene_activated",
-	"buzzer_sound_scene_saved"
+	"buzzer_sound_scene_saved",
+	"buzzer_sound_timer_fired"
 ];
 var SECRETS = [
 	"mqtt_password",

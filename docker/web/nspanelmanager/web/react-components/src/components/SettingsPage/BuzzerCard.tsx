@@ -18,7 +18,7 @@ export function BuzzerCard() {
   return (
     <Card title="Buzzer sounds">
       <p className="mb-2 text-sm opacity-80">
-        Sonoff NSPanels only. Panels make no sound unless you choose one here. Each panel also has a buzzer mute switch in Home Assistant.
+        Sonoff NSPanels only. Panels make no sound unless you choose one here, except the timer, which plays the Alarm unless you change it. Each panel also has a buzzer mute switch in Home Assistant.
       </p>
       {BUZZER_EVENTS.map((event) => (
         <BuzzerSoundField key={event.name} event={event} player={player} piezo={piezo} touch={touch} />
