@@ -1,4 +1,5 @@
 #include "nspanel.hpp"
+#include "screensaver_cards.hpp"
 #include "database_manager/database_manager.hpp"
 #include "entity_manager/entity_manager.hpp"
 #include "manager_clock/manager_clock.hpp"
@@ -389,6 +390,10 @@ void NSPanel::send_config(const char *reason) {
 
   config.set_optimistic_mode(MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::OPTIMISTIC_MODE));
   config.set_raise_light_level_to_100_above(MqttManagerConfig::get_setting_with_default<uint32_t>(MQTT_MANAGER_SETTING::RAISE_TO_100_LIGHT_LEVEL));
+
+  screensaver_cards::apply_to_config(config,
+                                     this->_get_nspanel_setting_with_default("screensaver_cards", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_CARDS)),
+                                     this->_get_nspanel_setting_with_default("screensaver_base_card_seconds", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS)));
 
   std::string screensaver_mode = this->_get_nspanel_setting_with_default("screensaver_mode", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_MODE));
   if (screensaver_mode.compare("with_background") == 0) {
