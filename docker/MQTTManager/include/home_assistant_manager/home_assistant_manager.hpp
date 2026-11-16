@@ -106,6 +106,12 @@ public:
     return HomeAssistantManager::_pending_calls.size();
   }
 
+  // Called with each message just after it has been recorded as sent, before send_json returns. Lets a test answer a request "instantly".
+  static void test_set_send_hook(std::function<void(const nlohmann::json &)> hook) {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_test_sent_messages_mutex);
+    HomeAssistantManager::_test_send_hook = std::move(hook);
+  }
+
   // Fail the pending calls that have passed their deadline at `now`.
   static void test_expire_pending_calls(std::chrono::steady_clock::time_point now) { HomeAssistantManager::_expire_pending_calls(now); }
 
@@ -125,6 +131,7 @@ private:
 #if defined(TEST_MODE) && TEST_MODE == 1
   static inline std::mutex _test_sent_messages_mutex;
   static inline std::vector<nlohmann::json> _test_sent_messages;
+  static inline std::function<void(const nlohmann::json &)> _test_send_hook;
 #endif
 
   static void _send_json_with_id(nlohmann::json &data, long id);

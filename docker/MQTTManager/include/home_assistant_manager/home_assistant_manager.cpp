@@ -229,9 +229,14 @@ void HomeAssistantManager::_send_json_with_id(nlohmann::json &data, long id) {
     }
   }
 #if defined(TEST_MODE) && TEST_MODE == 1
+  std::function<void(const nlohmann::json &)> hook;
   {
     std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_test_sent_messages_mutex);
     HomeAssistantManager::_test_sent_messages.push_back(data);
+    hook = HomeAssistantManager::_test_send_hook;
+  }
+  if (hook) {
+    hook(data);
   }
 #endif
   std::string buffer = data.dump();
