@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import Select, { type ClassNamesConfig, type GroupBase } from "react-select";
+import Select, { components, type ClassNamesConfig, type GroupBase, type MultiValueRemoveProps } from "react-select";
 import { typedFields } from "../common/typedFields";
 import { ALL_CALENDARS, formatCalendarIds, parseCalendarIds } from "./calendarIds";
 import type { SettingsFormValues } from "./form";
@@ -44,6 +44,11 @@ function useHomeAssistantCalendars(): Calendars {
     return () => abort.abort();
   }, []);
   return calendars;
+}
+
+/** react-select labels the remove button from the rendered label, which here is an element, so label it from the option. */
+function RemoveButton(props: MultiValueRemoveProps<CalendarOption, true>) {
+  return <components.MultiValueRemove {...props} innerProps={{ ...props.innerProps, "aria-label": `Remove ${props.data.label}` }} />;
 }
 
 const classNames: ClassNamesConfig<CalendarOption, true, GroupBase<CalendarOption>> = {
@@ -126,6 +131,7 @@ function CalendarChoice({ calendars }: { calendars: Exclude<Calendars, { status:
                   onChange={(next) => field.onChange(formatCalendarIds(next.map((option) => option.value)))}
                   onBlur={field.onBlur}
                   unstyled
+                  components={{ MultiValueRemove: RemoveButton }}
                   classNames={classNames}
                   noOptionsMessage={() => "No calendars in Home Assistant"}
                   formatOptionLabel={(option, { context }) =>
