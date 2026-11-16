@@ -405,6 +405,38 @@ struct NSPanelMQTTManagerCommand_ButtonPressedDefaultTypeInternal {
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NSPanelMQTTManagerCommand_ButtonPressedDefaultTypeInternal _NSPanelMQTTManagerCommand_ButtonPressed_default_instance_;
 
+inline constexpr NSPanelEnergyUpdate::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : currency_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        currency_symbol_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        power_{static_cast< ::NSPanelEnergyUpdate_Availability >(0)},
+        power_watts_{0},
+        cost_per_day_{0},
+        cost_{static_cast< ::NSPanelEnergyUpdate_Availability >(0)},
+        lights_{static_cast< ::NSPanelEnergyUpdate_Availability >(0)},
+        lights_on_{0},
+        lights_alert_{false},
+        generated_at_{::int64_t{0}},
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR NSPanelEnergyUpdate::NSPanelEnergyUpdate(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct NSPanelEnergyUpdateDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR NSPanelEnergyUpdateDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~NSPanelEnergyUpdateDefaultTypeInternal() {}
+  union {
+    NSPanelEnergyUpdate _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NSPanelEnergyUpdateDefaultTypeInternal _NSPanelEnergyUpdate_default_instance_;
+
 inline constexpr NSPanelConfig_Sound::Impl_::Impl_(
     ::_pbi::ConstantInitialized) noexcept
       : rtttl_(
@@ -732,7 +764,7 @@ struct NSPanelCalendarUpdateDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 NSPanelCalendarUpdateDefaultTypeInternal _NSPanelCalendarUpdate_default_instance_;
-static const ::_pb::EnumDescriptor* file_level_enum_descriptors_protobuf_5fnspanel_2eproto[12];
+static const ::_pb::EnumDescriptor* file_level_enum_descriptors_protobuf_5fnspanel_2eproto[13];
 static constexpr const ::_pb::ServiceDescriptor**
     file_level_service_descriptors_protobuf_5fnspanel_2eproto = nullptr;
 const ::uint32_t
@@ -964,6 +996,24 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NSPanelCalendarUpdate, _impl_.lookahead_hours_),
         PROTOBUF_FIELD_OFFSET(::NSPanelCalendarUpdate, _impl_.generated_at_),
         ~0u,  // no _has_bits_
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        ~0u,  // no _inlined_string_donated_
+        ~0u,  // no _split_
+        ~0u,  // no sizeof(Split)
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.power_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.power_watts_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.cost_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.cost_per_day_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.currency_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.currency_symbol_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.lights_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.lights_on_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.lights_alert_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelEnergyUpdate, _impl_.generated_at_),
+        ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::NSPanelMQTTManagerCommand_FirstPageTurnLightOn, _internal_metadata_),
         ~0u,  // no _extensions_
         ~0u,  // no _oneof_case_
@@ -1135,18 +1185,19 @@ static const ::_pbi::MigrationSchema
         {185, -1, -1, sizeof(::NSPanelWeatherUpdate)},
         {201, -1, -1, sizeof(::NSPanelCalendarUpdate_Event)},
         {214, -1, -1, sizeof(::NSPanelCalendarUpdate)},
-        {225, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOn)},
-        {240, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOff)},
-        {250, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LightCommand)},
-        {267, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage)},
-        {277, -1, -1, sizeof(::NSPanelMQTTManagerCommand_SaveSceneCommand)},
-        {287, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ButtonPressed)},
-        {296, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatTemperatureCommand)},
-        {306, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatCommand)},
-        {317, -1, -1, sizeof(::NSPanelMQTTManagerCommand_MediaPlayerCommand)},
-        {335, -1, -1, sizeof(::NSPanelMQTTManagerCommand_CoverCommand)},
-        {349, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LvglLook)},
-        {359, -1, -1, sizeof(::NSPanelMQTTManagerCommand)},
+        {225, -1, -1, sizeof(::NSPanelEnergyUpdate)},
+        {243, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOn)},
+        {258, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOff)},
+        {268, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LightCommand)},
+        {285, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage)},
+        {295, -1, -1, sizeof(::NSPanelMQTTManagerCommand_SaveSceneCommand)},
+        {305, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ButtonPressed)},
+        {314, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatTemperatureCommand)},
+        {324, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatCommand)},
+        {335, -1, -1, sizeof(::NSPanelMQTTManagerCommand_MediaPlayerCommand)},
+        {353, -1, -1, sizeof(::NSPanelMQTTManagerCommand_CoverCommand)},
+        {367, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LvglLook)},
+        {377, -1, -1, sizeof(::NSPanelMQTTManagerCommand)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_NSPanelConfig_RoomInfo_default_instance_._instance,
@@ -1162,6 +1213,7 @@ static const ::_pb::Message* const file_default_instances[] = {
     &::_NSPanelWeatherUpdate_default_instance_._instance,
     &::_NSPanelCalendarUpdate_Event_default_instance_._instance,
     &::_NSPanelCalendarUpdate_default_instance_._instance,
+    &::_NSPanelEnergyUpdate_default_instance_._instance,
     &::_NSPanelMQTTManagerCommand_FirstPageTurnLightOn_default_instance_._instance,
     &::_NSPanelMQTTManagerCommand_FirstPageTurnLightOff_default_instance_._instance,
     &::_NSPanelMQTTManagerCommand_LightCommand_default_instance_._instance,
@@ -1177,7 +1229,7 @@ static const ::_pb::Message* const file_default_instances[] = {
 };
 const char descriptor_table_protodef_protobuf_5fnspanel_2eproto[] ABSL_ATTRIBUTE_SECTION_VARIABLE(
     protodesc_cold) = {
-    "\n\026protobuf_nspanel.proto\"\374\021\n\rNSPanelConf"
+    "\n\026protobuf_nspanel.proto\"\231\022\n\rNSPanelConf"
     "ig\022\014\n\004name\030\001 \001(\t\022\024\n\014default_room\030\002 \001(\005\0227"
     "\n\014default_page\030\003 \001(\0162!.NSPanelConfig.NSP"
     "anelDefaultPage\022&\n\036screensaver_activatio"
@@ -1232,154 +1284,164 @@ const char descriptor_table_protodef_protobuf_5fnspanel_2eproto[] ABSL_ATTRIBUTE
     "\n\016NOTIFY_MANAGER\020\002\022\023\n\017THERMOSTAT_HEAT\020\003\022"
     "\023\n\017THERMOSTAT_COOL\020\004\022\024\n\020OPEN_ENTITY_PAGE"
     "\020\005\"D\n\021NSPanelSoundEvent\022\t\n\005TOUCH\020\000\022\023\n\017SC"
-    "ENE_ACTIVATED\020\001\022\017\n\013SCENE_SAVED\020\002\"]\n\032NSPa"
+    "ENE_ACTIVATED\020\001\022\017\n\013SCENE_SAVED\020\002\"z\n\032NSPa"
     "nelScreensaverCardType\022 \n\034SCREENSAVER_CA"
     "RD_UNSPECIFIED\020\000\022\035\n\031SCREENSAVER_CARD_CAL"
-    "ENDAR\020\001\"C\n\016NSPanelWarning\022#\n\005level\030\001 \001(\016"
-    "2\024.NSPanelWarningLevel\022\014\n\004text\030\002 \001(\t\"\354\005\n"
-    "\023NSPanelStatusReport\0221\n\rnspanel_state\030\001 "
-    "\001(\0162\032.NSPanelStatusReport.state\022\027\n\017updat"
-    "e_progress\030\002 \001(\005\022\014\n\004rssi\030\003 \001(\005\022\025\n\rheap_u"
-    "sed_pct\030\004 \001(\005\022\023\n\013mac_address\030\005 \001(\t\022\023\n\013te"
-    "mperature\030\006 \001(\002\022\022\n\nip_address\030\007 \001(\t\022!\n\010w"
-    "arnings\030\010 \003(\0132\017.NSPanelWarning\022\024\n\014md5_fi"
-    "rmware\030\t \001(\t\022\024\n\014md5_littlefs\030\n \001(\t\022\023\n\013md"
-    "5_tft_gui\030\013 \001(\t\022\024\n\014has_humidity\030\014 \001(\010\022\020\n"
-    "\010humidity\030\r \001(\002\022\024\n\014has_pressure\030\016 \001(\010\022\020\n"
-    "\010pressure\030\017 \001(\002\022=\n\014display_mode\030\020 \001(\0162\'."
-    "NSPanelStatusReport.NSPanelDisplayMode\022\022"
-    "\n\nlvgl_theme\030\021 \001(\t\022\027\n\017lvgl_background\030\022 "
-    "\001(\t\022\024\n\014metrics_port\030\023 \001(\005\"o\n\005state\022\n\n\006ON"
-    "LINE\020\000\022\013\n\007OFFLINE\020\001\022\020\n\014UPDATING_TFT\020\002\022\025\n"
-    "\021UPDATING_FIRMWARE\020\003\022\025\n\021UPDATING_LITTLEF"
-    "S\020\004\022\r\n\tREBOOTING\020\005\"\177\n\022NSPanelDisplayMode"
-    "\022\030\n\024DISPLAY_MODE_UNKNOWN\020\000\022\030\n\024DISPLAY_MO"
-    "DE_NEXTION\020\001\022\025\n\021DISPLAY_MODE_LVGL\020\002\022\036\n\032D"
-    "ISPLAY_MODE_TERMINAL_IDLE\020\003\"\275\004\n\027NSPanelR"
-    "oomEntitiesPage\022\n\n\002id\030\001 \001(\005\022\021\n\tpage_type"
-    "\030\002 \001(\005\022\023\n\013header_text\030\003 \001(\t\0225\n\010entities\030"
-    "\004 \003(\0132#.NSPanelRoomEntitiesPage.EntitySl"
-    "ot\032\266\003\n\nEntitySlot\022\032\n\022room_view_position\030"
-    "\001 \001(\005\022\014\n\004name\030\002 \001(\t\022\014\n\004icon\030\003 \001(\t\022\013\n\003pco"
-    "\030\004 \001(\005\022\014\n\004pco2\030\005 \001(\005\022\026\n\016can_save_scene\030\006"
-    " \001(\010\022\030\n\020mqtt_state_topic\030\007 \001(\t\022<\n\004type\030\010"
-    " \001(\0162..NSPanelRoomEntitiesPage.EntitySlo"
-    "t.EntityType\022\n\n\002id\030\t \001(\005\"\330\001\n\nEntityType\022"
-    "\033\n\027ENTITY_TYPE_UNSPECIFIED\020\000\022\025\n\021ENTITY_T"
-    "YPE_LIGHT\020\001\022\026\n\022ENTITY_TYPE_SWITCH\020\002\022\026\n\022E"
-    "NTITY_TYPE_BUTTON\020\003\022\032\n\026ENTITY_TYPE_THERM"
-    "OSTAT\020\004\022\025\n\021ENTITY_TYPE_SCENE\020\005\022\034\n\030ENTITY"
-    "_TYPE_MEDIA_PLAYER\020\006\022\025\n\021ENTITY_TYPE_COVE"
-    "R\020\007\"\344\003\n\021NSPanelRoomStatus\022\n\n\002id\030\001 \001(\005\022\014\n"
-    "\004name\030\002 \001(\t\022\031\n\021average_dim_level\030\003 \001(\005\022 "
-    "\n\030ceiling_lights_dim_level\030\004 \001(\005\022\036\n\026tabl"
-    "e_lights_dim_level\030\005 \001(\005\022!\n\031average_colo"
-    "r_temperature\030\006 \001(\005\022.\n&ceiling_lights_co"
-    "lor_temperature_value\030\007 \001(\005\022,\n$table_lig"
-    "hts_color_temperature_value\030\010 \001(\005\022\032\n\022num"
-    "_ceiling_lights\030\t \001(\005\022\030\n\020num_table_light"
-    "s\030\n \001(\005\022\035\n\025num_ceiling_lights_on\030\013 \001(\005\022\033"
-    "\n\023num_table_lights_on\030\014 \001(\005\022\027\n\017entity_pa"
-    "ge_ids\030\r \003(\005\022$\n\034num_color_temperature_li"
-    "ghts\030\016 \001(\005\022&\n\036color_temperature_lights_k"
-    "nown\030\017 \001(\010\"\277\003\n\024NSPanelWeatherUpdate\022:\n\016f"
-    "orecast_items\030\001 \003(\0132\".NSPanelWeatherUpda"
-    "te.ForecastItem\022\034\n\024current_weather_icon\030"
-    "\002 \001(\t\022\"\n\032current_temperature_string\030\003 \001("
-    "\t\022\"\n\032current_maxmin_temperature\030\004 \001(\t\022\033\n"
-    "\023current_wind_string\030\005 \001(\t\022\026\n\016sunrise_st"
-    "ring\030\006 \001(\t\022\025\n\rsunset_string\030\007 \001(\t\022$\n\034cur"
-    "rent_precipitation_string\030\010 \001(\t\032\222\001\n\014Fore"
-    "castItem\022\024\n\014weather_icon\030\001 \001(\t\022\034\n\024precip"
-    "itation_string\030\002 \001(\t\022!\n\031temperature_maxm"
-    "in_string\030\003 \001(\t\022\023\n\013wind_string\030\004 \001(\t\022\026\n\016"
-    "display_string\030\005 \001(\t\"\320\001\n\025NSPanelCalendar"
-    "Update\022,\n\006events\030\001 \003(\0132\034.NSPanelCalendar"
-    "Update.Event\022\027\n\017lookahead_hours\030\002 \001(\005\022\024\n"
-    "\014generated_at\030\003 \001(\003\032Z\n\005Event\022\017\n\007summary\030"
-    "\001 \001(\t\022\r\n\005start\030\002 \001(\003\022\013\n\003end\030\003 \001(\003\022\017\n\007all"
-    "_day\030\004 \001(\010\022\023\n\013when_string\030\005 \001(\t\"\306\024\n\031NSPa"
-    "nelMQTTManagerCommand\022M\n\022first_page_turn"
-    "_on\030\001 \001(\0132/.NSPanelMQTTManagerCommand.Fi"
-    "rstPageTurnLightOnH\000\022O\n\023first_page_turn_"
-    "off\030\002 \001(\01320.NSPanelMQTTManagerCommand.Fi"
-    "rstPageTurnLightOffH\000\022@\n\rlight_command\030\003"
-    " \001(\0132\'.NSPanelMQTTManagerCommand.LightCo"
-    "mmandH\000\022c\n toggle_entity_from_entities_p"
-    "age\030\004 \001(\01327.NSPanelMQTTManagerCommand.To"
-    "ggleEntityFromEntitiesPageH\000\022I\n\022save_sce"
-    "ne_command\030\005 \001(\0132+.NSPanelMQTTManagerCom"
-    "mand.SaveSceneCommandH\000\022B\n\016button_presse"
-    "d\030\006 \001(\0132(.NSPanelMQTTManagerCommand.Butt"
-    "onPressedH\000\022a\n\036thermostat_temperature_co"
-    "mmand\030\007 \001(\01327.NSPanelMQTTManagerCommand."
-    "ThermostatTemperatureCommandH\000\022J\n\022thermo"
-    "stat_command\030\010 \001(\0132,.NSPanelMQTTManagerC"
-    "ommand.ThermostatCommandH\000\022M\n\024media_play"
-    "er_command\030\t \001(\0132-.NSPanelMQTTManagerCom"
-    "mand.MediaPlayerCommandH\000\022@\n\rcover_comma"
-    "nd\030\n \001(\0132\'.NSPanelMQTTManagerCommand.Cov"
-    "erCommandH\000\0228\n\tlvgl_look\030\013 \001(\0132#.NSPanel"
-    "MQTTManagerCommand.LvglLookH\000\022\022\n\nnspanel"
-    "_id\030d \001(\005\032\372\001\n\024FirstPageTurnLightOn\022E\n\raf"
-    "fect_lights\030\001 \001(\0162..NSPanelMQTTManagerCo"
-    "mmand.AffectLightsOptions\022\037\n\027brightness_"
-    "slider_value\030\002 \001(\005\022\033\n\023kelvin_slider_valu"
-    "e\030\003 \001(\005\022\025\n\rselected_room\030\004 \001(\005\022\016\n\006global"
-    "\030\005 \001(\010\022\034\n\024has_brightness_value\030\006 \001(\010\022\030\n\020"
-    "has_kelvin_value\030\007 \001(\010\032n\n\025FirstPageTurnL"
-    "ightOff\022E\n\raffect_lights\030\001 \001(\0162..NSPanel"
-    "MQTTManagerCommand.AffectLightsOptions\022\016"
-    "\n\006global\030\002 \001(\010\032\321\001\n\014LightCommand\022\021\n\tlight"
-    "_ids\030\001 \003(\005\022\026\n\016has_brightness\030\002 \001(\010\022\022\n\nbr"
-    "ightness\030\003 \001(\005\022\035\n\025has_color_temperature\030"
-    "\004 \001(\010\022\031\n\021color_temperature\030\005 \001(\005\022\017\n\007has_"
-    "hue\030\006 \001(\010\022\013\n\003hue\030\007 \001(\005\022\026\n\016has_saturation"
-    "\030\010 \001(\010\022\022\n\nsaturation\030\t \001(\005\032K\n\034ToggleEnti"
-    "tyFromEntitiesPage\022\026\n\016entity_page_id\030\001 \001"
-    "(\005\022\023\n\013entity_slot\030\002 \001(\005\032\?\n\020SaveSceneComm"
-    "and\022\026\n\016entity_page_id\030\001 \001(\005\022\023\n\013entity_sl"
-    "ot\030\002 \001(\005\032\"\n\rButtonPressed\022\021\n\tbutton_id\030\002"
-    " \001(\005\032J\n\034ThermostatTemperatureCommand\022\025\n\r"
-    "thermostat_id\030\001 \001(\005\022\023\n\013temperature\030\002 \001(\002"
-    "\032M\n\021ThermostatCommand\022\025\n\rthermostat_id\030\001"
-    " \001(\005\022\016\n\006option\030\002 \001(\t\022\021\n\tnew_value\030\003 \001(\t\032"
-    "\224\003\n\022MediaPlayerCommand\022\027\n\017media_player_i"
-    "d\030\001 \001(\005\022U\n\017playback_action\030\002 \001(\0162<.NSPan"
-    "elMQTTManagerCommand.MediaPlayerCommand."
-    "PlaybackAction\022\022\n\nhas_volume\030\003 \001(\010\022\016\n\006vo"
-    "lume\030\004 \001(\005\022\031\n\021has_source_volume\030\005 \001(\010\022\025\n"
-    "\rsource_volume\030\006 \001(\005\022\021\n\thas_muted\030\007 \001(\010\022"
-    "\r\n\005muted\030\010 \001(\010\022\034\n\024select_player_source\030\t"
-    " \001(\t\022#\n\033select_source_player_source\030\n \001("
-    "\t\"S\n\016PlaybackAction\022\010\n\004NONE\020\000\022\010\n\004PLAY\020\001\022"
-    "\t\n\005PAUSE\020\002\022\016\n\nNEXT_TRACK\020\003\022\022\n\016PREVIOUS_T"
-    "RACK\020\004\032\233\002\n\014CoverCommand\022\020\n\010cover_id\030\001 \001("
-    "\005\022>\n\006action\030\002 \001(\0162..NSPanelMQTTManagerCo"
-    "mmand.CoverCommand.Action\022\024\n\014has_positio"
-    "n\030\003 \001(\010\022\020\n\010position\030\004 \001(\005\022\031\n\021has_tilt_po"
-    "sition\030\005 \001(\010\022\025\n\rtilt_position\030\006 \001(\005\"_\n\006A"
-    "ction\022\010\n\004NONE\020\000\022\010\n\004OPEN\020\001\022\t\n\005CLOSE\020\002\022\010\n\004"
-    "STOP\020\003\022\r\n\tOPEN_TILT\020\004\022\016\n\nCLOSE_TILT\020\005\022\r\n"
-    "\tSTOP_TILT\020\006\032-\n\010LvglLook\022\r\n\005theme\030\001 \001(\t\022"
-    "\022\n\nbackground\030\002 \001(\t\"D\n\023AffectLightsOptio"
-    "ns\022\007\n\003ALL\020\000\022\020\n\014TABLE_LIGHTS\020\001\022\022\n\016CEILING"
-    "_LIGHTS\020\002B\r\n\013CommandData*[\n\023NSPanelWarni"
-    "ngLevel\022\014\n\010CRITICAL\020\000\022\t\n\005ERROR\020\001\022\013\n\007WARN"
-    "ING\020\002\022\010\n\004INFO\020\003\022\t\n\005DEBUG\020\004\022\t\n\005TRACE\020\005b\006p"
-    "roto3"
+    "ENDAR\020\001\022\033\n\027SCREENSAVER_CARD_ENERGY\020\002\"C\n\016"
+    "NSPanelWarning\022#\n\005level\030\001 \001(\0162\024.NSPanelW"
+    "arningLevel\022\014\n\004text\030\002 \001(\t\"\354\005\n\023NSPanelSta"
+    "tusReport\0221\n\rnspanel_state\030\001 \001(\0162\032.NSPan"
+    "elStatusReport.state\022\027\n\017update_progress\030"
+    "\002 \001(\005\022\014\n\004rssi\030\003 \001(\005\022\025\n\rheap_used_pct\030\004 \001"
+    "(\005\022\023\n\013mac_address\030\005 \001(\t\022\023\n\013temperature\030\006"
+    " \001(\002\022\022\n\nip_address\030\007 \001(\t\022!\n\010warnings\030\010 \003"
+    "(\0132\017.NSPanelWarning\022\024\n\014md5_firmware\030\t \001("
+    "\t\022\024\n\014md5_littlefs\030\n \001(\t\022\023\n\013md5_tft_gui\030\013"
+    " \001(\t\022\024\n\014has_humidity\030\014 \001(\010\022\020\n\010humidity\030\r"
+    " \001(\002\022\024\n\014has_pressure\030\016 \001(\010\022\020\n\010pressure\030\017"
+    " \001(\002\022=\n\014display_mode\030\020 \001(\0162\'.NSPanelStat"
+    "usReport.NSPanelDisplayMode\022\022\n\nlvgl_them"
+    "e\030\021 \001(\t\022\027\n\017lvgl_background\030\022 \001(\t\022\024\n\014metr"
+    "ics_port\030\023 \001(\005\"o\n\005state\022\n\n\006ONLINE\020\000\022\013\n\007O"
+    "FFLINE\020\001\022\020\n\014UPDATING_TFT\020\002\022\025\n\021UPDATING_F"
+    "IRMWARE\020\003\022\025\n\021UPDATING_LITTLEFS\020\004\022\r\n\tREBO"
+    "OTING\020\005\"\177\n\022NSPanelDisplayMode\022\030\n\024DISPLAY"
+    "_MODE_UNKNOWN\020\000\022\030\n\024DISPLAY_MODE_NEXTION\020"
+    "\001\022\025\n\021DISPLAY_MODE_LVGL\020\002\022\036\n\032DISPLAY_MODE"
+    "_TERMINAL_IDLE\020\003\"\275\004\n\027NSPanelRoomEntities"
+    "Page\022\n\n\002id\030\001 \001(\005\022\021\n\tpage_type\030\002 \001(\005\022\023\n\013h"
+    "eader_text\030\003 \001(\t\0225\n\010entities\030\004 \003(\0132#.NSP"
+    "anelRoomEntitiesPage.EntitySlot\032\266\003\n\nEnti"
+    "tySlot\022\032\n\022room_view_position\030\001 \001(\005\022\014\n\004na"
+    "me\030\002 \001(\t\022\014\n\004icon\030\003 \001(\t\022\013\n\003pco\030\004 \001(\005\022\014\n\004p"
+    "co2\030\005 \001(\005\022\026\n\016can_save_scene\030\006 \001(\010\022\030\n\020mqt"
+    "t_state_topic\030\007 \001(\t\022<\n\004type\030\010 \001(\0162..NSPa"
+    "nelRoomEntitiesPage.EntitySlot.EntityTyp"
+    "e\022\n\n\002id\030\t \001(\005\"\330\001\n\nEntityType\022\033\n\027ENTITY_T"
+    "YPE_UNSPECIFIED\020\000\022\025\n\021ENTITY_TYPE_LIGHT\020\001"
+    "\022\026\n\022ENTITY_TYPE_SWITCH\020\002\022\026\n\022ENTITY_TYPE_"
+    "BUTTON\020\003\022\032\n\026ENTITY_TYPE_THERMOSTAT\020\004\022\025\n\021"
+    "ENTITY_TYPE_SCENE\020\005\022\034\n\030ENTITY_TYPE_MEDIA"
+    "_PLAYER\020\006\022\025\n\021ENTITY_TYPE_COVER\020\007\"\344\003\n\021NSP"
+    "anelRoomStatus\022\n\n\002id\030\001 \001(\005\022\014\n\004name\030\002 \001(\t"
+    "\022\031\n\021average_dim_level\030\003 \001(\005\022 \n\030ceiling_l"
+    "ights_dim_level\030\004 \001(\005\022\036\n\026table_lights_di"
+    "m_level\030\005 \001(\005\022!\n\031average_color_temperatu"
+    "re\030\006 \001(\005\022.\n&ceiling_lights_color_tempera"
+    "ture_value\030\007 \001(\005\022,\n$table_lights_color_t"
+    "emperature_value\030\010 \001(\005\022\032\n\022num_ceiling_li"
+    "ghts\030\t \001(\005\022\030\n\020num_table_lights\030\n \001(\005\022\035\n\025"
+    "num_ceiling_lights_on\030\013 \001(\005\022\033\n\023num_table"
+    "_lights_on\030\014 \001(\005\022\027\n\017entity_page_ids\030\r \003("
+    "\005\022$\n\034num_color_temperature_lights\030\016 \001(\005\022"
+    "&\n\036color_temperature_lights_known\030\017 \001(\010\""
+    "\277\003\n\024NSPanelWeatherUpdate\022:\n\016forecast_ite"
+    "ms\030\001 \003(\0132\".NSPanelWeatherUpdate.Forecast"
+    "Item\022\034\n\024current_weather_icon\030\002 \001(\t\022\"\n\032cu"
+    "rrent_temperature_string\030\003 \001(\t\022\"\n\032curren"
+    "t_maxmin_temperature\030\004 \001(\t\022\033\n\023current_wi"
+    "nd_string\030\005 \001(\t\022\026\n\016sunrise_string\030\006 \001(\t\022"
+    "\025\n\rsunset_string\030\007 \001(\t\022$\n\034current_precip"
+    "itation_string\030\010 \001(\t\032\222\001\n\014ForecastItem\022\024\n"
+    "\014weather_icon\030\001 \001(\t\022\034\n\024precipitation_str"
+    "ing\030\002 \001(\t\022!\n\031temperature_maxmin_string\030\003"
+    " \001(\t\022\023\n\013wind_string\030\004 \001(\t\022\026\n\016display_str"
+    "ing\030\005 \001(\t\"\320\001\n\025NSPanelCalendarUpdate\022,\n\006e"
+    "vents\030\001 \003(\0132\034.NSPanelCalendarUpdate.Even"
+    "t\022\027\n\017lookahead_hours\030\002 \001(\005\022\024\n\014generated_"
+    "at\030\003 \001(\003\032Z\n\005Event\022\017\n\007summary\030\001 \001(\t\022\r\n\005st"
+    "art\030\002 \001(\003\022\013\n\003end\030\003 \001(\003\022\017\n\007all_day\030\004 \001(\010\022"
+    "\023\n\013when_string\030\005 \001(\t\"\204\003\n\023NSPanelEnergyUp"
+    "date\0220\n\005power\030\001 \001(\0162!.NSPanelEnergyUpdat"
+    "e.Availability\022\023\n\013power_watts\030\002 \001(\005\022/\n\004c"
+    "ost\030\003 \001(\0162!.NSPanelEnergyUpdate.Availabi"
+    "lity\022\024\n\014cost_per_day\030\004 \001(\001\022\020\n\010currency\030\005"
+    " \001(\t\022\027\n\017currency_symbol\030\006 \001(\t\0221\n\006lights\030"
+    "\007 \001(\0162!.NSPanelEnergyUpdate.Availability"
+    "\022\021\n\tlights_on\030\010 \001(\005\022\024\n\014lights_alert\030\t \001("
+    "\010\022\024\n\014generated_at\030\n \001(\003\"B\n\014Availability\022"
+    "\022\n\016NOT_CONFIGURED\020\000\022\017\n\013UNAVAILABLE\020\001\022\r\n\t"
+    "AVAILABLE\020\002\"\306\024\n\031NSPanelMQTTManagerComman"
+    "d\022M\n\022first_page_turn_on\030\001 \001(\0132/.NSPanelM"
+    "QTTManagerCommand.FirstPageTurnLightOnH\000"
+    "\022O\n\023first_page_turn_off\030\002 \001(\01320.NSPanelM"
+    "QTTManagerCommand.FirstPageTurnLightOffH"
+    "\000\022@\n\rlight_command\030\003 \001(\0132\'.NSPanelMQTTMa"
+    "nagerCommand.LightCommandH\000\022c\n toggle_en"
+    "tity_from_entities_page\030\004 \001(\01327.NSPanelM"
+    "QTTManagerCommand.ToggleEntityFromEntiti"
+    "esPageH\000\022I\n\022save_scene_command\030\005 \001(\0132+.N"
+    "SPanelMQTTManagerCommand.SaveSceneComman"
+    "dH\000\022B\n\016button_pressed\030\006 \001(\0132(.NSPanelMQT"
+    "TManagerCommand.ButtonPressedH\000\022a\n\036therm"
+    "ostat_temperature_command\030\007 \001(\01327.NSPane"
+    "lMQTTManagerCommand.ThermostatTemperatur"
+    "eCommandH\000\022J\n\022thermostat_command\030\010 \001(\0132,"
+    ".NSPanelMQTTManagerCommand.ThermostatCom"
+    "mandH\000\022M\n\024media_player_command\030\t \001(\0132-.N"
+    "SPanelMQTTManagerCommand.MediaPlayerComm"
+    "andH\000\022@\n\rcover_command\030\n \001(\0132\'.NSPanelMQ"
+    "TTManagerCommand.CoverCommandH\000\0228\n\tlvgl_"
+    "look\030\013 \001(\0132#.NSPanelMQTTManagerCommand.L"
+    "vglLookH\000\022\022\n\nnspanel_id\030d \001(\005\032\372\001\n\024FirstP"
+    "ageTurnLightOn\022E\n\raffect_lights\030\001 \001(\0162.."
+    "NSPanelMQTTManagerCommand.AffectLightsOp"
+    "tions\022\037\n\027brightness_slider_value\030\002 \001(\005\022\033"
+    "\n\023kelvin_slider_value\030\003 \001(\005\022\025\n\rselected_"
+    "room\030\004 \001(\005\022\016\n\006global\030\005 \001(\010\022\034\n\024has_bright"
+    "ness_value\030\006 \001(\010\022\030\n\020has_kelvin_value\030\007 \001"
+    "(\010\032n\n\025FirstPageTurnLightOff\022E\n\raffect_li"
+    "ghts\030\001 \001(\0162..NSPanelMQTTManagerCommand.A"
+    "ffectLightsOptions\022\016\n\006global\030\002 \001(\010\032\321\001\n\014L"
+    "ightCommand\022\021\n\tlight_ids\030\001 \003(\005\022\026\n\016has_br"
+    "ightness\030\002 \001(\010\022\022\n\nbrightness\030\003 \001(\005\022\035\n\025ha"
+    "s_color_temperature\030\004 \001(\010\022\031\n\021color_tempe"
+    "rature\030\005 \001(\005\022\017\n\007has_hue\030\006 \001(\010\022\013\n\003hue\030\007 \001"
+    "(\005\022\026\n\016has_saturation\030\010 \001(\010\022\022\n\nsaturation"
+    "\030\t \001(\005\032K\n\034ToggleEntityFromEntitiesPage\022\026"
+    "\n\016entity_page_id\030\001 \001(\005\022\023\n\013entity_slot\030\002 "
+    "\001(\005\032\?\n\020SaveSceneCommand\022\026\n\016entity_page_i"
+    "d\030\001 \001(\005\022\023\n\013entity_slot\030\002 \001(\005\032\"\n\rButtonPr"
+    "essed\022\021\n\tbutton_id\030\002 \001(\005\032J\n\034ThermostatTe"
+    "mperatureCommand\022\025\n\rthermostat_id\030\001 \001(\005\022"
+    "\023\n\013temperature\030\002 \001(\002\032M\n\021ThermostatComman"
+    "d\022\025\n\rthermostat_id\030\001 \001(\005\022\016\n\006option\030\002 \001(\t"
+    "\022\021\n\tnew_value\030\003 \001(\t\032\224\003\n\022MediaPlayerComma"
+    "nd\022\027\n\017media_player_id\030\001 \001(\005\022U\n\017playback_"
+    "action\030\002 \001(\0162<.NSPanelMQTTManagerCommand"
+    ".MediaPlayerCommand.PlaybackAction\022\022\n\nha"
+    "s_volume\030\003 \001(\010\022\016\n\006volume\030\004 \001(\005\022\031\n\021has_so"
+    "urce_volume\030\005 \001(\010\022\025\n\rsource_volume\030\006 \001(\005"
+    "\022\021\n\thas_muted\030\007 \001(\010\022\r\n\005muted\030\010 \001(\010\022\034\n\024se"
+    "lect_player_source\030\t \001(\t\022#\n\033select_sourc"
+    "e_player_source\030\n \001(\t\"S\n\016PlaybackAction\022"
+    "\010\n\004NONE\020\000\022\010\n\004PLAY\020\001\022\t\n\005PAUSE\020\002\022\016\n\nNEXT_T"
+    "RACK\020\003\022\022\n\016PREVIOUS_TRACK\020\004\032\233\002\n\014CoverComm"
+    "and\022\020\n\010cover_id\030\001 \001(\005\022>\n\006action\030\002 \001(\0162.."
+    "NSPanelMQTTManagerCommand.CoverCommand.A"
+    "ction\022\024\n\014has_position\030\003 \001(\010\022\020\n\010position\030"
+    "\004 \001(\005\022\031\n\021has_tilt_position\030\005 \001(\010\022\025\n\rtilt"
+    "_position\030\006 \001(\005\"_\n\006Action\022\010\n\004NONE\020\000\022\010\n\004O"
+    "PEN\020\001\022\t\n\005CLOSE\020\002\022\010\n\004STOP\020\003\022\r\n\tOPEN_TILT\020"
+    "\004\022\016\n\nCLOSE_TILT\020\005\022\r\n\tSTOP_TILT\020\006\032-\n\010Lvgl"
+    "Look\022\r\n\005theme\030\001 \001(\t\022\022\n\nbackground\030\002 \001(\t\""
+    "D\n\023AffectLightsOptions\022\007\n\003ALL\020\000\022\020\n\014TABLE"
+    "_LIGHTS\020\001\022\022\n\016CEILING_LIGHTS\020\002B\r\n\013Command"
+    "Data*[\n\023NSPanelWarningLevel\022\014\n\010CRITICAL\020"
+    "\000\022\t\n\005ERROR\020\001\022\013\n\007WARNING\020\002\022\010\n\004INFO\020\003\022\t\n\005D"
+    "EBUG\020\004\022\t\n\005TRACE\020\005b\006proto3"
 };
 static ::absl::once_flag descriptor_table_protobuf_5fnspanel_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_protobuf_5fnspanel_2eproto = {
     false,
     false,
-    7605,
+    8025,
     descriptor_table_protodef_protobuf_5fnspanel_2eproto,
     "protobuf_nspanel.proto",
     &descriptor_table_protobuf_5fnspanel_2eproto_once,
     nullptr,
     0,
-    25,
+    26,
     schemas,
     file_default_instances,
     TableStruct_protobuf_5fnspanel_2eproto::offsets,
@@ -1480,15 +1542,16 @@ const ::google::protobuf::EnumDescriptor* NSPanelConfig_NSPanelScreensaverCardTy
   return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[4];
 }
 PROTOBUF_CONSTINIT const uint32_t NSPanelConfig_NSPanelScreensaverCardType_internal_data_[] = {
-    131072u, 0u, };
+    196608u, 0u, };
 bool NSPanelConfig_NSPanelScreensaverCardType_IsValid(int value) {
-  return 0 <= value && value <= 1;
+  return 0 <= value && value <= 2;
 }
 #if (__cplusplus < 201703) && \
   (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 
 constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig::SCREENSAVER_CARD_UNSPECIFIED;
 constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig::SCREENSAVER_CARD_CALENDAR;
+constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig::SCREENSAVER_CARD_ENERGY;
 constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig::NSPanelScreensaverCardType_MIN;
 constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig::NSPanelScreensaverCardType_MAX;
 constexpr int NSPanelConfig::NSPanelScreensaverCardType_ARRAYSIZE;
@@ -1567,9 +1630,30 @@ constexpr int NSPanelRoomEntitiesPage_EntitySlot::EntityType_ARRAYSIZE;
 
 #endif  // (__cplusplus < 201703) &&
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
-const ::google::protobuf::EnumDescriptor* NSPanelMQTTManagerCommand_MediaPlayerCommand_PlaybackAction_descriptor() {
+const ::google::protobuf::EnumDescriptor* NSPanelEnergyUpdate_Availability_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_protobuf_5fnspanel_2eproto);
   return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[8];
+}
+PROTOBUF_CONSTINIT const uint32_t NSPanelEnergyUpdate_Availability_internal_data_[] = {
+    196608u, 0u, };
+bool NSPanelEnergyUpdate_Availability_IsValid(int value) {
+  return 0 <= value && value <= 2;
+}
+#if (__cplusplus < 201703) && \
+  (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
+
+constexpr NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::NOT_CONFIGURED;
+constexpr NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::UNAVAILABLE;
+constexpr NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::AVAILABLE;
+constexpr NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::Availability_MIN;
+constexpr NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::Availability_MAX;
+constexpr int NSPanelEnergyUpdate::Availability_ARRAYSIZE;
+
+#endif  // (__cplusplus < 201703) &&
+        // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
+const ::google::protobuf::EnumDescriptor* NSPanelMQTTManagerCommand_MediaPlayerCommand_PlaybackAction_descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_protobuf_5fnspanel_2eproto);
+  return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[9];
 }
 PROTOBUF_CONSTINIT const uint32_t NSPanelMQTTManagerCommand_MediaPlayerCommand_PlaybackAction_internal_data_[] = {
     327680u, 0u, };
@@ -1592,7 +1676,7 @@ constexpr int NSPanelMQTTManagerCommand_MediaPlayerCommand::PlaybackAction_ARRAY
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 const ::google::protobuf::EnumDescriptor* NSPanelMQTTManagerCommand_CoverCommand_Action_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_protobuf_5fnspanel_2eproto);
-  return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[9];
+  return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[10];
 }
 PROTOBUF_CONSTINIT const uint32_t NSPanelMQTTManagerCommand_CoverCommand_Action_internal_data_[] = {
     458752u, 0u, };
@@ -1617,7 +1701,7 @@ constexpr int NSPanelMQTTManagerCommand_CoverCommand::Action_ARRAYSIZE;
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 const ::google::protobuf::EnumDescriptor* NSPanelMQTTManagerCommand_AffectLightsOptions_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_protobuf_5fnspanel_2eproto);
-  return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[10];
+  return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[11];
 }
 PROTOBUF_CONSTINIT const uint32_t NSPanelMQTTManagerCommand_AffectLightsOptions_internal_data_[] = {
     196608u, 0u, };
@@ -1638,7 +1722,7 @@ constexpr int NSPanelMQTTManagerCommand::AffectLightsOptions_ARRAYSIZE;
         // (!defined(_MSC_VER) || (_MSC_VER >= 1900 && _MSC_VER < 1912))
 const ::google::protobuf::EnumDescriptor* NSPanelWarningLevel_descriptor() {
   ::google::protobuf::internal::AssignDescriptors(&descriptor_table_protobuf_5fnspanel_2eproto);
-  return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[11];
+  return file_level_enum_descriptors_protobuf_5fnspanel_2eproto[12];
 }
 PROTOBUF_CONSTINIT const uint32_t NSPanelWarningLevel_internal_data_[] = {
     393216u, 0u, };
@@ -6981,6 +7065,445 @@ void NSPanelCalendarUpdate::InternalSwap(NSPanelCalendarUpdate* PROTOBUF_RESTRIC
 }
 
 ::google::protobuf::Metadata NSPanelCalendarUpdate::GetMetadata() const {
+  return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
+}
+// ===================================================================
+
+class NSPanelEnergyUpdate::_Internal {
+ public:
+};
+
+NSPanelEnergyUpdate::NSPanelEnergyUpdate(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
+  SharedCtor(arena);
+  // @@protoc_insertion_point(arena_constructor:NSPanelEnergyUpdate)
+}
+inline PROTOBUF_NDEBUG_INLINE NSPanelEnergyUpdate::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from, const ::NSPanelEnergyUpdate& from_msg)
+      : currency_(arena, from.currency_),
+        currency_symbol_(arena, from.currency_symbol_),
+        _cached_size_{0} {}
+
+NSPanelEnergyUpdate::NSPanelEnergyUpdate(
+    ::google::protobuf::Arena* arena,
+    const NSPanelEnergyUpdate& from)
+    : ::google::protobuf::Message(arena) {
+  NSPanelEnergyUpdate* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_, from);
+  ::memcpy(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, power_),
+           reinterpret_cast<const char *>(&from._impl_) +
+               offsetof(Impl_, power_),
+           offsetof(Impl_, generated_at_) -
+               offsetof(Impl_, power_) +
+               sizeof(Impl_::generated_at_));
+
+  // @@protoc_insertion_point(copy_constructor:NSPanelEnergyUpdate)
+}
+inline PROTOBUF_NDEBUG_INLINE NSPanelEnergyUpdate::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : currency_(arena),
+        currency_symbol_(arena),
+        _cached_size_{0} {}
+
+inline void NSPanelEnergyUpdate::SharedCtor(::_pb::Arena* arena) {
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  ::memset(reinterpret_cast<char *>(&_impl_) +
+               offsetof(Impl_, power_),
+           0,
+           offsetof(Impl_, generated_at_) -
+               offsetof(Impl_, power_) +
+               sizeof(Impl_::generated_at_));
+}
+NSPanelEnergyUpdate::~NSPanelEnergyUpdate() {
+  // @@protoc_insertion_point(destructor:NSPanelEnergyUpdate)
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  SharedDtor();
+}
+inline void NSPanelEnergyUpdate::SharedDtor() {
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.currency_.Destroy();
+  _impl_.currency_symbol_.Destroy();
+  _impl_.~Impl_();
+}
+
+const ::google::protobuf::MessageLite::ClassData*
+NSPanelEnergyUpdate::GetClassData() const {
+  PROTOBUF_CONSTINIT static const ::google::protobuf::MessageLite::
+      ClassDataFull _data_ = {
+          {
+              &_table_.header,
+              nullptr,  // OnDemandRegisterArenaDtor
+              nullptr,  // IsInitialized
+              PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_._cached_size_),
+              false,
+          },
+          &NSPanelEnergyUpdate::MergeImpl,
+          &NSPanelEnergyUpdate::kDescriptorMethods,
+          &descriptor_table_protobuf_5fnspanel_2eproto,
+          nullptr,  // tracker
+      };
+  ::google::protobuf::internal::PrefetchToLocalCache(&_data_);
+  ::google::protobuf::internal::PrefetchToLocalCache(_data_.tc_table);
+  return _data_.base();
+}
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<4, 10, 0, 59, 2> NSPanelEnergyUpdate::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    10, 120,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294966272,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    10,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_NSPanelEnergyUpdate_default_instance_._instance,
+    nullptr,  // post_loop_handler
+    ::_pbi::TcParser::GenericFallback,  // fallback
+    #ifdef PROTOBUF_PREFETCH_PARSE_TABLE
+    ::_pbi::TcParser::GetTable<::NSPanelEnergyUpdate>(),  // to_prefetch
+    #endif  // PROTOBUF_PREFETCH_PARSE_TABLE
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .NSPanelEnergyUpdate.Availability power = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NSPanelEnergyUpdate, _impl_.power_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.power_)}},
+    // int32 power_watts = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NSPanelEnergyUpdate, _impl_.power_watts_), 63>(),
+     {16, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.power_watts_)}},
+    // .NSPanelEnergyUpdate.Availability cost = 3;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NSPanelEnergyUpdate, _impl_.cost_), 63>(),
+     {24, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.cost_)}},
+    // double cost_per_day = 4;
+    {::_pbi::TcParser::FastF64S1,
+     {33, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.cost_per_day_)}},
+    // string currency = 5;
+    {::_pbi::TcParser::FastUS1,
+     {42, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.currency_)}},
+    // string currency_symbol = 6;
+    {::_pbi::TcParser::FastUS1,
+     {50, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.currency_symbol_)}},
+    // .NSPanelEnergyUpdate.Availability lights = 7;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NSPanelEnergyUpdate, _impl_.lights_), 63>(),
+     {56, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.lights_)}},
+    // int32 lights_on = 8;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(NSPanelEnergyUpdate, _impl_.lights_on_), 63>(),
+     {64, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.lights_on_)}},
+    // bool lights_alert = 9;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(NSPanelEnergyUpdate, _impl_.lights_alert_), 63>(),
+     {72, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.lights_alert_)}},
+    // int64 generated_at = 10;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint64_t, offsetof(NSPanelEnergyUpdate, _impl_.generated_at_), 63>(),
+     {80, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.generated_at_)}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+    {::_pbi::TcParser::MiniParse, {}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .NSPanelEnergyUpdate.Availability power = 1;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.power_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
+    // int32 power_watts = 2;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.power_watts_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    // .NSPanelEnergyUpdate.Availability cost = 3;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.cost_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
+    // double cost_per_day = 4;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.cost_per_day_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kDouble)},
+    // string currency = 5;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.currency_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string currency_symbol = 6;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.currency_symbol_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // .NSPanelEnergyUpdate.Availability lights = 7;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.lights_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
+    // int32 lights_on = 8;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.lights_on_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    // bool lights_alert = 9;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.lights_alert_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
+    // int64 generated_at = 10;
+    {PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.generated_at_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kInt64)},
+  }},
+  // no aux_entries
+  {{
+    "\23\0\0\0\0\10\17\0\0\0\0\0\0\0\0\0"
+    "NSPanelEnergyUpdate"
+    "currency"
+    "currency_symbol"
+  }},
+};
+
+PROTOBUF_NOINLINE void NSPanelEnergyUpdate::Clear() {
+// @@protoc_insertion_point(message_clear_start:NSPanelEnergyUpdate)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  _impl_.currency_.ClearToEmpty();
+  _impl_.currency_symbol_.ClearToEmpty();
+  ::memset(&_impl_.power_, 0, static_cast<::size_t>(
+      reinterpret_cast<char*>(&_impl_.generated_at_) -
+      reinterpret_cast<char*>(&_impl_.power_)) + sizeof(_impl_.generated_at_));
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+}
+
+::uint8_t* NSPanelEnergyUpdate::_InternalSerialize(
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+  // @@protoc_insertion_point(serialize_to_array_start:NSPanelEnergyUpdate)
+  ::uint32_t cached_has_bits = 0;
+  (void)cached_has_bits;
+
+  // .NSPanelEnergyUpdate.Availability power = 1;
+  if (this->_internal_power() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+        1, this->_internal_power(), target);
+  }
+
+  // int32 power_watts = 2;
+  if (this->_internal_power_watts() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt32ToArrayWithField<2>(
+            stream, this->_internal_power_watts(), target);
+  }
+
+  // .NSPanelEnergyUpdate.Availability cost = 3;
+  if (this->_internal_cost() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+        3, this->_internal_cost(), target);
+  }
+
+  // double cost_per_day = 4;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_cost_per_day = this->_internal_cost_per_day();
+  ::uint64_t raw_cost_per_day;
+  memcpy(&raw_cost_per_day, &tmp_cost_per_day, sizeof(tmp_cost_per_day));
+  if (raw_cost_per_day != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteDoubleToArray(
+        4, this->_internal_cost_per_day(), target);
+  }
+
+  // string currency = 5;
+  if (!this->_internal_currency().empty()) {
+    const std::string& _s = this->_internal_currency();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "NSPanelEnergyUpdate.currency");
+    target = stream->WriteStringMaybeAliased(5, _s, target);
+  }
+
+  // string currency_symbol = 6;
+  if (!this->_internal_currency_symbol().empty()) {
+    const std::string& _s = this->_internal_currency_symbol();
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "NSPanelEnergyUpdate.currency_symbol");
+    target = stream->WriteStringMaybeAliased(6, _s, target);
+  }
+
+  // .NSPanelEnergyUpdate.Availability lights = 7;
+  if (this->_internal_lights() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteEnumToArray(
+        7, this->_internal_lights(), target);
+  }
+
+  // int32 lights_on = 8;
+  if (this->_internal_lights_on() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt32ToArrayWithField<8>(
+            stream, this->_internal_lights_on(), target);
+  }
+
+  // bool lights_alert = 9;
+  if (this->_internal_lights_alert() != 0) {
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteBoolToArray(
+        9, this->_internal_lights_alert(), target);
+  }
+
+  // int64 generated_at = 10;
+  if (this->_internal_generated_at() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::
+        WriteInt64ToArrayWithField<10>(
+            stream, this->_internal_generated_at(), target);
+  }
+
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+  }
+  // @@protoc_insertion_point(serialize_to_array_end:NSPanelEnergyUpdate)
+  return target;
+}
+
+::size_t NSPanelEnergyUpdate::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:NSPanelEnergyUpdate)
+  ::size_t total_size = 0;
+
+  ::uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
+
+  ::_pbi::Prefetch5LinesFrom7Lines(reinterpret_cast<const void*>(this));
+  // string currency = 5;
+  if (!this->_internal_currency().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_currency());
+  }
+
+  // string currency_symbol = 6;
+  if (!this->_internal_currency_symbol().empty()) {
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+                                    this->_internal_currency_symbol());
+  }
+
+  // .NSPanelEnergyUpdate.Availability power = 1;
+  if (this->_internal_power() != 0) {
+    total_size += 1 +
+                  ::_pbi::WireFormatLite::EnumSize(this->_internal_power());
+  }
+
+  // int32 power_watts = 2;
+  if (this->_internal_power_watts() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+        this->_internal_power_watts());
+  }
+
+  // double cost_per_day = 4;
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_cost_per_day = this->_internal_cost_per_day();
+  ::uint64_t raw_cost_per_day;
+  memcpy(&raw_cost_per_day, &tmp_cost_per_day, sizeof(tmp_cost_per_day));
+  if (raw_cost_per_day != 0) {
+    total_size += 9;
+  }
+
+  // .NSPanelEnergyUpdate.Availability cost = 3;
+  if (this->_internal_cost() != 0) {
+    total_size += 1 +
+                  ::_pbi::WireFormatLite::EnumSize(this->_internal_cost());
+  }
+
+  // .NSPanelEnergyUpdate.Availability lights = 7;
+  if (this->_internal_lights() != 0) {
+    total_size += 1 +
+                  ::_pbi::WireFormatLite::EnumSize(this->_internal_lights());
+  }
+
+  // int32 lights_on = 8;
+  if (this->_internal_lights_on() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int32SizePlusOne(
+        this->_internal_lights_on());
+  }
+
+  // bool lights_alert = 9;
+  if (this->_internal_lights_alert() != 0) {
+    total_size += 2;
+  }
+
+  // int64 generated_at = 10;
+  if (this->_internal_generated_at() != 0) {
+    total_size += ::_pbi::WireFormatLite::Int64SizePlusOne(
+        this->_internal_generated_at());
+  }
+
+  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+}
+
+
+void NSPanelEnergyUpdate::MergeImpl(::google::protobuf::MessageLite& to_msg, const ::google::protobuf::MessageLite& from_msg) {
+  auto* const _this = static_cast<NSPanelEnergyUpdate*>(&to_msg);
+  auto& from = static_cast<const NSPanelEnergyUpdate&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:NSPanelEnergyUpdate)
+  ABSL_DCHECK_NE(&from, _this);
+  ::uint32_t cached_has_bits = 0;
+  (void) cached_has_bits;
+
+  if (!from._internal_currency().empty()) {
+    _this->_internal_set_currency(from._internal_currency());
+  }
+  if (!from._internal_currency_symbol().empty()) {
+    _this->_internal_set_currency_symbol(from._internal_currency_symbol());
+  }
+  if (from._internal_power() != 0) {
+    _this->_impl_.power_ = from._impl_.power_;
+  }
+  if (from._internal_power_watts() != 0) {
+    _this->_impl_.power_watts_ = from._impl_.power_watts_;
+  }
+  static_assert(sizeof(::uint64_t) == sizeof(double),
+                "Code assumes ::uint64_t and double are the same size.");
+  double tmp_cost_per_day = from._internal_cost_per_day();
+  ::uint64_t raw_cost_per_day;
+  memcpy(&raw_cost_per_day, &tmp_cost_per_day, sizeof(tmp_cost_per_day));
+  if (raw_cost_per_day != 0) {
+    _this->_impl_.cost_per_day_ = from._impl_.cost_per_day_;
+  }
+  if (from._internal_cost() != 0) {
+    _this->_impl_.cost_ = from._impl_.cost_;
+  }
+  if (from._internal_lights() != 0) {
+    _this->_impl_.lights_ = from._impl_.lights_;
+  }
+  if (from._internal_lights_on() != 0) {
+    _this->_impl_.lights_on_ = from._impl_.lights_on_;
+  }
+  if (from._internal_lights_alert() != 0) {
+    _this->_impl_.lights_alert_ = from._impl_.lights_alert_;
+  }
+  if (from._internal_generated_at() != 0) {
+    _this->_impl_.generated_at_ = from._impl_.generated_at_;
+  }
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+}
+
+void NSPanelEnergyUpdate::CopyFrom(const NSPanelEnergyUpdate& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:NSPanelEnergyUpdate)
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+
+void NSPanelEnergyUpdate::InternalSwap(NSPanelEnergyUpdate* PROTOBUF_RESTRICT other) {
+  using std::swap;
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.currency_, &other->_impl_.currency_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.currency_symbol_, &other->_impl_.currency_symbol_, arena);
+  ::google::protobuf::internal::memswap<
+      PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.generated_at_)
+      + sizeof(NSPanelEnergyUpdate::_impl_.generated_at_)
+      - PROTOBUF_FIELD_OFFSET(NSPanelEnergyUpdate, _impl_.power_)>(
+          reinterpret_cast<char*>(&_impl_.power_),
+          reinterpret_cast<char*>(&other->_impl_.power_));
+}
+
+::google::protobuf::Metadata NSPanelEnergyUpdate::GetMetadata() const {
   return ::google::protobuf::Message::GetMetadataImpl(GetClassData()->full());
 }
 // ===================================================================

@@ -111,6 +111,7 @@ message NSPanelConfig {
   enum NSPanelScreensaverCardType {
     SCREENSAVER_CARD_UNSPECIFIED = 0;
     SCREENSAVER_CARD_CALENDAR = 1; // Upcoming events, from NSPanelCalendarUpdate on nspanel/mqttmanager_<address>/status/calendar
+    SCREENSAVER_CARD_ENERGY = 2;   // Power draw as cost per day and lights on, from NSPanelEnergyUpdate on nspanel/mqttmanager_<address>/status/energy
   }
   message ScreensaverCard {
     NSPanelScreensaverCardType type = 1;
@@ -272,6 +273,27 @@ message NSPanelCalendarUpdate {
   repeated Event events = 1; // Events that have not ended, sorted by start, at most the manager's configured maximum
   int32 lookahead_hours = 2; // How far ahead the list looks, for "No events in the next 48 hours"
   int64 generated_at = 3;    // Unix seconds. Always set, so a list with no events never serialises to an empty payload
+}
+
+// The house's power draw, its cost per day and the number of lights on, for the screensaver's energy card. Published
+// retained by the manager on nspanel/mqttmanager_<address>/status/energy, one for every panel. The panel formats the
+// numbers.
+message NSPanelEnergyUpdate {
+  enum Availability {
+    NOT_CONFIGURED = 0; // Not set up in the manager: the card leaves this part out
+    UNAVAILABLE = 1;    // Set up, but there is no value now (a sensor is unavailable, Home Assistant is disconnected)
+    AVAILABLE = 2;
+  }
+  Availability power = 1;
+  int32 power_watts = 2;      // The whole house, rounded to 10 W. Negative: exporting
+  Availability cost = 3;      // NOT_CONFIGURED without a price; otherwise follows `power`
+  double cost_per_day = 4;    // What a whole day would cost at power_watts, in units of `currency`. Negative: a credit
+  string currency = 5;        // ISO 4217 code, from Home Assistant ("USD")
+  string currency_symbol = 6; // "$", "€", "£"; empty: show `currency` instead
+  Availability lights = 7;
+  int32 lights_on = 8;
+  bool lights_alert = 9;      // lights_on is at or above the manager's threshold
+  int64 generated_at = 10;    // Unix seconds. Always set, so an update never serialises to an empty payload
 }
 
 // Command send from NSPanel to MQTTManager

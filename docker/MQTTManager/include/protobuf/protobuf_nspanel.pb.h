@@ -68,6 +68,9 @@ extern NSPanelConfig_ScreensaverCardDefaultTypeInternal _NSPanelConfig_Screensav
 class NSPanelConfig_Sound;
 struct NSPanelConfig_SoundDefaultTypeInternal;
 extern NSPanelConfig_SoundDefaultTypeInternal _NSPanelConfig_Sound_default_instance_;
+class NSPanelEnergyUpdate;
+struct NSPanelEnergyUpdateDefaultTypeInternal;
+extern NSPanelEnergyUpdateDefaultTypeInternal _NSPanelEnergyUpdate_default_instance_;
 class NSPanelMQTTManagerCommand;
 struct NSPanelMQTTManagerCommandDefaultTypeInternal;
 extern NSPanelMQTTManagerCommandDefaultTypeInternal _NSPanelMQTTManagerCommand_default_instance_;
@@ -274,6 +277,7 @@ inline bool NSPanelConfig_NSPanelSoundEvent_Parse(absl::string_view name, NSPane
 enum NSPanelConfig_NSPanelScreensaverCardType : int {
   NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_UNSPECIFIED = 0,
   NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR = 1,
+  NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_ENERGY = 2,
   NSPanelConfig_NSPanelScreensaverCardType_NSPanelConfig_NSPanelScreensaverCardType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   NSPanelConfig_NSPanelScreensaverCardType_NSPanelConfig_NSPanelScreensaverCardType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -283,8 +287,8 @@ enum NSPanelConfig_NSPanelScreensaverCardType : int {
 bool NSPanelConfig_NSPanelScreensaverCardType_IsValid(int value);
 extern const uint32_t NSPanelConfig_NSPanelScreensaverCardType_internal_data_[];
 constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MIN = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(0);
-constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MAX = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(1);
-constexpr int NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_ARRAYSIZE = 1 + 1;
+constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MAX = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(2);
+constexpr int NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_ARRAYSIZE = 2 + 1;
 const ::google::protobuf::EnumDescriptor*
 NSPanelConfig_NSPanelScreensaverCardType_descriptor();
 template <typename T>
@@ -297,7 +301,7 @@ const std::string& NSPanelConfig_NSPanelScreensaverCardType_Name(T value) {
 template <>
 inline const std::string& NSPanelConfig_NSPanelScreensaverCardType_Name(NSPanelConfig_NSPanelScreensaverCardType value) {
   return ::google::protobuf::internal::NameOfDenseEnum<NSPanelConfig_NSPanelScreensaverCardType_descriptor,
-                                                 0, 1>(
+                                                 0, 2>(
       static_cast<int>(value));
 }
 inline bool NSPanelConfig_NSPanelScreensaverCardType_Parse(absl::string_view name, NSPanelConfig_NSPanelScreensaverCardType* value) {
@@ -414,6 +418,40 @@ inline const std::string& NSPanelRoomEntitiesPage_EntitySlot_EntityType_Name(NSP
 inline bool NSPanelRoomEntitiesPage_EntitySlot_EntityType_Parse(absl::string_view name, NSPanelRoomEntitiesPage_EntitySlot_EntityType* value) {
   return ::google::protobuf::internal::ParseNamedEnum<NSPanelRoomEntitiesPage_EntitySlot_EntityType>(
       NSPanelRoomEntitiesPage_EntitySlot_EntityType_descriptor(), name, value);
+}
+enum NSPanelEnergyUpdate_Availability : int {
+  NSPanelEnergyUpdate_Availability_NOT_CONFIGURED = 0,
+  NSPanelEnergyUpdate_Availability_UNAVAILABLE = 1,
+  NSPanelEnergyUpdate_Availability_AVAILABLE = 2,
+  NSPanelEnergyUpdate_Availability_NSPanelEnergyUpdate_Availability_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::min(),
+  NSPanelEnergyUpdate_Availability_NSPanelEnergyUpdate_Availability_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::max(),
+};
+
+bool NSPanelEnergyUpdate_Availability_IsValid(int value);
+extern const uint32_t NSPanelEnergyUpdate_Availability_internal_data_[];
+constexpr NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate_Availability_Availability_MIN = static_cast<NSPanelEnergyUpdate_Availability>(0);
+constexpr NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate_Availability_Availability_MAX = static_cast<NSPanelEnergyUpdate_Availability>(2);
+constexpr int NSPanelEnergyUpdate_Availability_Availability_ARRAYSIZE = 2 + 1;
+const ::google::protobuf::EnumDescriptor*
+NSPanelEnergyUpdate_Availability_descriptor();
+template <typename T>
+const std::string& NSPanelEnergyUpdate_Availability_Name(T value) {
+  static_assert(std::is_same<T, NSPanelEnergyUpdate_Availability>::value ||
+                    std::is_integral<T>::value,
+                "Incorrect type passed to Availability_Name().");
+  return NSPanelEnergyUpdate_Availability_Name(static_cast<NSPanelEnergyUpdate_Availability>(value));
+}
+template <>
+inline const std::string& NSPanelEnergyUpdate_Availability_Name(NSPanelEnergyUpdate_Availability value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<NSPanelEnergyUpdate_Availability_descriptor,
+                                                 0, 2>(
+      static_cast<int>(value));
+}
+inline bool NSPanelEnergyUpdate_Availability_Parse(absl::string_view name, NSPanelEnergyUpdate_Availability* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<NSPanelEnergyUpdate_Availability>(
+      NSPanelEnergyUpdate_Availability_descriptor(), name, value);
 }
 enum NSPanelMQTTManagerCommand_MediaPlayerCommand_PlaybackAction : int {
   NSPanelMQTTManagerCommand_MediaPlayerCommand_PlaybackAction_NONE = 0,
@@ -1723,7 +1761,7 @@ class NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage final : public ::go
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage*>(
         &_NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage& a, NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage* other) {
     if (other == this) return;
@@ -1906,7 +1944,7 @@ class NSPanelMQTTManagerCommand_ThermostatTemperatureCommand final : public ::go
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ThermostatTemperatureCommand*>(
         &_NSPanelMQTTManagerCommand_ThermostatTemperatureCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 19;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(NSPanelMQTTManagerCommand_ThermostatTemperatureCommand& a, NSPanelMQTTManagerCommand_ThermostatTemperatureCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ThermostatTemperatureCommand* other) {
     if (other == this) return;
@@ -2089,7 +2127,7 @@ class NSPanelMQTTManagerCommand_ThermostatCommand final : public ::google::proto
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ThermostatCommand*>(
         &_NSPanelMQTTManagerCommand_ThermostatCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 21;
   friend void swap(NSPanelMQTTManagerCommand_ThermostatCommand& a, NSPanelMQTTManagerCommand_ThermostatCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ThermostatCommand* other) {
     if (other == this) return;
@@ -2296,7 +2334,7 @@ class NSPanelMQTTManagerCommand_SaveSceneCommand final : public ::google::protob
     return reinterpret_cast<const NSPanelMQTTManagerCommand_SaveSceneCommand*>(
         &_NSPanelMQTTManagerCommand_SaveSceneCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(NSPanelMQTTManagerCommand_SaveSceneCommand& a, NSPanelMQTTManagerCommand_SaveSceneCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_SaveSceneCommand* other) {
     if (other == this) return;
@@ -2479,7 +2517,7 @@ class NSPanelMQTTManagerCommand_MediaPlayerCommand final : public ::google::prot
     return reinterpret_cast<const NSPanelMQTTManagerCommand_MediaPlayerCommand*>(
         &_NSPanelMQTTManagerCommand_MediaPlayerCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 21;
+  static constexpr int kIndexInFileMessages = 22;
   friend void swap(NSPanelMQTTManagerCommand_MediaPlayerCommand& a, NSPanelMQTTManagerCommand_MediaPlayerCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_MediaPlayerCommand* other) {
     if (other == this) return;
@@ -2792,7 +2830,7 @@ class NSPanelMQTTManagerCommand_LvglLook final : public ::google::protobuf::Mess
     return reinterpret_cast<const NSPanelMQTTManagerCommand_LvglLook*>(
         &_NSPanelMQTTManagerCommand_LvglLook_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 23;
+  static constexpr int kIndexInFileMessages = 24;
   friend void swap(NSPanelMQTTManagerCommand_LvglLook& a, NSPanelMQTTManagerCommand_LvglLook& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_LvglLook* other) {
     if (other == this) return;
@@ -2987,7 +3025,7 @@ class NSPanelMQTTManagerCommand_LightCommand final : public ::google::protobuf::
     return reinterpret_cast<const NSPanelMQTTManagerCommand_LightCommand*>(
         &_NSPanelMQTTManagerCommand_LightCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(NSPanelMQTTManagerCommand_LightCommand& a, NSPanelMQTTManagerCommand_LightCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_LightCommand* other) {
     if (other == this) return;
@@ -3263,7 +3301,7 @@ class NSPanelMQTTManagerCommand_FirstPageTurnLightOn final : public ::google::pr
     return reinterpret_cast<const NSPanelMQTTManagerCommand_FirstPageTurnLightOn*>(
         &_NSPanelMQTTManagerCommand_FirstPageTurnLightOn_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOn& a, NSPanelMQTTManagerCommand_FirstPageTurnLightOn& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOn* other) {
     if (other == this) return;
@@ -3506,7 +3544,7 @@ class NSPanelMQTTManagerCommand_FirstPageTurnLightOff final : public ::google::p
     return reinterpret_cast<const NSPanelMQTTManagerCommand_FirstPageTurnLightOff*>(
         &_NSPanelMQTTManagerCommand_FirstPageTurnLightOff_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOff& a, NSPanelMQTTManagerCommand_FirstPageTurnLightOff& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOff* other) {
     if (other == this) return;
@@ -3689,7 +3727,7 @@ class NSPanelMQTTManagerCommand_CoverCommand final : public ::google::protobuf::
     return reinterpret_cast<const NSPanelMQTTManagerCommand_CoverCommand*>(
         &_NSPanelMQTTManagerCommand_CoverCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 22;
+  static constexpr int kIndexInFileMessages = 23;
   friend void swap(NSPanelMQTTManagerCommand_CoverCommand& a, NSPanelMQTTManagerCommand_CoverCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_CoverCommand* other) {
     if (other == this) return;
@@ -3944,7 +3982,7 @@ class NSPanelMQTTManagerCommand_ButtonPressed final : public ::google::protobuf:
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ButtonPressed*>(
         &_NSPanelMQTTManagerCommand_ButtonPressed_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 18;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(NSPanelMQTTManagerCommand_ButtonPressed& a, NSPanelMQTTManagerCommand_ButtonPressed& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ButtonPressed* other) {
     if (other == this) return;
@@ -4052,6 +4090,317 @@ class NSPanelMQTTManagerCommand_ButtonPressed final : public ::google::protobuf:
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const NSPanelMQTTManagerCommand_ButtonPressed& from_msg);
     ::int32_t button_id_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_protobuf_5fnspanel_2eproto;
+};
+// -------------------------------------------------------------------
+
+class NSPanelEnergyUpdate final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:NSPanelEnergyUpdate) */ {
+ public:
+  inline NSPanelEnergyUpdate() : NSPanelEnergyUpdate(nullptr) {}
+  ~NSPanelEnergyUpdate() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR NSPanelEnergyUpdate(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline NSPanelEnergyUpdate(const NSPanelEnergyUpdate& from) : NSPanelEnergyUpdate(nullptr, from) {}
+  inline NSPanelEnergyUpdate(NSPanelEnergyUpdate&& from) noexcept
+      : NSPanelEnergyUpdate(nullptr, std::move(from)) {}
+  inline NSPanelEnergyUpdate& operator=(const NSPanelEnergyUpdate& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NSPanelEnergyUpdate& operator=(NSPanelEnergyUpdate&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NSPanelEnergyUpdate& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NSPanelEnergyUpdate* internal_default_instance() {
+    return reinterpret_cast<const NSPanelEnergyUpdate*>(
+        &_NSPanelEnergyUpdate_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 13;
+  friend void swap(NSPanelEnergyUpdate& a, NSPanelEnergyUpdate& b) { a.Swap(&b); }
+  inline void Swap(NSPanelEnergyUpdate* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NSPanelEnergyUpdate* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NSPanelEnergyUpdate* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<NSPanelEnergyUpdate>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const NSPanelEnergyUpdate& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const NSPanelEnergyUpdate& from) { NSPanelEnergyUpdate::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(NSPanelEnergyUpdate* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "NSPanelEnergyUpdate"; }
+
+ protected:
+  explicit NSPanelEnergyUpdate(::google::protobuf::Arena* arena);
+  NSPanelEnergyUpdate(::google::protobuf::Arena* arena, const NSPanelEnergyUpdate& from);
+  NSPanelEnergyUpdate(::google::protobuf::Arena* arena, NSPanelEnergyUpdate&& from) noexcept
+      : NSPanelEnergyUpdate(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::Message::ClassData* GetClassData() const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+  using Availability = NSPanelEnergyUpdate_Availability;
+  static constexpr Availability NOT_CONFIGURED = NSPanelEnergyUpdate_Availability_NOT_CONFIGURED;
+  static constexpr Availability UNAVAILABLE = NSPanelEnergyUpdate_Availability_UNAVAILABLE;
+  static constexpr Availability AVAILABLE = NSPanelEnergyUpdate_Availability_AVAILABLE;
+  static inline bool Availability_IsValid(int value) {
+    return NSPanelEnergyUpdate_Availability_IsValid(value);
+  }
+  static constexpr Availability Availability_MIN = NSPanelEnergyUpdate_Availability_Availability_MIN;
+  static constexpr Availability Availability_MAX = NSPanelEnergyUpdate_Availability_Availability_MAX;
+  static constexpr int Availability_ARRAYSIZE = NSPanelEnergyUpdate_Availability_Availability_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor* Availability_descriptor() {
+    return NSPanelEnergyUpdate_Availability_descriptor();
+  }
+  template <typename T>
+  static inline const std::string& Availability_Name(T value) {
+    return NSPanelEnergyUpdate_Availability_Name(value);
+  }
+  static inline bool Availability_Parse(absl::string_view name, Availability* value) {
+    return NSPanelEnergyUpdate_Availability_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kCurrencyFieldNumber = 5,
+    kCurrencySymbolFieldNumber = 6,
+    kPowerFieldNumber = 1,
+    kPowerWattsFieldNumber = 2,
+    kCostPerDayFieldNumber = 4,
+    kCostFieldNumber = 3,
+    kLightsFieldNumber = 7,
+    kLightsOnFieldNumber = 8,
+    kLightsAlertFieldNumber = 9,
+    kGeneratedAtFieldNumber = 10,
+  };
+  // string currency = 5;
+  void clear_currency() ;
+  const std::string& currency() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_currency(Arg_&& arg, Args_... args);
+  std::string* mutable_currency();
+  PROTOBUF_NODISCARD std::string* release_currency();
+  void set_allocated_currency(std::string* value);
+
+  private:
+  const std::string& _internal_currency() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_currency(
+      const std::string& value);
+  std::string* _internal_mutable_currency();
+
+  public:
+  // string currency_symbol = 6;
+  void clear_currency_symbol() ;
+  const std::string& currency_symbol() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_currency_symbol(Arg_&& arg, Args_... args);
+  std::string* mutable_currency_symbol();
+  PROTOBUF_NODISCARD std::string* release_currency_symbol();
+  void set_allocated_currency_symbol(std::string* value);
+
+  private:
+  const std::string& _internal_currency_symbol() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_currency_symbol(
+      const std::string& value);
+  std::string* _internal_mutable_currency_symbol();
+
+  public:
+  // .NSPanelEnergyUpdate.Availability power = 1;
+  void clear_power() ;
+  ::NSPanelEnergyUpdate_Availability power() const;
+  void set_power(::NSPanelEnergyUpdate_Availability value);
+
+  private:
+  ::NSPanelEnergyUpdate_Availability _internal_power() const;
+  void _internal_set_power(::NSPanelEnergyUpdate_Availability value);
+
+  public:
+  // int32 power_watts = 2;
+  void clear_power_watts() ;
+  ::int32_t power_watts() const;
+  void set_power_watts(::int32_t value);
+
+  private:
+  ::int32_t _internal_power_watts() const;
+  void _internal_set_power_watts(::int32_t value);
+
+  public:
+  // double cost_per_day = 4;
+  void clear_cost_per_day() ;
+  double cost_per_day() const;
+  void set_cost_per_day(double value);
+
+  private:
+  double _internal_cost_per_day() const;
+  void _internal_set_cost_per_day(double value);
+
+  public:
+  // .NSPanelEnergyUpdate.Availability cost = 3;
+  void clear_cost() ;
+  ::NSPanelEnergyUpdate_Availability cost() const;
+  void set_cost(::NSPanelEnergyUpdate_Availability value);
+
+  private:
+  ::NSPanelEnergyUpdate_Availability _internal_cost() const;
+  void _internal_set_cost(::NSPanelEnergyUpdate_Availability value);
+
+  public:
+  // .NSPanelEnergyUpdate.Availability lights = 7;
+  void clear_lights() ;
+  ::NSPanelEnergyUpdate_Availability lights() const;
+  void set_lights(::NSPanelEnergyUpdate_Availability value);
+
+  private:
+  ::NSPanelEnergyUpdate_Availability _internal_lights() const;
+  void _internal_set_lights(::NSPanelEnergyUpdate_Availability value);
+
+  public:
+  // int32 lights_on = 8;
+  void clear_lights_on() ;
+  ::int32_t lights_on() const;
+  void set_lights_on(::int32_t value);
+
+  private:
+  ::int32_t _internal_lights_on() const;
+  void _internal_set_lights_on(::int32_t value);
+
+  public:
+  // bool lights_alert = 9;
+  void clear_lights_alert() ;
+  bool lights_alert() const;
+  void set_lights_alert(bool value);
+
+  private:
+  bool _internal_lights_alert() const;
+  void _internal_set_lights_alert(bool value);
+
+  public:
+  // int64 generated_at = 10;
+  void clear_generated_at() ;
+  ::int64_t generated_at() const;
+  void set_generated_at(::int64_t value);
+
+  private:
+  ::int64_t _internal_generated_at() const;
+  void _internal_set_generated_at(::int64_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:NSPanelEnergyUpdate)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      4, 10, 0,
+      59, 2>
+      _table_;
+
+  static constexpr const void* _raw_default_instance_ =
+      &_NSPanelEnergyUpdate_default_instance_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const NSPanelEnergyUpdate& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr currency_;
+    ::google::protobuf::internal::ArenaStringPtr currency_symbol_;
+    int power_;
+    ::int32_t power_watts_;
+    double cost_per_day_;
+    int cost_;
+    int lights_;
+    ::int32_t lights_on_;
+    bool lights_alert_;
+    ::int64_t generated_at_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -5951,7 +6300,7 @@ class NSPanelMQTTManagerCommand final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelMQTTManagerCommand*>(
         &_NSPanelMQTTManagerCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 24;
+  static constexpr int kIndexInFileMessages = 25;
   friend void swap(NSPanelMQTTManagerCommand& a, NSPanelMQTTManagerCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand* other) {
     if (other == this) return;
@@ -6561,6 +6910,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
   using NSPanelScreensaverCardType = NSPanelConfig_NSPanelScreensaverCardType;
   static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_UNSPECIFIED = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_UNSPECIFIED;
   static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_CALENDAR = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR;
+  static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_ENERGY = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_ENERGY;
   static inline bool NSPanelScreensaverCardType_IsValid(int value) {
     return NSPanelConfig_NSPanelScreensaverCardType_IsValid(value);
   }
@@ -11470,6 +11820,286 @@ inline void NSPanelCalendarUpdate::_internal_set_generated_at(::int64_t value) {
 
 // -------------------------------------------------------------------
 
+// NSPanelEnergyUpdate
+
+// .NSPanelEnergyUpdate.Availability power = 1;
+inline void NSPanelEnergyUpdate::clear_power() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.power_ = 0;
+}
+inline ::NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::power() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.power)
+  return _internal_power();
+}
+inline void NSPanelEnergyUpdate::set_power(::NSPanelEnergyUpdate_Availability value) {
+  _internal_set_power(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.power)
+}
+inline ::NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::_internal_power() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::NSPanelEnergyUpdate_Availability>(_impl_.power_);
+}
+inline void NSPanelEnergyUpdate::_internal_set_power(::NSPanelEnergyUpdate_Availability value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.power_ = value;
+}
+
+// int32 power_watts = 2;
+inline void NSPanelEnergyUpdate::clear_power_watts() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.power_watts_ = 0;
+}
+inline ::int32_t NSPanelEnergyUpdate::power_watts() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.power_watts)
+  return _internal_power_watts();
+}
+inline void NSPanelEnergyUpdate::set_power_watts(::int32_t value) {
+  _internal_set_power_watts(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.power_watts)
+}
+inline ::int32_t NSPanelEnergyUpdate::_internal_power_watts() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.power_watts_;
+}
+inline void NSPanelEnergyUpdate::_internal_set_power_watts(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.power_watts_ = value;
+}
+
+// .NSPanelEnergyUpdate.Availability cost = 3;
+inline void NSPanelEnergyUpdate::clear_cost() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cost_ = 0;
+}
+inline ::NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::cost() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.cost)
+  return _internal_cost();
+}
+inline void NSPanelEnergyUpdate::set_cost(::NSPanelEnergyUpdate_Availability value) {
+  _internal_set_cost(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.cost)
+}
+inline ::NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::_internal_cost() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::NSPanelEnergyUpdate_Availability>(_impl_.cost_);
+}
+inline void NSPanelEnergyUpdate::_internal_set_cost(::NSPanelEnergyUpdate_Availability value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cost_ = value;
+}
+
+// double cost_per_day = 4;
+inline void NSPanelEnergyUpdate::clear_cost_per_day() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cost_per_day_ = 0;
+}
+inline double NSPanelEnergyUpdate::cost_per_day() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.cost_per_day)
+  return _internal_cost_per_day();
+}
+inline void NSPanelEnergyUpdate::set_cost_per_day(double value) {
+  _internal_set_cost_per_day(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.cost_per_day)
+}
+inline double NSPanelEnergyUpdate::_internal_cost_per_day() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.cost_per_day_;
+}
+inline void NSPanelEnergyUpdate::_internal_set_cost_per_day(double value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.cost_per_day_ = value;
+}
+
+// string currency = 5;
+inline void NSPanelEnergyUpdate::clear_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_.ClearToEmpty();
+}
+inline const std::string& NSPanelEnergyUpdate::currency() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.currency)
+  return _internal_currency();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelEnergyUpdate::set_currency(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.currency)
+}
+inline std::string* NSPanelEnergyUpdate::mutable_currency() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_currency();
+  // @@protoc_insertion_point(field_mutable:NSPanelEnergyUpdate.currency)
+  return _s;
+}
+inline const std::string& NSPanelEnergyUpdate::_internal_currency() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.currency_.Get();
+}
+inline void NSPanelEnergyUpdate::_internal_set_currency(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_.Set(value, GetArena());
+}
+inline std::string* NSPanelEnergyUpdate::_internal_mutable_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.currency_.Mutable( GetArena());
+}
+inline std::string* NSPanelEnergyUpdate::release_currency() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelEnergyUpdate.currency)
+  return _impl_.currency_.Release();
+}
+inline void NSPanelEnergyUpdate::set_allocated_currency(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.currency_.IsDefault()) {
+          _impl_.currency_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelEnergyUpdate.currency)
+}
+
+// string currency_symbol = 6;
+inline void NSPanelEnergyUpdate::clear_currency_symbol() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_symbol_.ClearToEmpty();
+}
+inline const std::string& NSPanelEnergyUpdate::currency_symbol() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.currency_symbol)
+  return _internal_currency_symbol();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelEnergyUpdate::set_currency_symbol(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_symbol_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.currency_symbol)
+}
+inline std::string* NSPanelEnergyUpdate::mutable_currency_symbol() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_currency_symbol();
+  // @@protoc_insertion_point(field_mutable:NSPanelEnergyUpdate.currency_symbol)
+  return _s;
+}
+inline const std::string& NSPanelEnergyUpdate::_internal_currency_symbol() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.currency_symbol_.Get();
+}
+inline void NSPanelEnergyUpdate::_internal_set_currency_symbol(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_symbol_.Set(value, GetArena());
+}
+inline std::string* NSPanelEnergyUpdate::_internal_mutable_currency_symbol() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.currency_symbol_.Mutable( GetArena());
+}
+inline std::string* NSPanelEnergyUpdate::release_currency_symbol() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelEnergyUpdate.currency_symbol)
+  return _impl_.currency_symbol_.Release();
+}
+inline void NSPanelEnergyUpdate::set_allocated_currency_symbol(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.currency_symbol_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.currency_symbol_.IsDefault()) {
+          _impl_.currency_symbol_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelEnergyUpdate.currency_symbol)
+}
+
+// .NSPanelEnergyUpdate.Availability lights = 7;
+inline void NSPanelEnergyUpdate::clear_lights() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lights_ = 0;
+}
+inline ::NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::lights() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.lights)
+  return _internal_lights();
+}
+inline void NSPanelEnergyUpdate::set_lights(::NSPanelEnergyUpdate_Availability value) {
+  _internal_set_lights(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.lights)
+}
+inline ::NSPanelEnergyUpdate_Availability NSPanelEnergyUpdate::_internal_lights() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::NSPanelEnergyUpdate_Availability>(_impl_.lights_);
+}
+inline void NSPanelEnergyUpdate::_internal_set_lights(::NSPanelEnergyUpdate_Availability value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lights_ = value;
+}
+
+// int32 lights_on = 8;
+inline void NSPanelEnergyUpdate::clear_lights_on() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lights_on_ = 0;
+}
+inline ::int32_t NSPanelEnergyUpdate::lights_on() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.lights_on)
+  return _internal_lights_on();
+}
+inline void NSPanelEnergyUpdate::set_lights_on(::int32_t value) {
+  _internal_set_lights_on(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.lights_on)
+}
+inline ::int32_t NSPanelEnergyUpdate::_internal_lights_on() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lights_on_;
+}
+inline void NSPanelEnergyUpdate::_internal_set_lights_on(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lights_on_ = value;
+}
+
+// bool lights_alert = 9;
+inline void NSPanelEnergyUpdate::clear_lights_alert() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lights_alert_ = false;
+}
+inline bool NSPanelEnergyUpdate::lights_alert() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.lights_alert)
+  return _internal_lights_alert();
+}
+inline void NSPanelEnergyUpdate::set_lights_alert(bool value) {
+  _internal_set_lights_alert(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.lights_alert)
+}
+inline bool NSPanelEnergyUpdate::_internal_lights_alert() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lights_alert_;
+}
+inline void NSPanelEnergyUpdate::_internal_set_lights_alert(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lights_alert_ = value;
+}
+
+// int64 generated_at = 10;
+inline void NSPanelEnergyUpdate::clear_generated_at() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generated_at_ = ::int64_t{0};
+}
+inline ::int64_t NSPanelEnergyUpdate::generated_at() const {
+  // @@protoc_insertion_point(field_get:NSPanelEnergyUpdate.generated_at)
+  return _internal_generated_at();
+}
+inline void NSPanelEnergyUpdate::set_generated_at(::int64_t value) {
+  _internal_set_generated_at(value);
+  // @@protoc_insertion_point(field_set:NSPanelEnergyUpdate.generated_at)
+}
+inline ::int64_t NSPanelEnergyUpdate::_internal_generated_at() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.generated_at_;
+}
+inline void NSPanelEnergyUpdate::_internal_set_generated_at(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generated_at_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // NSPanelMQTTManagerCommand_FirstPageTurnLightOn
 
 // .NSPanelMQTTManagerCommand.AffectLightsOptions affect_lights = 1;
@@ -13676,6 +14306,12 @@ struct is_proto_enum<::NSPanelRoomEntitiesPage_EntitySlot_EntityType> : std::tru
 template <>
 inline const EnumDescriptor* GetEnumDescriptor<::NSPanelRoomEntitiesPage_EntitySlot_EntityType>() {
   return ::NSPanelRoomEntitiesPage_EntitySlot_EntityType_descriptor();
+}
+template <>
+struct is_proto_enum<::NSPanelEnergyUpdate_Availability> : std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor<::NSPanelEnergyUpdate_Availability>() {
+  return ::NSPanelEnergyUpdate_Availability_descriptor();
 }
 template <>
 struct is_proto_enum<::NSPanelMQTTManagerCommand_MediaPlayerCommand_PlaybackAction> : std::true_type {};
