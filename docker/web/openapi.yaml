@@ -361,6 +361,38 @@ components:
       description: |-
         * `nextion` - nextion
         * `lvgl` - lvgl
+    EnergyPowerSourceEnum:
+      enum:
+      - home_assistant_energy
+      - entities
+      - 'off'
+      type: string
+      description: |-
+        * `home_assistant_energy` - home_assistant_energy
+        * `entities` - entities
+        * `off` - off
+    EnergyPriceSourceEnum:
+      enum:
+      - home_assistant_energy
+      - entity
+      - fixed
+      - 'off'
+      type: string
+      description: |-
+        * `home_assistant_energy` - home_assistant_energy
+        * `entity` - entity
+        * `fixed` - fixed
+        * `off` - off
+    LightsOnSourceEnum:
+      enum:
+      - home_assistant
+      - nspanelmanager
+      - 'off'
+      type: string
+      description: |-
+        * `home_assistant` - home_assistant
+        * `nspanelmanager` - nspanelmanager
+        * `off` - off
     LvglBackgroundEnum:
       enum:
       - none
@@ -690,6 +722,61 @@ components:
           maximum: 2147483647
           minimum: 1
           description: Minutes between calendar updates.
+        energy_power_source:
+          allOf:
+          - $ref: '#/components/schemas/EnergyPowerSourceEnum'
+          description: |-
+            Where the house's power draw comes from: the power sensors in Home Assistant's Energy settings, the sensors in energy_power_entity_ids, or nowhere.
+
+            * `home_assistant_energy` - home_assistant_energy
+            * `entities` - entities
+            * `off` - off
+        energy_power_entity_ids:
+          type: string
+          description: Leading and trailing whitespace is removed. Comma-separated
+            Home Assistant power sensors, added together, for energy_power_source
+            entities.
+          maxLength: 255
+        energy_price_source:
+          allOf:
+          - $ref: '#/components/schemas/EnergyPriceSourceEnum'
+          description: |-
+            Where the price per kWh comes from: Home Assistant's Energy settings, energy_price_entity_id, energy_price_per_kwh, or nowhere.
+
+            * `home_assistant_energy` - home_assistant_energy
+            * `entity` - entity
+            * `fixed` - fixed
+            * `off` - off
+        energy_price_entity_id:
+          type: string
+          description: Leading and trailing whitespace is removed. Home Assistant
+            entity holding the price per kWh, for energy_price_source entity.
+          maxLength: 255
+        energy_price_per_kwh:
+          type: string
+          description: Leading and trailing whitespace is removed. Price per kWh,
+            for energy_price_source fixed.
+          maxLength: 255
+        lights_on_source:
+          allOf:
+          - $ref: '#/components/schemas/LightsOnSourceEnum'
+          description: |-
+            What the lights on count counts: Home Assistant's lights, NSPanel Manager's lights, or nothing.
+
+            * `home_assistant` - home_assistant
+            * `nspanelmanager` - nspanelmanager
+            * `off` - off
+        lights_on_exclude_labels:
+          type: string
+          description: Leading and trailing whitespace is removed. Comma-separated
+            Home Assistant label ids. Lights with any of them are not counted.
+          maxLength: 255
+        lights_on_alert_threshold:
+          type: integer
+          maximum: 1000
+          minimum: 0
+          description: Lights on at which the count turns to the alert colour. 0 never
+            does.
         location_latitude:
           type: string
           description: Leading and trailing whitespace is removed.
@@ -1009,6 +1096,36 @@ components:
         calendar_update_interval:
           type: integer
           nullable: true
+        energy_power_source:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/EnergyPowerSourceEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        energy_power_entity_ids:
+          type: string
+          nullable: true
+        energy_price_source:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/EnergyPriceSourceEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        energy_price_entity_id:
+          type: string
+          nullable: true
+        energy_price_per_kwh:
+          type: string
+          nullable: true
+        lights_on_source:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/LightsOnSourceEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        lights_on_exclude_labels:
+          type: string
+          nullable: true
+        lights_on_alert_threshold:
+          type: integer
+          nullable: true
         location_latitude:
           type: string
           nullable: true
@@ -1101,10 +1218,18 @@ components:
       - color_temp_min
       - date_format
       - default_nspanel_type
+      - energy_power_entity_ids
+      - energy_power_source
+      - energy_price_entity_id
+      - energy_price_per_kwh
+      - energy_price_source
       - home_assistant_address
       - home_assistant_token_set
       - is_home_assistant_addon
       - light_turn_on_brightness
+      - lights_on_alert_threshold
+      - lights_on_exclude_labels
+      - lights_on_source
       - location_latitude
       - location_longitude
       - manager_address
@@ -1288,6 +1413,38 @@ components:
           items:
             type: string
         calendar_update_interval:
+          type: array
+          items:
+            type: string
+        energy_power_source:
+          type: array
+          items:
+            type: string
+        energy_power_entity_ids:
+          type: array
+          items:
+            type: string
+        energy_price_source:
+          type: array
+          items:
+            type: string
+        energy_price_entity_id:
+          type: array
+          items:
+            type: string
+        energy_price_per_kwh:
+          type: array
+          items:
+            type: string
+        lights_on_source:
+          type: array
+          items:
+            type: string
+        lights_on_exclude_labels:
+          type: array
+          items:
+            type: string
+        lights_on_alert_threshold:
           type: array
           items:
             type: string

@@ -5,6 +5,7 @@
 #include "cover/cover.hpp"
 #include "cover/home_assistant_cover.hpp"
 #include "cover/openhab_cover.hpp"
+#include "energy/energy.hpp"
 #include "entity/entity.hpp"
 #include "light/home_assistant_light.hpp"
 #include "light/light.hpp"
@@ -87,6 +88,7 @@ void EntityManager::load_entities() {
   SPDLOG_INFO("Loading config...");
   EntityManager::_weather_manager.reload_config();
   MQTTManagerCalendar::reload_config();
+  MQTTManagerEnergy::reload_config();
 
   EntityManager::load_lights();
   EntityManager::load_buttons();

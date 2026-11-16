@@ -82,6 +82,14 @@ LEGACY_ROWS = {
     "calendar_max_events": "5",
     "calendar_lookahead_hours": "48",
     "calendar_update_interval": "5",
+    "energy_power_source": "home_assistant_energy",
+    "energy_power_entity_ids": "sensor.panel_1_power,sensor.panel_2_power",
+    "energy_price_source": "fixed",
+    "energy_price_entity_id": "",
+    "energy_price_per_kwh": "0.1092",
+    "lights_on_source": "home_assistant",
+    "lights_on_exclude_labels": "exclude_from_whats_on",
+    "lights_on_alert_threshold": "15",
     "location_latitude": "-33.8688",
     "location_longitude": "151.2093",
     "weather_update_interval": "10",
@@ -131,6 +139,7 @@ INTEGER_RANGES = {
     "calendar_max_events": (1, 10),
     "calendar_lookahead_hours": (1, 336),
     "calendar_update_interval": (1, 2**31 - 1),
+    "lights_on_alert_threshold": (0, 1000),
 }
 
 CHOICES = {
@@ -141,6 +150,9 @@ CHOICES = {
     "weather_wind_speed_format": ["kmh", "ms", "mph", "knots"],
     "weather_precipitation_format": ["mm", "inch"],
     "outside_temp_sensor_provider": ["", "home_assistant", "openhab"],
+    "energy_power_source": ["home_assistant_energy", "entities", "off"],
+    "energy_price_source": ["home_assistant_energy", "entity", "fixed", "off"],
+    "lights_on_source": ["home_assistant", "nspanelmanager", "off"],
 }
 
 BOOLEANS = ["reverse_color_temp", "optimistic_mode", "show_screensaver_inside_temperature", "show_screensaver_outside_temperature", "clock_us_style", "use_fahrenheit"]
@@ -587,6 +599,14 @@ class ValidationTests(RestV2TestCase):
             for value in ("abc", f"{limit}.1", f"-{limit}.0001", "nan", "inf", "1e3", "12,5"):
                 with self.subTest(name=name, value=value):
                     self.assertPatchRejected({name: value}, name)
+
+    def test_energy_price(self):
+        for value in ("0", "0.1092", "12", "999999.999999", ""):  # Blank: no price, as 0
+            with self.subTest(value=value):
+                self.assertPatchOk({"energy_price_per_kwh": value})
+        for value in ("abc", "-0.1", "1e3", "nan", "inf", "12,5", ".5", "0.1234567"):
+            with self.subTest(value=value):
+                self.assertPatchRejected({"energy_price_per_kwh": value}, "energy_price_per_kwh")
 
     def test_string_length(self):
         self.assertPatchOk({"mqtt_server": "a" * 255})

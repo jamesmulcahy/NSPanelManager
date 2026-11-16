@@ -621,3 +621,73 @@ describe("calendar section", () => {
     expect(screen.queryByLabelText("Calendars")).not.toBeInTheDocument();
   });
 });
+
+describe("energy section", () => {
+  it("reads the power and price from Home Assistant's Energy settings by default", async () => {
+    await renderPage();
+
+    expect(screen.getByLabelText("Power from")).toHaveValue("home_assistant_energy");
+    expect(screen.getByLabelText("Price from")).toHaveValue("home_assistant_energy");
+    expect(screen.queryByLabelText("Power sensors")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Price per kWh")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Lights on counts")).toHaveValue("home_assistant");
+    expect(screen.getByLabelText("Alert at (lights on)")).toHaveValue(15);
+  });
+
+  it("edits picked power sensors and a fixed price", async () => {
+    const user = await renderPage();
+
+    await user.selectOptions(screen.getByLabelText("Power from"), "entities");
+    await user.type(screen.getByLabelText("Power sensors"), "sensor.a,sensor.b");
+    await user.selectOptions(screen.getByLabelText("Price from"), "fixed");
+    await user.clear(screen.getByLabelText("Price per kWh"));
+    await user.type(screen.getByLabelText("Price per kWh"), "0.1092");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({
+      energy_power_source: "entities",
+      energy_power_entity_ids: "sensor.a,sensor.b",
+      energy_price_source: "fixed",
+      energy_price_per_kwh: "0.1092",
+    });
+  });
+
+  it("hides the price when the power is off", async () => {
+    const user = await renderPage();
+
+    await user.selectOptions(screen.getByLabelText("Power from"), "off");
+
+    expect(screen.queryByLabelText("Price from")).not.toBeInTheDocument();
+  });
+
+  it("edits the labels left out of the lights count and the alert threshold", async () => {
+    const user = await renderPage();
+
+    await user.type(screen.getByLabelText("Leave out lights labelled"), "exclude_from_whats_on");
+    await user.clear(screen.getByLabelText("Alert at (lights on)"));
+    await user.type(screen.getByLabelText("Alert at (lights on)"), "20");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ lights_on_exclude_labels: "exclude_from_whats_on", lights_on_alert_threshold: 20 });
+  });
+
+  it("counts only NSPanel Manager's lights without Home Assistant", async () => {
+    await renderPage({ home_assistant_address: "", home_assistant_token_set: false, lights_on_source: "nspanelmanager" });
+
+    expect(screen.queryByLabelText("Power from")).not.toBeInTheDocument();
+    expect(screen.getByText(/The power and its cost come from Home Assistant/)).toBeInTheDocument();
+    const lights = screen.getByLabelText("Lights on counts");
+    expect(lights).toHaveValue("nspanelmanager");
+    expect([...lights.querySelectorAll("option")].map((option) => option.getAttribute("value")).filter(Boolean)).toEqual(["nspanelmanager", "off"]);
+    expect(screen.queryByLabelText("Leave out lights labelled")).not.toBeInTheDocument();
+  });
+
+  it("adds the energy card to the screensaver", async () => {
+    const user = await renderPage({ screensaver_cards: "calendar:15" });
+
+    await user.click(screen.getByRole("checkbox", { name: "Show energy card" }));
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ screensaver_cards: "calendar:15,energy:10" });
+  });
+});

@@ -1,8 +1,8 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-odd6o1_K.js";
-import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm } from "./index.esm-B18mY3iZ.js";
-import { n as Notify } from "./NSPanelToastContainer-B3O_RKU1.js";
-import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-CU_luxze.js";
-import { a as TextInput$1, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-DMiG7CRs.js";
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-CxSwuLl2.js";
+import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm } from "./index.esm-AKyCAyDZ.js";
+import { n as Notify } from "./NSPanelToastContainer-BkRzSHMA.js";
+import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-CkRoEtYi.js";
+import { a as TextInput$1, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-DXZNryqA.js";
 //#region src/api/connectionTests.ts
 var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
 async function errorMessage(response) {
@@ -618,6 +618,22 @@ var SCREENSAVER_MODES = {
 	datetime_without_background: "Show without background (no weather)",
 	no_screensaver: "No screensaver (turn off screen)"
 };
+var ENERGY_POWER_SOURCES = {
+	home_assistant_energy: "Home Assistant's Energy settings",
+	entities: "These power sensors",
+	off: "Off"
+};
+var ENERGY_PRICE_SOURCES = {
+	home_assistant_energy: "Home Assistant's Energy settings",
+	entity: "An entity",
+	fixed: "A fixed price",
+	off: "Off"
+};
+var LIGHTS_ON_SOURCES = {
+	home_assistant: "Home Assistant's lights",
+	nspanelmanager: "NSPanel Manager's lights",
+	off: "Off"
+};
 var options = (choices) => Object.entries(choices);
 //#endregion
 //#region src/components/common/buttons.tsx
@@ -674,7 +690,10 @@ function typedFields() {
 		SecretInput: SecretInput$1
 	};
 }
-var CARD_TYPES = { calendar: "Calendar" };
+var CARD_TYPES = {
+	calendar: "Calendar",
+	energy: "Energy"
+};
 /** Entries with a missing or unreadable time get the default; blank entries are dropped. */
 function parseCards(value) {
 	const cards = [];
@@ -815,6 +834,14 @@ var PAGE_FIELDS = [
 	"calendar_max_events",
 	"calendar_lookahead_hours",
 	"calendar_update_interval",
+	"energy_power_source",
+	"energy_power_entity_ids",
+	"energy_price_source",
+	"energy_price_entity_id",
+	"energy_price_per_kwh",
+	"lights_on_source",
+	"lights_on_exclude_labels",
+	"lights_on_alert_threshold",
 	"optimistic_mode",
 	"room_status_backoff_time",
 	"all_rooms_status_backoff_time",
@@ -1161,6 +1188,7 @@ function SettingsForm({ settings: loaded, logDownloadUrl }) {
 						children: "Calendars come from Home Assistant. Set the Home Assistant address and token below to use them."
 					})
 				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(EnergyCard, { homeAssistantConfigured }),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
 					title: "MQTT",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Row, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
@@ -1257,6 +1285,73 @@ function applyFieldErrors(errors, values, setError) {
 		else unplaced.push(name === "non_field_errors" ? message : `${name}: ${message}`);
 	}
 	return unplaced;
+}
+/** The screensaver's energy card: where the power, the price and the lights on count come from. */
+function EnergyCard({ homeAssistantConfigured }) {
+	const { control } = useFormContext();
+	const [powerSource, priceSource, lightsSource] = useWatch({
+		control,
+		name: [
+			"energy_power_source",
+			"energy_price_source",
+			"lights_on_source"
+		]
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Card, {
+		title: "Energy",
+		children: [
+			homeAssistantConfigured ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Select, {
+					name: "energy_power_source",
+					label: "Power from",
+					options: options(ENERGY_POWER_SOURCES)
+				}),
+				powerSource === "entities" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
+					name: "energy_power_entity_ids",
+					label: "Power sensors",
+					hint: "Home Assistant power sensors, comma-separated. They are added together, so pick the mains, not the circuits under them.",
+					placeholder: "sensor.panel_1_power, sensor.panel_2_power"
+				}),
+				powerSource !== "off" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Select, {
+						name: "energy_price_source",
+						label: "Price from",
+						options: options(ENERGY_PRICE_SOURCES)
+					}),
+					priceSource === "entity" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
+						name: "energy_price_entity_id",
+						label: "Price entity",
+						hint: "A Home Assistant entity holding the price per kWh.",
+						placeholder: "sensor.electricity_price"
+					}),
+					priceSource === "fixed" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
+						name: "energy_price_per_kwh",
+						label: "Price per kWh",
+						hint: "In Home Assistant's currency, for example 0.1092."
+					})
+				] })
+			] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Alert, {
+				level: "info",
+				children: "The power and its cost come from Home Assistant. Set the Home Assistant address and token below to use them."
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Select, {
+				name: "lights_on_source",
+				label: "Lights on counts",
+				options: options(LIGHTS_ON_SOURCES).filter(([value]) => homeAssistantConfigured || value !== "home_assistant")
+			}),
+			lightsSource === "home_assistant" && homeAssistantConfigured && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
+				name: "lights_on_exclude_labels",
+				label: "Leave out lights labelled",
+				hint: "Home Assistant label ids, comma-separated. Light groups and hidden lights are always left out.",
+				placeholder: "exclude_from_whats_on, seasonal_lights"
+			}),
+			lightsSource !== "off" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberInput, {
+				name: "lights_on_alert_threshold",
+				label: "Alert at (lights on)",
+				hint: "The count turns red at this many lights. 0 never does."
+			})
+		]
+	});
 }
 //#endregion
 export { SettingsPage as default };

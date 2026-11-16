@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { FormProvider, useForm, useFormContext, useWatch } from "react-hook-form";
 import { api, type Settings, type SettingsErrors } from "../../api/client";
 import { getIpByHostname, testHomeAssistant, testManager, testOpenhab } from "../../api/connectionTests";
 import { Notify } from "../NSPanelToastContainer";
 import { BuzzerCard } from "./BuzzerCard";
-import { LOG_LEVELS, NSPANEL_TYPES, options, SCREENSAVER_MODES, TURN_ON_BEHAVIORS } from "./choices";
+import { ENERGY_POWER_SOURCES, ENERGY_PRICE_SOURCES, LIGHTS_ON_SOURCES, LOG_LEVELS, NSPANEL_TYPES, options, SCREENSAVER_MODES, TURN_ON_BEHAVIORS } from "./choices";
 import { JoinButton, TestButton } from "../common/buttons";
 import { Alert, Card, Row } from "../common/layout";
 import { typedFields } from "../common/typedFields";
@@ -239,6 +239,8 @@ function SettingsForm({ settings: loaded, logDownloadUrl }: { settings: Settings
           )}
         </Card>
 
+        <EnergyCard homeAssistantConfigured={homeAssistantConfigured} />
+
         <Card title="MQTT">
           <Row>
             <TextInput name="mqtt_server" label="MQTT server" />
@@ -299,4 +301,36 @@ function applyFieldErrors(errors: SettingsErrors, values: SettingsFormValues, se
     }
   }
   return unplaced;
+}
+
+/** The screensaver's energy card: where the power, the price and the lights on count come from. */
+function EnergyCard({ homeAssistantConfigured }: { homeAssistantConfigured: boolean }) {
+  const { control } = useFormContext<SettingsFormValues>();
+  const [powerSource, priceSource, lightsSource] = useWatch({ control, name: ["energy_power_source", "energy_price_source", "lights_on_source"] });
+  return (
+    <Card title="Energy">
+      {homeAssistantConfigured ? (
+        <>
+          <Select name="energy_power_source" label="Power from" options={options(ENERGY_POWER_SOURCES)} />
+          {powerSource === "entities" && (
+            <TextInput name="energy_power_entity_ids" label="Power sensors" hint="Home Assistant power sensors, comma-separated. They are added together, so pick the mains, not the circuits under them." placeholder="sensor.panel_1_power, sensor.panel_2_power" />
+          )}
+          {powerSource !== "off" && (
+            <>
+              <Select name="energy_price_source" label="Price from" options={options(ENERGY_PRICE_SOURCES)} />
+              {priceSource === "entity" && <TextInput name="energy_price_entity_id" label="Price entity" hint="A Home Assistant entity holding the price per kWh." placeholder="sensor.electricity_price" />}
+              {priceSource === "fixed" && <TextInput name="energy_price_per_kwh" label="Price per kWh" hint="In Home Assistant's currency, for example 0.1092." />}
+            </>
+          )}
+        </>
+      ) : (
+        <Alert level="info">The power and its cost come from Home Assistant. Set the Home Assistant address and token below to use them.</Alert>
+      )}
+      <Select name="lights_on_source" label="Lights on counts" options={options(LIGHTS_ON_SOURCES).filter(([value]) => homeAssistantConfigured || value !== "home_assistant")} />
+      {lightsSource === "home_assistant" && homeAssistantConfigured && (
+        <TextInput name="lights_on_exclude_labels" label="Leave out lights labelled" hint="Home Assistant label ids, comma-separated. Light groups and hidden lights are always left out." placeholder="exclude_from_whats_on, seasonal_lights" />
+      )}
+      {lightsSource !== "off" && <NumberInput name="lights_on_alert_threshold" label="Alert at (lights on)" hint="The count turns red at this many lights. 0 never does." />}
+    </Card>
+  );
 }

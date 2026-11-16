@@ -34,6 +34,14 @@ enum MQTT_MANAGER_SETTING {
   COLOR_TEMP_MIN,
   THEME,
   DATE_FORMAT,
+  ENERGY_POWER_ENTITY_IDS,
+  ENERGY_POWER_SOURCE,
+  ENERGY_PRICE_ENTITY_ID,
+  ENERGY_PRICE_PER_KWH,
+  ENERGY_PRICE_SOURCE,
+  LIGHTS_ON_ALERT_THRESHOLD,
+  LIGHTS_ON_EXCLUDE_LABELS,
+  LIGHTS_ON_SOURCE,
   IS_HOME_ASSISTANT_ADDON,
   HOME_ASSISTANT_ADDRESS,
   HOME_ASSISTANT_TOKEN,
@@ -214,6 +222,14 @@ private:
       {MQTT_MANAGER_SETTING::CALENDAR_MAX_EVENTS, {"calendar_max_events", "5"}},
       {MQTT_MANAGER_SETTING::CALENDAR_UPDATE_INTERVAL, {"calendar_update_interval", "5"}}, // Minutes
       {MQTT_MANAGER_SETTING::CLOCK_US_STYLE, {"clock_us_style", "False"}},
+      {MQTT_MANAGER_SETTING::ENERGY_POWER_ENTITY_IDS, {"energy_power_entity_ids", ""}},                // Comma-separated power sensors, summed, for energy_power_source "entities"
+      {MQTT_MANAGER_SETTING::ENERGY_POWER_SOURCE, {"energy_power_source", "home_assistant_energy"}},   // home_assistant_energy, entities or off
+      {MQTT_MANAGER_SETTING::ENERGY_PRICE_ENTITY_ID, {"energy_price_entity_id", ""}},                  // For energy_price_source "entity"
+      {MQTT_MANAGER_SETTING::ENERGY_PRICE_PER_KWH, {"energy_price_per_kwh", "0"}},                     // For energy_price_source "fixed"
+      {MQTT_MANAGER_SETTING::ENERGY_PRICE_SOURCE, {"energy_price_source", "home_assistant_energy"}},   // home_assistant_energy, entity, fixed or off
+      {MQTT_MANAGER_SETTING::LIGHTS_ON_ALERT_THRESHOLD, {"lights_on_alert_threshold", "15"}},          // 0: never alert
+      {MQTT_MANAGER_SETTING::LIGHTS_ON_EXCLUDE_LABELS, {"lights_on_exclude_labels", ""}},              // Comma-separated Home Assistant label ids
+      {MQTT_MANAGER_SETTING::LIGHTS_ON_SOURCE, {"lights_on_source", "home_assistant"}},                // home_assistant, nspanelmanager or off
       {MQTT_MANAGER_SETTING::COLOR_TEMP_MAX, {"color_temp_max", "6000"}},
       {MQTT_MANAGER_SETTING::COLOR_TEMP_MIN, {"color_temp_min", "2000"}},
       {MQTT_MANAGER_SETTING::THEME, {"theme", "default"}},

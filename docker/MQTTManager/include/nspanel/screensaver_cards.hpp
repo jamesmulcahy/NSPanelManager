@@ -37,7 +37,7 @@ inline int parse_seconds(const std::string &text) {
   return static_cast<int>(std::clamp(value, static_cast<long>(MIN_SECONDS), static_cast<long>(MAX_SECONDS)));
 }
 
-// "calendar:10,calendar:15" -> cards, in order. Unknown card types are logged and skipped.
+// "calendar:10,energy:15" -> cards, in order. Unknown card types are logged and skipped.
 inline std::vector<Card> parse_cards(const std::string &setting) {
   std::vector<Card> cards;
   std::vector<std::string> items;
@@ -59,6 +59,8 @@ inline std::vector<Card> parse_cards(const std::string &setting) {
 
     if (name.compare("calendar") == 0) {
       cards.push_back({NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR, parse_seconds(seconds)});
+    } else if (name.compare("energy") == 0) {
+      cards.push_back({NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_ENERGY, parse_seconds(seconds)});
     } else {
       SPDLOG_WARN("Unknown screensaver card type '{}' in setting '{}'. Will skip it.", name, setting);
     }

@@ -152,6 +152,7 @@ void HomeAssistantManager::_process_websocket_message(const std::string &message
       HomeAssistantManager::send_json(subscribe_command);
 
       HomeAssistantManager::_request_all_states();
+      HomeAssistantManager::_resubscribe_all();
 
       try {
         HomeAssistantManager::_authenticated_observers();
@@ -173,8 +174,11 @@ void HomeAssistantManager::_process_websocket_message(const std::string &message
       }
 
       if (data.contains("id") && data["id"].is_number_integer()) {
-        // Requests made with call_service_with_response(). The ids of all other requests are not in the map.
+        // Requests made with send_command_with_response(). The ids of all other requests are not in the map.
         HomeAssistantManager::_complete_pending_call(data["id"].get<long>(), success, success ? data.value("result", nlohmann::json()) : data.value("error", nlohmann::json()));
+        if (!success) {
+          HomeAssistantManager::_process_subscription_message(data["id"].get<long>(), data);
+        }
       }
 
       if ((long)data["id"] == HomeAssistantManager::_all_statues_request_message_id) {
@@ -190,6 +194,9 @@ void HomeAssistantManager::_process_websocket_message(const std::string &message
         }
       }
     } else if (type.compare("event") == 0) {
+      if (data.contains("id") && data["id"].is_number_integer() && HomeAssistantManager::_process_subscription_message(data["id"].get<long>(), data)) {
+        return;
+      }
       // Counted here, not in _process_home_assistant_event, which also replays the get_states snapshot.
       if (data.contains("event") && data["event"].is_object() && data["event"].value("event_type", "").compare("state_changed") == 0 &&
           data["event"].contains("data") && data["event"]["data"].is_object() && data["event"]["data"].contains("entity_id") && data["event"]["data"]["entity_id"].is_string()) {
@@ -244,13 +251,6 @@ void HomeAssistantManager::_send_json_with_id(nlohmann::json &data, long id) {
 }
 
 long HomeAssistantManager::call_service_with_response(const std::string &domain, const std::string &service, nlohmann::json target, nlohmann::json service_data, ResultCallback callback) {
-  if (!HomeAssistantManager::_authenticated) {
-    // Nothing would ever answer.
-    callback(false, nlohmann::json());
-    return 0;
-  }
-  HomeAssistantManager::_expire_pending_calls();
-
   nlohmann::json message;
   message["type"] = "call_service";
   message["domain"] = domain;
@@ -258,6 +258,16 @@ long HomeAssistantManager::call_service_with_response(const std::string &domain,
   message["target"] = std::move(target);
   message["service_data"] = std::move(service_data);
   message["return_response"] = true;
+  return HomeAssistantManager::send_command_with_response(std::move(message), std::move(callback));
+}
+
+long HomeAssistantManager::send_command_with_response(nlohmann::json message, ResultCallback callback) {
+  if (!HomeAssistantManager::_authenticated) {
+    // Nothing would ever answer.
+    callback(false, nlohmann::json());
+    return 0;
+  }
+  HomeAssistantManager::_expire_pending_calls();
 
   // Registered before sending so that a fast reply cannot arrive first.
   long id = HomeAssistantManager::_next_message_id++;
@@ -313,6 +323,105 @@ void HomeAssistantManager::_handle_connection_lost() {
   HomeAssistantManager::_authenticated = false;
   HomeAssistantManager::_connected = false;
   HomeAssistantManager::_fail_pending_calls(true, std::chrono::steady_clock::now());
+  {
+    // Home Assistant forgets subscriptions with the connection; they are sent again once authenticated.
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_subscriptions_mutex);
+    HomeAssistantManager::_subscription_handles.clear();
+    for (auto &[handle, subscription] : HomeAssistantManager::_subscriptions) {
+      subscription.id = 0;
+    }
+  }
+}
+
+long HomeAssistantManager::subscribe(nlohmann::json command, SubscriptionCallback callback) {
+  long handle = HomeAssistantManager::_next_subscription_handle++;
+  {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_subscriptions_mutex);
+    HomeAssistantManager::_subscriptions[handle] = Subscription{command.dump(), std::move(callback), 0};
+  }
+  if (HomeAssistantManager::_authenticated) {
+    HomeAssistantManager::_send_subscription(handle);
+  }
+  return handle;
+}
+
+void HomeAssistantManager::unsubscribe(long handle) {
+  long id = 0;
+  {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_subscriptions_mutex);
+    auto it = HomeAssistantManager::_subscriptions.find(handle);
+    if (it == HomeAssistantManager::_subscriptions.end()) {
+      return;
+    }
+    id = it->second.id;
+    if (id != 0) {
+      HomeAssistantManager::_subscription_handles.erase(id);
+    }
+    HomeAssistantManager::_subscriptions.erase(it);
+  }
+  if (id != 0 && HomeAssistantManager::_authenticated) {
+    nlohmann::json message = {{"type", "unsubscribe_events"}, {"subscription", id}};
+    HomeAssistantManager::send_json(message);
+  }
+}
+
+void HomeAssistantManager::_send_subscription(long handle) {
+  nlohmann::json message;
+  long id = 0;
+  {
+    // Decided under the lock, so that subscribe() and a reconnect running at the same time send it once.
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_subscriptions_mutex);
+    auto it = HomeAssistantManager::_subscriptions.find(handle);
+    if (it == HomeAssistantManager::_subscriptions.end() || it->second.id != 0) {
+      return;
+    }
+    id = HomeAssistantManager::_next_message_id++;
+    it->second.id = id;
+    HomeAssistantManager::_subscription_handles[id] = handle;
+    message = nlohmann::json::parse(it->second.command);
+  }
+  HomeAssistantManager::_send_json_with_id(message, id);
+}
+
+void HomeAssistantManager::_resubscribe_all() {
+  std::vector<long> handles;
+  {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_subscriptions_mutex);
+    for (const auto &[handle, subscription] : HomeAssistantManager::_subscriptions) {
+      handles.push_back(handle);
+    }
+  }
+  for (long handle : handles) {
+    HomeAssistantManager::_send_subscription(handle);
+  }
+}
+
+bool HomeAssistantManager::_process_subscription_message(long id, const nlohmann::json &data) {
+  SubscriptionCallback callback;
+  bool success = data.value("type", "").compare("event") == 0;
+  {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_subscriptions_mutex);
+    auto handle = HomeAssistantManager::_subscription_handles.find(id);
+    if (handle == HomeAssistantManager::_subscription_handles.end()) {
+      return false;
+    }
+    auto subscription = HomeAssistantManager::_subscriptions.find(handle->second);
+    if (subscription == HomeAssistantManager::_subscriptions.end()) {
+      return false;
+    }
+    callback = subscription->second.callback;
+    if (!success) {
+      // Refused: not active. It is tried again on the next connection.
+      subscription->second.id = 0;
+      HomeAssistantManager::_subscription_handles.erase(handle);
+    }
+  }
+  try {
+    callback(success, success ? data.value("event", nlohmann::json()) : data.value("error", nlohmann::json()));
+  } catch (const std::exception &e) {
+    SPDLOG_ERROR("[HA WS] Caught exception in subscription callback: {}", e.what());
+  }
+  return true;
 }
 
 void HomeAssistantManager::_send_string(std::string &data) {

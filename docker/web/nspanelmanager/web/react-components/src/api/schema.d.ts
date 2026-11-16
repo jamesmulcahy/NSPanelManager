@@ -99,6 +99,28 @@ export interface components {
          */
         DisplayModeEnum: "nextion" | "lvgl";
         /**
+         * @description * `home_assistant_energy` - home_assistant_energy
+         *     * `entities` - entities
+         *     * `off` - off
+         * @enum {string}
+         */
+        EnergyPowerSourceEnum: "home_assistant_energy" | "entities" | "off";
+        /**
+         * @description * `home_assistant_energy` - home_assistant_energy
+         *     * `entity` - entity
+         *     * `fixed` - fixed
+         *     * `off` - off
+         * @enum {string}
+         */
+        EnergyPriceSourceEnum: "home_assistant_energy" | "entity" | "fixed" | "off";
+        /**
+         * @description * `home_assistant` - home_assistant
+         *     * `nspanelmanager` - nspanelmanager
+         *     * `off` - off
+         * @enum {string}
+         */
+        LightsOnSourceEnum: "home_assistant" | "nspanelmanager" | "off";
+        /**
          * @description * `none` - none
          *     * `ocean` - ocean
          *     * `dusk` - dusk
@@ -267,6 +289,41 @@ export interface components {
             calendar_lookahead_hours?: number;
             /** @description Minutes between calendar updates. */
             calendar_update_interval?: number;
+            /**
+             * @description Where the house's power draw comes from: the power sensors in Home Assistant's Energy settings, the sensors in energy_power_entity_ids, or nowhere.
+             *
+             *     * `home_assistant_energy` - home_assistant_energy
+             *     * `entities` - entities
+             *     * `off` - off
+             */
+            energy_power_source?: components["schemas"]["EnergyPowerSourceEnum"];
+            /** @description Leading and trailing whitespace is removed. Comma-separated Home Assistant power sensors, added together, for energy_power_source entities. */
+            energy_power_entity_ids?: string;
+            /**
+             * @description Where the price per kWh comes from: Home Assistant's Energy settings, energy_price_entity_id, energy_price_per_kwh, or nowhere.
+             *
+             *     * `home_assistant_energy` - home_assistant_energy
+             *     * `entity` - entity
+             *     * `fixed` - fixed
+             *     * `off` - off
+             */
+            energy_price_source?: components["schemas"]["EnergyPriceSourceEnum"];
+            /** @description Leading and trailing whitespace is removed. Home Assistant entity holding the price per kWh, for energy_price_source entity. */
+            energy_price_entity_id?: string;
+            /** @description Leading and trailing whitespace is removed. Price per kWh, for energy_price_source fixed. */
+            energy_price_per_kwh?: string;
+            /**
+             * @description What the lights on count counts: Home Assistant's lights, NSPanel Manager's lights, or nothing.
+             *
+             *     * `home_assistant` - home_assistant
+             *     * `nspanelmanager` - nspanelmanager
+             *     * `off` - off
+             */
+            lights_on_source?: components["schemas"]["LightsOnSourceEnum"];
+            /** @description Leading and trailing whitespace is removed. Comma-separated Home Assistant label ids. Lights with any of them are not counted. */
+            lights_on_exclude_labels?: string;
+            /** @description Lights on at which the count turns to the alert colour. 0 never does. */
+            lights_on_alert_threshold?: number;
             /** @description Leading and trailing whitespace is removed. */
             location_latitude?: string;
             /** @description Leading and trailing whitespace is removed. */
@@ -392,6 +449,14 @@ export interface components {
             calendar_max_events: number | null;
             calendar_lookahead_hours: number | null;
             calendar_update_interval: number | null;
+            energy_power_source: (components["schemas"]["EnergyPowerSourceEnum"] | components["schemas"]["NullEnum"]) | null;
+            energy_power_entity_ids: string | null;
+            energy_price_source: (components["schemas"]["EnergyPriceSourceEnum"] | components["schemas"]["NullEnum"]) | null;
+            energy_price_entity_id: string | null;
+            energy_price_per_kwh: string | null;
+            lights_on_source: (components["schemas"]["LightsOnSourceEnum"] | components["schemas"]["NullEnum"]) | null;
+            lights_on_exclude_labels: string | null;
+            lights_on_alert_threshold: number | null;
             location_latitude: string | null;
             location_longitude: string | null;
             weather_update_interval: number | null;
@@ -458,6 +523,14 @@ export interface components {
             calendar_max_events?: string[];
             calendar_lookahead_hours?: string[];
             calendar_update_interval?: string[];
+            energy_power_source?: string[];
+            energy_power_entity_ids?: string[];
+            energy_price_source?: string[];
+            energy_price_entity_id?: string[];
+            energy_price_per_kwh?: string[];
+            lights_on_source?: string[];
+            lights_on_exclude_labels?: string[];
+            lights_on_alert_threshold?: string[];
             location_latitude?: string[];
             location_longitude?: string[];
             weather_update_interval?: string[];
