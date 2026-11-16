@@ -303,6 +303,53 @@ TEST_F(NSPanelTest, panel_settings_are_sent_in_the_config) {
   EXPECT_FALSE(config->show_screensaver_outside_temperature());
 }
 
+// The global screensaver card settings apply to a panel without its own.
+TEST_F(NSPanelTest, screensaver_cards_come_from_the_global_settings) {
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_CARDS, "calendar:12");
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS, "30");
+  OnExit restore{[] {
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_CARDS, "");
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS, "10");
+  }};
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  ASSERT_EQ(config->screensaver_cards_size(), 1);
+  EXPECT_EQ(config->screensaver_cards(0).type(), NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR);
+  EXPECT_EQ(config->screensaver_cards(0).seconds(), 12);
+  EXPECT_EQ(config->screensaver_base_card_seconds(), 30);
+}
+
+TEST_F(NSPanelTest, panel_screensaver_cards_override_the_global_ones) {
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_CARDS, "calendar:12");
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS, "30");
+  OnExit restore{[] {
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_CARDS, "");
+    MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS, "10");
+  }};
+  set_panel_setting("screensaver_cards", "energy:5,calendar:bad");
+  set_panel_setting("screensaver_base_card_seconds", "45");
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  ASSERT_EQ(config->screensaver_cards_size(), 1); // energy is not known and is skipped
+  EXPECT_EQ(config->screensaver_cards(0).seconds(), 10);
+  EXPECT_EQ(config->screensaver_base_card_seconds(), 45);
+}
+
+TEST_F(NSPanelTest, no_screensaver_cards_by_default) {
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->screensaver_cards_size(), 0);
+  EXPECT_EQ(config->screensaver_base_card_seconds(), 10);
+}
+
 TEST_F(NSPanelTest, timezone_rule_is_sent_in_the_config) {
   std::string previous_rule = MqttManagerConfig::timezone_posix_rule;
   OnExit restore_rule{[&] { MqttManagerConfig::timezone_posix_rule = previous_rule; }};
