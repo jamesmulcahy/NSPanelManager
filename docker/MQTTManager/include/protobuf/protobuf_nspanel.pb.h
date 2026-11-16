@@ -50,12 +50,21 @@ struct TableStruct_protobuf_5fnspanel_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_protobuf_5fnspanel_2eproto;
+class NSPanelCalendarUpdate;
+struct NSPanelCalendarUpdateDefaultTypeInternal;
+extern NSPanelCalendarUpdateDefaultTypeInternal _NSPanelCalendarUpdate_default_instance_;
+class NSPanelCalendarUpdate_Event;
+struct NSPanelCalendarUpdate_EventDefaultTypeInternal;
+extern NSPanelCalendarUpdate_EventDefaultTypeInternal _NSPanelCalendarUpdate_Event_default_instance_;
 class NSPanelConfig;
 struct NSPanelConfigDefaultTypeInternal;
 extern NSPanelConfigDefaultTypeInternal _NSPanelConfig_default_instance_;
 class NSPanelConfig_RoomInfo;
 struct NSPanelConfig_RoomInfoDefaultTypeInternal;
 extern NSPanelConfig_RoomInfoDefaultTypeInternal _NSPanelConfig_RoomInfo_default_instance_;
+class NSPanelConfig_ScreensaverCard;
+struct NSPanelConfig_ScreensaverCardDefaultTypeInternal;
+extern NSPanelConfig_ScreensaverCardDefaultTypeInternal _NSPanelConfig_ScreensaverCard_default_instance_;
 class NSPanelConfig_Sound;
 struct NSPanelConfig_SoundDefaultTypeInternal;
 extern NSPanelConfig_SoundDefaultTypeInternal _NSPanelConfig_Sound_default_instance_;
@@ -261,6 +270,39 @@ inline const std::string& NSPanelConfig_NSPanelSoundEvent_Name(NSPanelConfig_NSP
 inline bool NSPanelConfig_NSPanelSoundEvent_Parse(absl::string_view name, NSPanelConfig_NSPanelSoundEvent* value) {
   return ::google::protobuf::internal::ParseNamedEnum<NSPanelConfig_NSPanelSoundEvent>(
       NSPanelConfig_NSPanelSoundEvent_descriptor(), name, value);
+}
+enum NSPanelConfig_NSPanelScreensaverCardType : int {
+  NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_UNSPECIFIED = 0,
+  NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR = 1,
+  NSPanelConfig_NSPanelScreensaverCardType_NSPanelConfig_NSPanelScreensaverCardType_INT_MIN_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::min(),
+  NSPanelConfig_NSPanelScreensaverCardType_NSPanelConfig_NSPanelScreensaverCardType_INT_MAX_SENTINEL_DO_NOT_USE_ =
+      std::numeric_limits<::int32_t>::max(),
+};
+
+bool NSPanelConfig_NSPanelScreensaverCardType_IsValid(int value);
+extern const uint32_t NSPanelConfig_NSPanelScreensaverCardType_internal_data_[];
+constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MIN = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(0);
+constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MAX = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(1);
+constexpr int NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_ARRAYSIZE = 1 + 1;
+const ::google::protobuf::EnumDescriptor*
+NSPanelConfig_NSPanelScreensaverCardType_descriptor();
+template <typename T>
+const std::string& NSPanelConfig_NSPanelScreensaverCardType_Name(T value) {
+  static_assert(std::is_same<T, NSPanelConfig_NSPanelScreensaverCardType>::value ||
+                    std::is_integral<T>::value,
+                "Incorrect type passed to NSPanelScreensaverCardType_Name().");
+  return NSPanelConfig_NSPanelScreensaverCardType_Name(static_cast<NSPanelConfig_NSPanelScreensaverCardType>(value));
+}
+template <>
+inline const std::string& NSPanelConfig_NSPanelScreensaverCardType_Name(NSPanelConfig_NSPanelScreensaverCardType value) {
+  return ::google::protobuf::internal::NameOfDenseEnum<NSPanelConfig_NSPanelScreensaverCardType_descriptor,
+                                                 0, 1>(
+      static_cast<int>(value));
+}
+inline bool NSPanelConfig_NSPanelScreensaverCardType_Parse(absl::string_view name, NSPanelConfig_NSPanelScreensaverCardType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<NSPanelConfig_NSPanelScreensaverCardType>(
+      NSPanelConfig_NSPanelScreensaverCardType_descriptor(), name, value);
 }
 enum NSPanelStatusReport_state : int {
   NSPanelStatusReport_state_ONLINE = 0,
@@ -579,7 +621,7 @@ class NSPanelWeatherUpdate_ForecastItem final : public ::google::protobuf::Messa
     return reinterpret_cast<const NSPanelWeatherUpdate_ForecastItem*>(
         &_NSPanelWeatherUpdate_ForecastItem_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(NSPanelWeatherUpdate_ForecastItem& a, NSPanelWeatherUpdate_ForecastItem& b) { a.Swap(&b); }
   inline void Swap(NSPanelWeatherUpdate_ForecastItem* other) {
     if (other == this) return;
@@ -828,7 +870,7 @@ class NSPanelWarning final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelWarning*>(
         &_NSPanelWarning_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 3;
+  static constexpr int kIndexInFileMessages = 4;
   friend void swap(NSPanelWarning& a, NSPanelWarning& b) { a.Swap(&b); }
   inline void Swap(NSPanelWarning* other) {
     if (other == this) return;
@@ -1017,7 +1059,7 @@ class NSPanelRoomStatus final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelRoomStatus*>(
         &_NSPanelRoomStatus_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(NSPanelRoomStatus& a, NSPanelRoomStatus& b) { a.Swap(&b); }
   inline void Swap(NSPanelRoomStatus* other) {
     if (other == this) return;
@@ -1371,7 +1413,7 @@ class NSPanelRoomEntitiesPage_EntitySlot final : public ::google::protobuf::Mess
     return reinterpret_cast<const NSPanelRoomEntitiesPage_EntitySlot*>(
         &_NSPanelRoomEntitiesPage_EntitySlot_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 5;
+  static constexpr int kIndexInFileMessages = 6;
   friend void swap(NSPanelRoomEntitiesPage_EntitySlot& a, NSPanelRoomEntitiesPage_EntitySlot& b) { a.Swap(&b); }
   inline void Swap(NSPanelRoomEntitiesPage_EntitySlot* other) {
     if (other == this) return;
@@ -1681,7 +1723,7 @@ class NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage final : public ::go
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage*>(
         &_NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage& a, NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage* other) {
     if (other == this) return;
@@ -1864,7 +1906,7 @@ class NSPanelMQTTManagerCommand_ThermostatTemperatureCommand final : public ::go
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ThermostatTemperatureCommand*>(
         &_NSPanelMQTTManagerCommand_ThermostatTemperatureCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(NSPanelMQTTManagerCommand_ThermostatTemperatureCommand& a, NSPanelMQTTManagerCommand_ThermostatTemperatureCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ThermostatTemperatureCommand* other) {
     if (other == this) return;
@@ -2047,7 +2089,7 @@ class NSPanelMQTTManagerCommand_ThermostatCommand final : public ::google::proto
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ThermostatCommand*>(
         &_NSPanelMQTTManagerCommand_ThermostatCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(NSPanelMQTTManagerCommand_ThermostatCommand& a, NSPanelMQTTManagerCommand_ThermostatCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ThermostatCommand* other) {
     if (other == this) return;
@@ -2254,7 +2296,7 @@ class NSPanelMQTTManagerCommand_SaveSceneCommand final : public ::google::protob
     return reinterpret_cast<const NSPanelMQTTManagerCommand_SaveSceneCommand*>(
         &_NSPanelMQTTManagerCommand_SaveSceneCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(NSPanelMQTTManagerCommand_SaveSceneCommand& a, NSPanelMQTTManagerCommand_SaveSceneCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_SaveSceneCommand* other) {
     if (other == this) return;
@@ -2437,7 +2479,7 @@ class NSPanelMQTTManagerCommand_MediaPlayerCommand final : public ::google::prot
     return reinterpret_cast<const NSPanelMQTTManagerCommand_MediaPlayerCommand*>(
         &_NSPanelMQTTManagerCommand_MediaPlayerCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 18;
+  static constexpr int kIndexInFileMessages = 21;
   friend void swap(NSPanelMQTTManagerCommand_MediaPlayerCommand& a, NSPanelMQTTManagerCommand_MediaPlayerCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_MediaPlayerCommand* other) {
     if (other == this) return;
@@ -2750,7 +2792,7 @@ class NSPanelMQTTManagerCommand_LvglLook final : public ::google::protobuf::Mess
     return reinterpret_cast<const NSPanelMQTTManagerCommand_LvglLook*>(
         &_NSPanelMQTTManagerCommand_LvglLook_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 23;
   friend void swap(NSPanelMQTTManagerCommand_LvglLook& a, NSPanelMQTTManagerCommand_LvglLook& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_LvglLook* other) {
     if (other == this) return;
@@ -2945,7 +2987,7 @@ class NSPanelMQTTManagerCommand_LightCommand final : public ::google::protobuf::
     return reinterpret_cast<const NSPanelMQTTManagerCommand_LightCommand*>(
         &_NSPanelMQTTManagerCommand_LightCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(NSPanelMQTTManagerCommand_LightCommand& a, NSPanelMQTTManagerCommand_LightCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_LightCommand* other) {
     if (other == this) return;
@@ -3221,7 +3263,7 @@ class NSPanelMQTTManagerCommand_FirstPageTurnLightOn final : public ::google::pr
     return reinterpret_cast<const NSPanelMQTTManagerCommand_FirstPageTurnLightOn*>(
         &_NSPanelMQTTManagerCommand_FirstPageTurnLightOn_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 13;
   friend void swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOn& a, NSPanelMQTTManagerCommand_FirstPageTurnLightOn& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOn* other) {
     if (other == this) return;
@@ -3464,7 +3506,7 @@ class NSPanelMQTTManagerCommand_FirstPageTurnLightOff final : public ::google::p
     return reinterpret_cast<const NSPanelMQTTManagerCommand_FirstPageTurnLightOff*>(
         &_NSPanelMQTTManagerCommand_FirstPageTurnLightOff_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 11;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOff& a, NSPanelMQTTManagerCommand_FirstPageTurnLightOff& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOff* other) {
     if (other == this) return;
@@ -3647,7 +3689,7 @@ class NSPanelMQTTManagerCommand_CoverCommand final : public ::google::protobuf::
     return reinterpret_cast<const NSPanelMQTTManagerCommand_CoverCommand*>(
         &_NSPanelMQTTManagerCommand_CoverCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 19;
+  static constexpr int kIndexInFileMessages = 22;
   friend void swap(NSPanelMQTTManagerCommand_CoverCommand& a, NSPanelMQTTManagerCommand_CoverCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_CoverCommand* other) {
     if (other == this) return;
@@ -3902,7 +3944,7 @@ class NSPanelMQTTManagerCommand_ButtonPressed final : public ::google::protobuf:
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ButtonPressed*>(
         &_NSPanelMQTTManagerCommand_ButtonPressed_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(NSPanelMQTTManagerCommand_ButtonPressed& a, NSPanelMQTTManagerCommand_ButtonPressed& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ButtonPressed* other) {
     if (other == this) return;
@@ -4207,6 +4249,189 @@ class NSPanelConfig_Sound final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class NSPanelConfig_ScreensaverCard final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:NSPanelConfig.ScreensaverCard) */ {
+ public:
+  inline NSPanelConfig_ScreensaverCard() : NSPanelConfig_ScreensaverCard(nullptr) {}
+  ~NSPanelConfig_ScreensaverCard() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR NSPanelConfig_ScreensaverCard(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline NSPanelConfig_ScreensaverCard(const NSPanelConfig_ScreensaverCard& from) : NSPanelConfig_ScreensaverCard(nullptr, from) {}
+  inline NSPanelConfig_ScreensaverCard(NSPanelConfig_ScreensaverCard&& from) noexcept
+      : NSPanelConfig_ScreensaverCard(nullptr, std::move(from)) {}
+  inline NSPanelConfig_ScreensaverCard& operator=(const NSPanelConfig_ScreensaverCard& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NSPanelConfig_ScreensaverCard& operator=(NSPanelConfig_ScreensaverCard&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NSPanelConfig_ScreensaverCard& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NSPanelConfig_ScreensaverCard* internal_default_instance() {
+    return reinterpret_cast<const NSPanelConfig_ScreensaverCard*>(
+        &_NSPanelConfig_ScreensaverCard_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 2;
+  friend void swap(NSPanelConfig_ScreensaverCard& a, NSPanelConfig_ScreensaverCard& b) { a.Swap(&b); }
+  inline void Swap(NSPanelConfig_ScreensaverCard* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NSPanelConfig_ScreensaverCard* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NSPanelConfig_ScreensaverCard* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<NSPanelConfig_ScreensaverCard>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const NSPanelConfig_ScreensaverCard& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const NSPanelConfig_ScreensaverCard& from) { NSPanelConfig_ScreensaverCard::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(NSPanelConfig_ScreensaverCard* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "NSPanelConfig.ScreensaverCard"; }
+
+ protected:
+  explicit NSPanelConfig_ScreensaverCard(::google::protobuf::Arena* arena);
+  NSPanelConfig_ScreensaverCard(::google::protobuf::Arena* arena, const NSPanelConfig_ScreensaverCard& from);
+  NSPanelConfig_ScreensaverCard(::google::protobuf::Arena* arena, NSPanelConfig_ScreensaverCard&& from) noexcept
+      : NSPanelConfig_ScreensaverCard(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::Message::ClassData* GetClassData() const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kTypeFieldNumber = 1,
+    kSecondsFieldNumber = 2,
+  };
+  // .NSPanelConfig.NSPanelScreensaverCardType type = 1;
+  void clear_type() ;
+  ::NSPanelConfig_NSPanelScreensaverCardType type() const;
+  void set_type(::NSPanelConfig_NSPanelScreensaverCardType value);
+
+  private:
+  ::NSPanelConfig_NSPanelScreensaverCardType _internal_type() const;
+  void _internal_set_type(::NSPanelConfig_NSPanelScreensaverCardType value);
+
+  public:
+  // int32 seconds = 2;
+  void clear_seconds() ;
+  ::int32_t seconds() const;
+  void set_seconds(::int32_t value);
+
+  private:
+  ::int32_t _internal_seconds() const;
+  void _internal_set_seconds(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:NSPanelConfig.ScreensaverCard)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      1, 2, 0,
+      0, 2>
+      _table_;
+
+  static constexpr const void* _raw_default_instance_ =
+      &_NSPanelConfig_ScreensaverCard_default_instance_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const NSPanelConfig_ScreensaverCard& from_msg);
+    int type_;
+    ::int32_t seconds_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_protobuf_5fnspanel_2eproto;
+};
+// -------------------------------------------------------------------
+
 class NSPanelConfig_RoomInfo final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:NSPanelConfig.RoomInfo) */ {
  public:
@@ -4420,6 +4645,237 @@ class NSPanelConfig_RoomInfo final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class NSPanelCalendarUpdate_Event final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:NSPanelCalendarUpdate.Event) */ {
+ public:
+  inline NSPanelCalendarUpdate_Event() : NSPanelCalendarUpdate_Event(nullptr) {}
+  ~NSPanelCalendarUpdate_Event() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR NSPanelCalendarUpdate_Event(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline NSPanelCalendarUpdate_Event(const NSPanelCalendarUpdate_Event& from) : NSPanelCalendarUpdate_Event(nullptr, from) {}
+  inline NSPanelCalendarUpdate_Event(NSPanelCalendarUpdate_Event&& from) noexcept
+      : NSPanelCalendarUpdate_Event(nullptr, std::move(from)) {}
+  inline NSPanelCalendarUpdate_Event& operator=(const NSPanelCalendarUpdate_Event& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NSPanelCalendarUpdate_Event& operator=(NSPanelCalendarUpdate_Event&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NSPanelCalendarUpdate_Event& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NSPanelCalendarUpdate_Event* internal_default_instance() {
+    return reinterpret_cast<const NSPanelCalendarUpdate_Event*>(
+        &_NSPanelCalendarUpdate_Event_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 11;
+  friend void swap(NSPanelCalendarUpdate_Event& a, NSPanelCalendarUpdate_Event& b) { a.Swap(&b); }
+  inline void Swap(NSPanelCalendarUpdate_Event* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NSPanelCalendarUpdate_Event* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NSPanelCalendarUpdate_Event* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<NSPanelCalendarUpdate_Event>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const NSPanelCalendarUpdate_Event& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const NSPanelCalendarUpdate_Event& from) { NSPanelCalendarUpdate_Event::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(NSPanelCalendarUpdate_Event* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "NSPanelCalendarUpdate.Event"; }
+
+ protected:
+  explicit NSPanelCalendarUpdate_Event(::google::protobuf::Arena* arena);
+  NSPanelCalendarUpdate_Event(::google::protobuf::Arena* arena, const NSPanelCalendarUpdate_Event& from);
+  NSPanelCalendarUpdate_Event(::google::protobuf::Arena* arena, NSPanelCalendarUpdate_Event&& from) noexcept
+      : NSPanelCalendarUpdate_Event(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::Message::ClassData* GetClassData() const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kSummaryFieldNumber = 1,
+    kWhenStringFieldNumber = 5,
+    kStartFieldNumber = 2,
+    kEndFieldNumber = 3,
+    kAllDayFieldNumber = 4,
+  };
+  // string summary = 1;
+  void clear_summary() ;
+  const std::string& summary() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_summary(Arg_&& arg, Args_... args);
+  std::string* mutable_summary();
+  PROTOBUF_NODISCARD std::string* release_summary();
+  void set_allocated_summary(std::string* value);
+
+  private:
+  const std::string& _internal_summary() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_summary(
+      const std::string& value);
+  std::string* _internal_mutable_summary();
+
+  public:
+  // string when_string = 5;
+  void clear_when_string() ;
+  const std::string& when_string() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_when_string(Arg_&& arg, Args_... args);
+  std::string* mutable_when_string();
+  PROTOBUF_NODISCARD std::string* release_when_string();
+  void set_allocated_when_string(std::string* value);
+
+  private:
+  const std::string& _internal_when_string() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_when_string(
+      const std::string& value);
+  std::string* _internal_mutable_when_string();
+
+  public:
+  // int64 start = 2;
+  void clear_start() ;
+  ::int64_t start() const;
+  void set_start(::int64_t value);
+
+  private:
+  ::int64_t _internal_start() const;
+  void _internal_set_start(::int64_t value);
+
+  public:
+  // int64 end = 3;
+  void clear_end() ;
+  ::int64_t end() const;
+  void set_end(::int64_t value);
+
+  private:
+  ::int64_t _internal_end() const;
+  void _internal_set_end(::int64_t value);
+
+  public:
+  // bool all_day = 4;
+  void clear_all_day() ;
+  bool all_day() const;
+  void set_all_day(bool value);
+
+  private:
+  bool _internal_all_day() const;
+  void _internal_set_all_day(bool value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:NSPanelCalendarUpdate.Event)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      3, 5, 0,
+      54, 2>
+      _table_;
+
+  static constexpr const void* _raw_default_instance_ =
+      &_NSPanelCalendarUpdate_Event_default_instance_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const NSPanelCalendarUpdate_Event& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr summary_;
+    ::google::protobuf::internal::ArenaStringPtr when_string_;
+    ::int64_t start_;
+    ::int64_t end_;
+    bool all_day_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_protobuf_5fnspanel_2eproto;
+};
+// -------------------------------------------------------------------
+
 class NSPanelWeatherUpdate final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:NSPanelWeatherUpdate) */ {
  public:
@@ -4475,7 +4931,7 @@ class NSPanelWeatherUpdate final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelWeatherUpdate*>(
         &_NSPanelWeatherUpdate_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 10;
   friend void swap(NSPanelWeatherUpdate& a, NSPanelWeatherUpdate& b) { a.Swap(&b); }
   inline void Swap(NSPanelWeatherUpdate* other) {
     if (other == this) return;
@@ -4780,7 +5236,7 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelStatusReport*>(
         &_NSPanelStatusReport_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 4;
+  static constexpr int kIndexInFileMessages = 5;
   friend void swap(NSPanelStatusReport& a, NSPanelStatusReport& b) { a.Swap(&b); }
   inline void Swap(NSPanelStatusReport* other) {
     if (other == this) return;
@@ -5260,7 +5716,7 @@ class NSPanelRoomEntitiesPage final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelRoomEntitiesPage*>(
         &_NSPanelRoomEntitiesPage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(NSPanelRoomEntitiesPage& a, NSPanelRoomEntitiesPage& b) { a.Swap(&b); }
   inline void Swap(NSPanelRoomEntitiesPage* other) {
     if (other == this) return;
@@ -5495,7 +5951,7 @@ class NSPanelMQTTManagerCommand final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelMQTTManagerCommand*>(
         &_NSPanelMQTTManagerCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 21;
+  static constexpr int kIndexInFileMessages = 24;
   friend void swap(NSPanelMQTTManagerCommand& a, NSPanelMQTTManagerCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand* other) {
     if (other == this) return;
@@ -5948,7 +6404,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelConfig*>(
         &_NSPanelConfig_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 2;
+  static constexpr int kIndexInFileMessages = 3;
   friend void swap(NSPanelConfig& a, NSPanelConfig& b) { a.Swap(&b); }
   inline void Swap(NSPanelConfig* other) {
     if (other == this) return;
@@ -6016,6 +6472,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
   // nested types ----------------------------------------------------
   using RoomInfo = NSPanelConfig_RoomInfo;
   using Sound = NSPanelConfig_Sound;
+  using ScreensaverCard = NSPanelConfig_ScreensaverCard;
   using NSPanelDefaultPage = NSPanelConfig_NSPanelDefaultPage;
   static constexpr NSPanelDefaultPage HOME = NSPanelConfig_NSPanelDefaultPage_HOME;
   static constexpr NSPanelDefaultPage SCENES = NSPanelConfig_NSPanelDefaultPage_SCENES;
@@ -6101,6 +6558,25 @@ class NSPanelConfig final : public ::google::protobuf::Message
   static inline bool NSPanelSoundEvent_Parse(absl::string_view name, NSPanelSoundEvent* value) {
     return NSPanelConfig_NSPanelSoundEvent_Parse(name, value);
   }
+  using NSPanelScreensaverCardType = NSPanelConfig_NSPanelScreensaverCardType;
+  static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_UNSPECIFIED = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_UNSPECIFIED;
+  static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_CALENDAR = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR;
+  static inline bool NSPanelScreensaverCardType_IsValid(int value) {
+    return NSPanelConfig_NSPanelScreensaverCardType_IsValid(value);
+  }
+  static constexpr NSPanelScreensaverCardType NSPanelScreensaverCardType_MIN = NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MIN;
+  static constexpr NSPanelScreensaverCardType NSPanelScreensaverCardType_MAX = NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MAX;
+  static constexpr int NSPanelScreensaverCardType_ARRAYSIZE = NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor* NSPanelScreensaverCardType_descriptor() {
+    return NSPanelConfig_NSPanelScreensaverCardType_descriptor();
+  }
+  template <typename T>
+  static inline const std::string& NSPanelScreensaverCardType_Name(T value) {
+    return NSPanelConfig_NSPanelScreensaverCardType_Name(value);
+  }
+  static inline bool NSPanelScreensaverCardType_Parse(absl::string_view name, NSPanelScreensaverCardType* value) {
+    return NSPanelConfig_NSPanelScreensaverCardType_Parse(name, value);
+  }
 
   // accessors -------------------------------------------------------
   enum : int {
@@ -6109,6 +6585,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
     kRelay1RelayGroupFieldNumber = 35,
     kRelay2RelayGroupFieldNumber = 37,
     kSoundsFieldNumber = 45,
+    kScreensaverCardsFieldNumber = 51,
     kNameFieldNumber = 1,
     kInsideTemperatureSensorMqttTopicFieldNumber = 40,
     kTzPosixFieldNumber = 46,
@@ -6146,6 +6623,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
     kButton1UpperTemperatureFieldNumber = 42,
     kButton2LowerTemperatureFieldNumber = 43,
     kButton2UpperTemperatureFieldNumber = 44,
+    kScreensaverBaseCardSecondsFieldNumber = 52,
   };
   // repeated .NSPanelConfig.RoomInfo room_infos = 17;
   int room_infos_size() const;
@@ -6235,6 +6713,23 @@ class NSPanelConfig final : public ::google::protobuf::Message
   const ::NSPanelConfig_Sound& sounds(int index) const;
   ::NSPanelConfig_Sound* add_sounds();
   const ::google::protobuf::RepeatedPtrField<::NSPanelConfig_Sound>& sounds() const;
+  // repeated .NSPanelConfig.ScreensaverCard screensaver_cards = 51;
+  int screensaver_cards_size() const;
+  private:
+  int _internal_screensaver_cards_size() const;
+
+  public:
+  void clear_screensaver_cards() ;
+  ::NSPanelConfig_ScreensaverCard* mutable_screensaver_cards(int index);
+  ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>* mutable_screensaver_cards();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>& _internal_screensaver_cards() const;
+  ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>* _internal_mutable_screensaver_cards();
+  public:
+  const ::NSPanelConfig_ScreensaverCard& screensaver_cards(int index) const;
+  ::NSPanelConfig_ScreensaverCard* add_screensaver_cards();
+  const ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>& screensaver_cards() const;
   // string name = 1;
   void clear_name() ;
   const std::string& name() const;
@@ -6647,12 +7142,22 @@ class NSPanelConfig final : public ::google::protobuf::Message
   void _internal_set_button2_upper_temperature(::int32_t value);
 
   public:
+  // int32 screensaver_base_card_seconds = 52;
+  void clear_screensaver_base_card_seconds() ;
+  ::int32_t screensaver_base_card_seconds() const;
+  void set_screensaver_base_card_seconds(::int32_t value);
+
+  private:
+  ::int32_t _internal_screensaver_base_card_seconds() const;
+  void _internal_set_screensaver_base_card_seconds(::int32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:NSPanelConfig)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 42, 2,
+      5, 44, 3,
       185, 9>
       _table_;
 
@@ -6681,6 +7186,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
     ::google::protobuf::RepeatedField<::int32_t> relay2_relay_group_;
     mutable ::google::protobuf::internal::CachedSize _relay2_relay_group_cached_byte_size_;
     ::google::protobuf::RepeatedPtrField< ::NSPanelConfig_Sound > sounds_;
+    ::google::protobuf::RepeatedPtrField< ::NSPanelConfig_ScreensaverCard > screensaver_cards_;
     ::google::protobuf::internal::ArenaStringPtr name_;
     ::google::protobuf::internal::ArenaStringPtr inside_temperature_sensor_mqtt_topic_;
     ::google::protobuf::internal::ArenaStringPtr tz_posix_;
@@ -6718,6 +7224,210 @@ class NSPanelConfig final : public ::google::protobuf::Message
     ::int32_t button1_upper_temperature_;
     ::int32_t button2_lower_temperature_;
     ::int32_t button2_upper_temperature_;
+    ::int32_t screensaver_base_card_seconds_;
+    mutable ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_protobuf_5fnspanel_2eproto;
+};
+// -------------------------------------------------------------------
+
+class NSPanelCalendarUpdate final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:NSPanelCalendarUpdate) */ {
+ public:
+  inline NSPanelCalendarUpdate() : NSPanelCalendarUpdate(nullptr) {}
+  ~NSPanelCalendarUpdate() override;
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR NSPanelCalendarUpdate(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline NSPanelCalendarUpdate(const NSPanelCalendarUpdate& from) : NSPanelCalendarUpdate(nullptr, from) {}
+  inline NSPanelCalendarUpdate(NSPanelCalendarUpdate&& from) noexcept
+      : NSPanelCalendarUpdate(nullptr, std::move(from)) {}
+  inline NSPanelCalendarUpdate& operator=(const NSPanelCalendarUpdate& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline NSPanelCalendarUpdate& operator=(NSPanelCalendarUpdate&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetArena() == from.GetArena()
+#ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetArena() != nullptr
+#endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const NSPanelCalendarUpdate& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const NSPanelCalendarUpdate* internal_default_instance() {
+    return reinterpret_cast<const NSPanelCalendarUpdate*>(
+        &_NSPanelCalendarUpdate_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 12;
+  friend void swap(NSPanelCalendarUpdate& a, NSPanelCalendarUpdate& b) { a.Swap(&b); }
+  inline void Swap(NSPanelCalendarUpdate* other) {
+    if (other == this) return;
+#ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() != nullptr && GetArena() == other->GetArena()) {
+#else   // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetArena() == other->GetArena()) {
+#endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(NSPanelCalendarUpdate* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  NSPanelCalendarUpdate* New(::google::protobuf::Arena* arena = nullptr) const final {
+    return ::google::protobuf::Message::DefaultConstruct<NSPanelCalendarUpdate>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const NSPanelCalendarUpdate& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const NSPanelCalendarUpdate& from) { NSPanelCalendarUpdate::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() final;
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  void SharedDtor();
+  void InternalSwap(NSPanelCalendarUpdate* other);
+ private:
+  friend class ::google::protobuf::internal::AnyMetadata;
+  static ::absl::string_view FullMessageName() { return "NSPanelCalendarUpdate"; }
+
+ protected:
+  explicit NSPanelCalendarUpdate(::google::protobuf::Arena* arena);
+  NSPanelCalendarUpdate(::google::protobuf::Arena* arena, const NSPanelCalendarUpdate& from);
+  NSPanelCalendarUpdate(::google::protobuf::Arena* arena, NSPanelCalendarUpdate&& from) noexcept
+      : NSPanelCalendarUpdate(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::Message::ClassData* GetClassData() const final;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+  using Event = NSPanelCalendarUpdate_Event;
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kEventsFieldNumber = 1,
+    kGeneratedAtFieldNumber = 3,
+    kLookaheadHoursFieldNumber = 2,
+  };
+  // repeated .NSPanelCalendarUpdate.Event events = 1;
+  int events_size() const;
+  private:
+  int _internal_events_size() const;
+
+  public:
+  void clear_events() ;
+  ::NSPanelCalendarUpdate_Event* mutable_events(int index);
+  ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>* mutable_events();
+
+  private:
+  const ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>& _internal_events() const;
+  ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>* _internal_mutable_events();
+  public:
+  const ::NSPanelCalendarUpdate_Event& events(int index) const;
+  ::NSPanelCalendarUpdate_Event* add_events();
+  const ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>& events() const;
+  // int64 generated_at = 3;
+  void clear_generated_at() ;
+  ::int64_t generated_at() const;
+  void set_generated_at(::int64_t value);
+
+  private:
+  ::int64_t _internal_generated_at() const;
+  void _internal_set_generated_at(::int64_t value);
+
+  public:
+  // int32 lookahead_hours = 2;
+  void clear_lookahead_hours() ;
+  ::int32_t lookahead_hours() const;
+  void set_lookahead_hours(::int32_t value);
+
+  private:
+  ::int32_t _internal_lookahead_hours() const;
+  void _internal_set_lookahead_hours(::int32_t value);
+
+  public:
+  // @@protoc_insertion_point(class_scope:NSPanelCalendarUpdate)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      2, 3, 1,
+      0, 2>
+      _table_;
+
+  static constexpr const void* _raw_default_instance_ =
+      &_NSPanelCalendarUpdate_default_instance_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const NSPanelCalendarUpdate& from_msg);
+    ::google::protobuf::RepeatedPtrField< ::NSPanelCalendarUpdate_Event > events_;
+    ::int64_t generated_at_;
+    ::int32_t lookahead_hours_;
     mutable ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
@@ -6927,6 +7637,54 @@ inline void NSPanelConfig_Sound::set_allocated_rtttl(std::string* value) {
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:NSPanelConfig.Sound.rtttl)
+}
+
+// -------------------------------------------------------------------
+
+// NSPanelConfig_ScreensaverCard
+
+// .NSPanelConfig.NSPanelScreensaverCardType type = 1;
+inline void NSPanelConfig_ScreensaverCard::clear_type() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_ = 0;
+}
+inline ::NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_ScreensaverCard::type() const {
+  // @@protoc_insertion_point(field_get:NSPanelConfig.ScreensaverCard.type)
+  return _internal_type();
+}
+inline void NSPanelConfig_ScreensaverCard::set_type(::NSPanelConfig_NSPanelScreensaverCardType value) {
+  _internal_set_type(value);
+  // @@protoc_insertion_point(field_set:NSPanelConfig.ScreensaverCard.type)
+}
+inline ::NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_ScreensaverCard::_internal_type() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return static_cast<::NSPanelConfig_NSPanelScreensaverCardType>(_impl_.type_);
+}
+inline void NSPanelConfig_ScreensaverCard::_internal_set_type(::NSPanelConfig_NSPanelScreensaverCardType value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.type_ = value;
+}
+
+// int32 seconds = 2;
+inline void NSPanelConfig_ScreensaverCard::clear_seconds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seconds_ = 0;
+}
+inline ::int32_t NSPanelConfig_ScreensaverCard::seconds() const {
+  // @@protoc_insertion_point(field_get:NSPanelConfig.ScreensaverCard.seconds)
+  return _internal_seconds();
+}
+inline void NSPanelConfig_ScreensaverCard::set_seconds(::int32_t value) {
+  _internal_set_seconds(value);
+  // @@protoc_insertion_point(field_set:NSPanelConfig.ScreensaverCard.seconds)
+}
+inline ::int32_t NSPanelConfig_ScreensaverCard::_internal_seconds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.seconds_;
+}
+inline void NSPanelConfig_ScreensaverCard::_internal_set_seconds(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.seconds_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -8174,6 +8932,77 @@ inline void NSPanelConfig::set_allocated_lvgl_background(std::string* value) {
         }
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
   // @@protoc_insertion_point(field_set_allocated:NSPanelConfig.lvgl_background)
+}
+
+// repeated .NSPanelConfig.ScreensaverCard screensaver_cards = 51;
+inline int NSPanelConfig::_internal_screensaver_cards_size() const {
+  return _internal_screensaver_cards().size();
+}
+inline int NSPanelConfig::screensaver_cards_size() const {
+  return _internal_screensaver_cards_size();
+}
+inline void NSPanelConfig::clear_screensaver_cards() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.screensaver_cards_.Clear();
+}
+inline ::NSPanelConfig_ScreensaverCard* NSPanelConfig::mutable_screensaver_cards(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:NSPanelConfig.screensaver_cards)
+  return _internal_mutable_screensaver_cards()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>* NSPanelConfig::mutable_screensaver_cards()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:NSPanelConfig.screensaver_cards)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_screensaver_cards();
+}
+inline const ::NSPanelConfig_ScreensaverCard& NSPanelConfig::screensaver_cards(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelConfig.screensaver_cards)
+  return _internal_screensaver_cards().Get(index);
+}
+inline ::NSPanelConfig_ScreensaverCard* NSPanelConfig::add_screensaver_cards() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::NSPanelConfig_ScreensaverCard* _add = _internal_mutable_screensaver_cards()->Add();
+  // @@protoc_insertion_point(field_add:NSPanelConfig.screensaver_cards)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>& NSPanelConfig::screensaver_cards() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:NSPanelConfig.screensaver_cards)
+  return _internal_screensaver_cards();
+}
+inline const ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>&
+NSPanelConfig::_internal_screensaver_cards() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.screensaver_cards_;
+}
+inline ::google::protobuf::RepeatedPtrField<::NSPanelConfig_ScreensaverCard>*
+NSPanelConfig::_internal_mutable_screensaver_cards() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.screensaver_cards_;
+}
+
+// int32 screensaver_base_card_seconds = 52;
+inline void NSPanelConfig::clear_screensaver_base_card_seconds() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.screensaver_base_card_seconds_ = 0;
+}
+inline ::int32_t NSPanelConfig::screensaver_base_card_seconds() const {
+  // @@protoc_insertion_point(field_get:NSPanelConfig.screensaver_base_card_seconds)
+  return _internal_screensaver_base_card_seconds();
+}
+inline void NSPanelConfig::set_screensaver_base_card_seconds(::int32_t value) {
+  _internal_set_screensaver_base_card_seconds(value);
+  // @@protoc_insertion_point(field_set:NSPanelConfig.screensaver_base_card_seconds)
+}
+inline ::int32_t NSPanelConfig::_internal_screensaver_base_card_seconds() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.screensaver_base_card_seconds_;
+}
+inline void NSPanelConfig::_internal_set_screensaver_base_card_seconds(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.screensaver_base_card_seconds_ = value;
 }
 
 // -------------------------------------------------------------------
@@ -10374,6 +11203,273 @@ inline void NSPanelWeatherUpdate::set_allocated_current_precipitation_string(std
 
 // -------------------------------------------------------------------
 
+// NSPanelCalendarUpdate_Event
+
+// string summary = 1;
+inline void NSPanelCalendarUpdate_Event::clear_summary() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.summary_.ClearToEmpty();
+}
+inline const std::string& NSPanelCalendarUpdate_Event::summary() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.Event.summary)
+  return _internal_summary();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelCalendarUpdate_Event::set_summary(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.summary_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelCalendarUpdate.Event.summary)
+}
+inline std::string* NSPanelCalendarUpdate_Event::mutable_summary() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_summary();
+  // @@protoc_insertion_point(field_mutable:NSPanelCalendarUpdate.Event.summary)
+  return _s;
+}
+inline const std::string& NSPanelCalendarUpdate_Event::_internal_summary() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.summary_.Get();
+}
+inline void NSPanelCalendarUpdate_Event::_internal_set_summary(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.summary_.Set(value, GetArena());
+}
+inline std::string* NSPanelCalendarUpdate_Event::_internal_mutable_summary() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.summary_.Mutable( GetArena());
+}
+inline std::string* NSPanelCalendarUpdate_Event::release_summary() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelCalendarUpdate.Event.summary)
+  return _impl_.summary_.Release();
+}
+inline void NSPanelCalendarUpdate_Event::set_allocated_summary(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.summary_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.summary_.IsDefault()) {
+          _impl_.summary_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelCalendarUpdate.Event.summary)
+}
+
+// int64 start = 2;
+inline void NSPanelCalendarUpdate_Event::clear_start() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.start_ = ::int64_t{0};
+}
+inline ::int64_t NSPanelCalendarUpdate_Event::start() const {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.Event.start)
+  return _internal_start();
+}
+inline void NSPanelCalendarUpdate_Event::set_start(::int64_t value) {
+  _internal_set_start(value);
+  // @@protoc_insertion_point(field_set:NSPanelCalendarUpdate.Event.start)
+}
+inline ::int64_t NSPanelCalendarUpdate_Event::_internal_start() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.start_;
+}
+inline void NSPanelCalendarUpdate_Event::_internal_set_start(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.start_ = value;
+}
+
+// int64 end = 3;
+inline void NSPanelCalendarUpdate_Event::clear_end() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.end_ = ::int64_t{0};
+}
+inline ::int64_t NSPanelCalendarUpdate_Event::end() const {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.Event.end)
+  return _internal_end();
+}
+inline void NSPanelCalendarUpdate_Event::set_end(::int64_t value) {
+  _internal_set_end(value);
+  // @@protoc_insertion_point(field_set:NSPanelCalendarUpdate.Event.end)
+}
+inline ::int64_t NSPanelCalendarUpdate_Event::_internal_end() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.end_;
+}
+inline void NSPanelCalendarUpdate_Event::_internal_set_end(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.end_ = value;
+}
+
+// bool all_day = 4;
+inline void NSPanelCalendarUpdate_Event::clear_all_day() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.all_day_ = false;
+}
+inline bool NSPanelCalendarUpdate_Event::all_day() const {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.Event.all_day)
+  return _internal_all_day();
+}
+inline void NSPanelCalendarUpdate_Event::set_all_day(bool value) {
+  _internal_set_all_day(value);
+  // @@protoc_insertion_point(field_set:NSPanelCalendarUpdate.Event.all_day)
+}
+inline bool NSPanelCalendarUpdate_Event::_internal_all_day() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.all_day_;
+}
+inline void NSPanelCalendarUpdate_Event::_internal_set_all_day(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.all_day_ = value;
+}
+
+// string when_string = 5;
+inline void NSPanelCalendarUpdate_Event::clear_when_string() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.when_string_.ClearToEmpty();
+}
+inline const std::string& NSPanelCalendarUpdate_Event::when_string() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.Event.when_string)
+  return _internal_when_string();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelCalendarUpdate_Event::set_when_string(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.when_string_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelCalendarUpdate.Event.when_string)
+}
+inline std::string* NSPanelCalendarUpdate_Event::mutable_when_string() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_when_string();
+  // @@protoc_insertion_point(field_mutable:NSPanelCalendarUpdate.Event.when_string)
+  return _s;
+}
+inline const std::string& NSPanelCalendarUpdate_Event::_internal_when_string() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.when_string_.Get();
+}
+inline void NSPanelCalendarUpdate_Event::_internal_set_when_string(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.when_string_.Set(value, GetArena());
+}
+inline std::string* NSPanelCalendarUpdate_Event::_internal_mutable_when_string() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.when_string_.Mutable( GetArena());
+}
+inline std::string* NSPanelCalendarUpdate_Event::release_when_string() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelCalendarUpdate.Event.when_string)
+  return _impl_.when_string_.Release();
+}
+inline void NSPanelCalendarUpdate_Event::set_allocated_when_string(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.when_string_.SetAllocated(value, GetArena());
+  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
+        if (_impl_.when_string_.IsDefault()) {
+          _impl_.when_string_.Set("", GetArena());
+        }
+  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  // @@protoc_insertion_point(field_set_allocated:NSPanelCalendarUpdate.Event.when_string)
+}
+
+// -------------------------------------------------------------------
+
+// NSPanelCalendarUpdate
+
+// repeated .NSPanelCalendarUpdate.Event events = 1;
+inline int NSPanelCalendarUpdate::_internal_events_size() const {
+  return _internal_events().size();
+}
+inline int NSPanelCalendarUpdate::events_size() const {
+  return _internal_events_size();
+}
+inline void NSPanelCalendarUpdate::clear_events() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.events_.Clear();
+}
+inline ::NSPanelCalendarUpdate_Event* NSPanelCalendarUpdate::mutable_events(int index)
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable:NSPanelCalendarUpdate.events)
+  return _internal_mutable_events()->Mutable(index);
+}
+inline ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>* NSPanelCalendarUpdate::mutable_events()
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_mutable_list:NSPanelCalendarUpdate.events)
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _internal_mutable_events();
+}
+inline const ::NSPanelCalendarUpdate_Event& NSPanelCalendarUpdate::events(int index) const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.events)
+  return _internal_events().Get(index);
+}
+inline ::NSPanelCalendarUpdate_Event* NSPanelCalendarUpdate::add_events() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  ::NSPanelCalendarUpdate_Event* _add = _internal_mutable_events()->Add();
+  // @@protoc_insertion_point(field_add:NSPanelCalendarUpdate.events)
+  return _add;
+}
+inline const ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>& NSPanelCalendarUpdate::events() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_list:NSPanelCalendarUpdate.events)
+  return _internal_events();
+}
+inline const ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>&
+NSPanelCalendarUpdate::_internal_events() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.events_;
+}
+inline ::google::protobuf::RepeatedPtrField<::NSPanelCalendarUpdate_Event>*
+NSPanelCalendarUpdate::_internal_mutable_events() {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return &_impl_.events_;
+}
+
+// int32 lookahead_hours = 2;
+inline void NSPanelCalendarUpdate::clear_lookahead_hours() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lookahead_hours_ = 0;
+}
+inline ::int32_t NSPanelCalendarUpdate::lookahead_hours() const {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.lookahead_hours)
+  return _internal_lookahead_hours();
+}
+inline void NSPanelCalendarUpdate::set_lookahead_hours(::int32_t value) {
+  _internal_set_lookahead_hours(value);
+  // @@protoc_insertion_point(field_set:NSPanelCalendarUpdate.lookahead_hours)
+}
+inline ::int32_t NSPanelCalendarUpdate::_internal_lookahead_hours() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.lookahead_hours_;
+}
+inline void NSPanelCalendarUpdate::_internal_set_lookahead_hours(::int32_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.lookahead_hours_ = value;
+}
+
+// int64 generated_at = 3;
+inline void NSPanelCalendarUpdate::clear_generated_at() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generated_at_ = ::int64_t{0};
+}
+inline ::int64_t NSPanelCalendarUpdate::generated_at() const {
+  // @@protoc_insertion_point(field_get:NSPanelCalendarUpdate.generated_at)
+  return _internal_generated_at();
+}
+inline void NSPanelCalendarUpdate::set_generated_at(::int64_t value) {
+  _internal_set_generated_at(value);
+  // @@protoc_insertion_point(field_set:NSPanelCalendarUpdate.generated_at)
+}
+inline ::int64_t NSPanelCalendarUpdate::_internal_generated_at() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.generated_at_;
+}
+inline void NSPanelCalendarUpdate::_internal_set_generated_at(::int64_t value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.generated_at_ = value;
+}
+
+// -------------------------------------------------------------------
+
 // NSPanelMQTTManagerCommand_FirstPageTurnLightOn
 
 // .NSPanelMQTTManagerCommand.AffectLightsOptions affect_lights = 1;
@@ -12556,6 +13652,12 @@ struct is_proto_enum<::NSPanelConfig_NSPanelSoundEvent> : std::true_type {};
 template <>
 inline const EnumDescriptor* GetEnumDescriptor<::NSPanelConfig_NSPanelSoundEvent>() {
   return ::NSPanelConfig_NSPanelSoundEvent_descriptor();
+}
+template <>
+struct is_proto_enum<::NSPanelConfig_NSPanelScreensaverCardType> : std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor<::NSPanelConfig_NSPanelScreensaverCardType>() {
+  return ::NSPanelConfig_NSPanelScreensaverCardType_descriptor();
 }
 template <>
 struct is_proto_enum<::NSPanelStatusReport_state> : std::true_type {};

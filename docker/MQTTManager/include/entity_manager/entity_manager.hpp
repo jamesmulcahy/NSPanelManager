@@ -16,6 +16,7 @@
 #include <nspanel/nspanel.hpp>
 #include <spdlog/spdlog.h>
 #include <vector>
+#include <calendar/calendar.hpp>
 #include <weather/weather.hpp>
 
 // Forward declare entities:

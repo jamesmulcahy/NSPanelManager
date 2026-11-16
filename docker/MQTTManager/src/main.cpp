@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
   // Load config from environment/manager
   MqttManagerConfig::load();   // Load all entities, rooms and panels.
   MQTTManagerWeather::start(); // Start thread to handle weather updates
+  MQTTManagerCalendar::start(); // Start thread to fetch calendar events from Home Assistant
 
   std::thread home_assistant_manager_thread;
   std::thread openhab_manager_thread;

@@ -68,6 +68,7 @@ add_library(nspm_core OBJECT
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/home_assistant_manager/home_assistant_manager.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/switch/switch.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/weather/weather.cpp
+    ${CMAKE_INCLUDE_SRC_DIRECTORY}/calendar/calendar.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/light/light.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/thermostat/openhab_thermostat.cpp
     ${CMAKE_INCLUDE_SRC_DIRECTORY}/mqtt_manager/mqtt_manager.cpp

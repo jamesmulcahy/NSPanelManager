@@ -255,6 +255,18 @@ export interface components {
             screensaver_mode?: components["schemas"]["ScreensaverModeEnum"];
             show_screensaver_inside_temperature?: boolean;
             show_screensaver_outside_temperature?: boolean;
+            /** @description Leading and trailing whitespace is removed. Comma-separated extra screensaver cards and how long each shows, for example calendar:10. Blank for none. */
+            screensaver_cards?: string;
+            /** @description Seconds the weather or clock card shows before the next card. */
+            screensaver_base_card_seconds?: number;
+            /** @description Leading and trailing whitespace is removed. Comma-separated Home Assistant calendar.* entity ids. Blank turns the calendar off. */
+            calendar_entity_ids?: string;
+            /** @description Most events shown. */
+            calendar_max_events?: number;
+            /** @description How far ahead to look for events. */
+            calendar_lookahead_hours?: number;
+            /** @description Minutes between calendar updates. */
+            calendar_update_interval?: number;
             /** @description Leading and trailing whitespace is removed. */
             location_latitude?: string;
             /** @description Leading and trailing whitespace is removed. */
@@ -374,6 +386,12 @@ export interface components {
             screensaver_mode: (components["schemas"]["ScreensaverModeEnum"] | components["schemas"]["NullEnum"]) | null;
             show_screensaver_inside_temperature: boolean | null;
             show_screensaver_outside_temperature: boolean | null;
+            screensaver_cards: string | null;
+            screensaver_base_card_seconds: number | null;
+            calendar_entity_ids: string | null;
+            calendar_max_events: number | null;
+            calendar_lookahead_hours: number | null;
+            calendar_update_interval: number | null;
             location_latitude: string | null;
             location_longitude: string | null;
             weather_update_interval: number | null;
@@ -434,6 +452,12 @@ export interface components {
             screensaver_mode?: string[];
             show_screensaver_inside_temperature?: string[];
             show_screensaver_outside_temperature?: string[];
+            screensaver_cards?: string[];
+            screensaver_base_card_seconds?: string[];
+            calendar_entity_ids?: string[];
+            calendar_max_events?: string[];
+            calendar_lookahead_hours?: string[];
+            calendar_update_interval?: string[];
             location_latitude?: string[];
             location_longitude?: string[];
             weather_update_interval?: string[];

@@ -191,6 +191,14 @@ class SettingsUpdateSerializer(serializers.Serializer):
     screensaver_mode = StrictChoiceField(choices=["with_background", "without_background", "datetime_with_background", "datetime_without_background", "no_screensaver"])
     show_screensaver_inside_temperature = StrictBooleanField()
     show_screensaver_outside_temperature = StrictBooleanField()
+    screensaver_cards = _trimmed(help_text="Comma-separated extra screensaver cards and how long each shows, for example calendar:10. Blank for none.")
+    screensaver_base_card_seconds = _int(3, 300, help_text="Seconds the weather or clock card shows before the next card.")
+
+    # Calendar (Home Assistant only)
+    calendar_entity_ids = _trimmed(help_text="Comma-separated Home Assistant calendar.* entity ids. Blank turns the calendar off.")
+    calendar_max_events = _int(1, 10, help_text="Most events shown.")
+    calendar_lookahead_hours = _int(1, 336, help_text="How far ahead to look for events.")
+    calendar_update_interval = _int(1, help_text="Minutes between calendar updates.")
 
     # Weather and time
     location_latitude = _coordinate(90)

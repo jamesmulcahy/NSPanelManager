@@ -24,10 +24,13 @@
 #include <metrics/latency_metrics.hpp>
 #include <mutex>
 #include <nlohmann/detail/json_pointer.hpp>
+#include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <spdlog/spdlog.h>
 #include <string>
 #include <thread>
+#include <unordered_map>
+#include <vector>
 #include <websocket_server/websocket_server.hpp>
 
 void HomeAssistantManager::connect() {
@@ -115,15 +118,13 @@ void HomeAssistantManager::_websocket_message_callback(const ix::WebSocketMessag
   } else if (msg->type == ix::WebSocketMessageType::Close) {
     WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "Home Assistant not connected.");
     SPDLOG_WARN("Disconnected from Home Assistant websocket.");
-    HomeAssistantManager::_authenticated = false;
-    HomeAssistantManager::_connected = false;
+    HomeAssistantManager::_handle_connection_lost();
     ManagerMetrics::integration_connection_changed(ManagerMetrics::Integration::HOME_ASSISTANT, false);
     LatencyMetrics::home_assistant_disconnected();
   } else if (msg->type == ix::WebSocketMessageType::Error) {
     WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "Home Assistant not connected.");
     SPDLOG_ERROR("Failed to connect to Home Assistant websocket. Reason: {}", msg->errorInfo.reason);
-    HomeAssistantManager::_authenticated = false;
-    HomeAssistantManager::_connected = false;
+    HomeAssistantManager::_handle_connection_lost();
     ManagerMetrics::integration_connection_changed(ManagerMetrics::Integration::HOME_ASSISTANT, false);
     LatencyMetrics::home_assistant_disconnected();
   }
@@ -151,6 +152,12 @@ void HomeAssistantManager::_process_websocket_message(const std::string &message
       HomeAssistantManager::send_json(subscribe_command);
 
       HomeAssistantManager::_request_all_states();
+
+      try {
+        HomeAssistantManager::_authenticated_observers();
+      } catch (const std::exception &e) {
+        SPDLOG_ERROR("Caught exception in Home Assistant authenticated observer: {}", e.what());
+      }
     } else if (type.compare("auth_invalid") == 0) {
       WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "Home Assistant authentication invalid.");
       ManagerMetrics::integration_auth_failure(ManagerMetrics::Integration::HOME_ASSISTANT);
@@ -163,6 +170,11 @@ void HomeAssistantManager::_process_websocket_message(const std::string &message
       }
       if (!success) {
         SPDLOG_ERROR("[HA WS] Command failed. Data: {}", message);
+      }
+
+      if (data.contains("id") && data["id"].is_number_integer()) {
+        // Requests made with call_service_with_response(). The ids of all other requests are not in the map.
+        HomeAssistantManager::_complete_pending_call(data["id"].get<long>(), success, success ? data.value("result", nlohmann::json()) : data.value("error", nlohmann::json()));
       }
 
       if ((long)data["id"] == HomeAssistantManager::_all_statues_request_message_id) {
@@ -205,7 +217,10 @@ void HomeAssistantManager::_send_auth() {
 }
 
 void HomeAssistantManager::send_json(nlohmann::json &data) {
-  long id = HomeAssistantManager::_next_message_id++;
+  HomeAssistantManager::_send_json_with_id(data, HomeAssistantManager::_next_message_id++);
+}
+
+void HomeAssistantManager::_send_json_with_id(nlohmann::json &data, long id) {
   data["id"] = id;
   if (data.contains("type") && data["type"].is_string()) {
     LatencyMetrics::home_assistant_request_sent(id, data["type"].get<std::string>(), data.contains("domain") && data["domain"].is_string() ? data["domain"].get<std::string>() : "");
@@ -214,13 +229,90 @@ void HomeAssistantManager::send_json(nlohmann::json &data) {
     }
   }
 #if defined(TEST_MODE) && TEST_MODE == 1
+  std::function<void(const nlohmann::json &)> hook;
   {
     std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_test_sent_messages_mutex);
     HomeAssistantManager::_test_sent_messages.push_back(data);
+    hook = HomeAssistantManager::_test_send_hook;
+  }
+  if (hook) {
+    hook(data);
   }
 #endif
   std::string buffer = data.dump();
   HomeAssistantManager::_send_string(buffer);
+}
+
+long HomeAssistantManager::call_service_with_response(const std::string &domain, const std::string &service, nlohmann::json target, nlohmann::json service_data, ResultCallback callback) {
+  if (!HomeAssistantManager::_authenticated) {
+    // Nothing would ever answer.
+    callback(false, nlohmann::json());
+    return 0;
+  }
+  HomeAssistantManager::_expire_pending_calls();
+
+  nlohmann::json message;
+  message["type"] = "call_service";
+  message["domain"] = domain;
+  message["service"] = service;
+  message["target"] = std::move(target);
+  message["service_data"] = std::move(service_data);
+  message["return_response"] = true;
+
+  // Registered before sending so that a fast reply cannot arrive first.
+  long id = HomeAssistantManager::_next_message_id++;
+  {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_pending_calls_mutex);
+    HomeAssistantManager::_pending_calls[id] = PendingCall{std::move(callback), std::chrono::steady_clock::now() + HomeAssistantManager::_pending_call_timeout};
+  }
+  HomeAssistantManager::_send_json_with_id(message, id);
+  return id;
+}
+
+void HomeAssistantManager::_complete_pending_call(long id, bool success, const nlohmann::json &result) {
+  ResultCallback callback;
+  {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_pending_calls_mutex);
+    auto it = HomeAssistantManager::_pending_calls.find(id);
+    if (it == HomeAssistantManager::_pending_calls.end()) {
+      return;
+    }
+    callback = std::move(it->second.callback);
+    HomeAssistantManager::_pending_calls.erase(it);
+  }
+  try {
+    callback(success, result);
+  } catch (const std::exception &e) {
+    SPDLOG_ERROR("[HA WS] Caught exception in result callback: {}", e.what());
+  }
+}
+
+void HomeAssistantManager::_fail_pending_calls(bool all, std::chrono::steady_clock::time_point now) {
+  std::vector<ResultCallback> failed;
+  {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_pending_calls_mutex);
+    for (auto it = HomeAssistantManager::_pending_calls.begin(); it != HomeAssistantManager::_pending_calls.end();) {
+      if (all || it->second.deadline <= now) {
+        failed.push_back(std::move(it->second.callback));
+        it = HomeAssistantManager::_pending_calls.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+  for (auto &callback : failed) {
+    try {
+      callback(false, nlohmann::json());
+    } catch (const std::exception &e) {
+      SPDLOG_ERROR("[HA WS] Caught exception in result callback: {}", e.what());
+    }
+  }
+}
+
+void HomeAssistantManager::_handle_connection_lost() {
+  HomeAssistantManager::_authenticated = false;
+  HomeAssistantManager::_connected = false;
+  HomeAssistantManager::_fail_pending_calls(true, std::chrono::steady_clock::now());
 }
 
 void HomeAssistantManager::_send_string(std::string &data) {

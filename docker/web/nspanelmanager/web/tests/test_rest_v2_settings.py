@@ -76,6 +76,12 @@ LEGACY_ROWS = {
     "screensaver_mode": "datetime_with_background",
     "show_screensaver_inside_temperature": "True",
     "show_screensaver_outside_temperature": "False",
+    "screensaver_cards": "calendar:10",
+    "screensaver_base_card_seconds": "10",
+    "calendar_entity_ids": "calendar.family,calendar.work",
+    "calendar_max_events": "5",
+    "calendar_lookahead_hours": "48",
+    "calendar_update_interval": "5",
     "location_latitude": "-33.8688",
     "location_longitude": "151.2093",
     "weather_update_interval": "10",
@@ -121,6 +127,10 @@ INTEGER_RANGES = {
     "screensaver_dim_level": (0, 100),
     "screensaver_activation_timeout": (0, 2**31 - 1),
     "weather_update_interval": (1, 2**31 - 1),  # MQTTManager sleeps this many minutes between updates
+    "screensaver_base_card_seconds": (3, 300),
+    "calendar_max_events": (1, 10),
+    "calendar_lookahead_hours": (1, 336),
+    "calendar_update_interval": (1, 2**31 - 1),
 }
 
 CHOICES = {

@@ -659,6 +659,37 @@ components:
           type: boolean
         show_screensaver_outside_temperature:
           type: boolean
+        screensaver_cards:
+          type: string
+          description: Leading and trailing whitespace is removed. Comma-separated
+            extra screensaver cards and how long each shows, for example calendar:10.
+            Blank for none.
+          maxLength: 255
+        screensaver_base_card_seconds:
+          type: integer
+          maximum: 300
+          minimum: 3
+          description: Seconds the weather or clock card shows before the next card.
+        calendar_entity_ids:
+          type: string
+          description: Leading and trailing whitespace is removed. Comma-separated
+            Home Assistant calendar.* entity ids. Blank turns the calendar off.
+          maxLength: 255
+        calendar_max_events:
+          type: integer
+          maximum: 10
+          minimum: 1
+          description: Most events shown.
+        calendar_lookahead_hours:
+          type: integer
+          maximum: 336
+          minimum: 1
+          description: How far ahead to look for events.
+        calendar_update_interval:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+          description: Minutes between calendar updates.
         location_latitude:
           type: string
           description: Leading and trailing whitespace is removed.
@@ -960,6 +991,24 @@ components:
         show_screensaver_outside_temperature:
           type: boolean
           nullable: true
+        screensaver_cards:
+          type: string
+          nullable: true
+        screensaver_base_card_seconds:
+          type: integer
+          nullable: true
+        calendar_entity_ids:
+          type: string
+          nullable: true
+        calendar_max_events:
+          type: integer
+          nullable: true
+        calendar_lookahead_hours:
+          type: integer
+          nullable: true
+        calendar_update_interval:
+          type: integer
+          nullable: true
         location_latitude:
           type: string
           nullable: true
@@ -1043,6 +1092,10 @@ components:
       - buzzer_sound_scene_activated
       - buzzer_sound_scene_saved
       - buzzer_sound_touch
+      - calendar_entity_ids
+      - calendar_lookahead_hours
+      - calendar_max_events
+      - calendar_update_interval
       - clock_us_style
       - color_temp_max
       - color_temp_min
@@ -1075,6 +1128,8 @@ components:
       - room_status_backoff_time
       - screen_dim_level
       - screensaver_activation_timeout
+      - screensaver_base_card_seconds
+      - screensaver_cards
       - screensaver_dim_level
       - screensaver_mode
       - show_screensaver_inside_temperature
@@ -1209,6 +1264,30 @@ components:
           items:
             type: string
         show_screensaver_outside_temperature:
+          type: array
+          items:
+            type: string
+        screensaver_cards:
+          type: array
+          items:
+            type: string
+        screensaver_base_card_seconds:
+          type: array
+          items:
+            type: string
+        calendar_entity_ids:
+          type: array
+          items:
+            type: string
+        calendar_max_events:
+          type: array
+          items:
+            type: string
+        calendar_lookahead_hours:
+          type: array
+          items:
+            type: string
+        calendar_update_interval:
           type: array
           items:
             type: string

@@ -86,6 +86,7 @@ void EntityManager::init() {
 void EntityManager::load_entities() {
   SPDLOG_INFO("Loading config...");
   EntityManager::_weather_manager.reload_config();
+  MQTTManagerCalendar::reload_config();
 
   EntityManager::load_lights();
   EntityManager::load_buttons();
