@@ -562,6 +562,8 @@ NSPanel::~NSPanel() {
 
   this->reset_mqtt_topics();
   this->reset_ha_mqtt_topics();
+  // This nspanel was removed. Clear any retain on its command topic.
+  MQTT_Manager::clear_retain(this->_mqtt_command_topic);
 }
 
 void NSPanel::reset_mqtt_topics() {
@@ -574,9 +576,6 @@ void NSPanel::reset_mqtt_topics() {
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_legacy_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
   MQTT_Manager::detach_callback(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
-
-  // This nspanel was removed. Clear any retain on any MQTT topic.
-  MQTT_Manager::clear_retain(this->_mqtt_command_topic);
 }
 
 void NSPanel::reset_ha_mqtt_topics() {
@@ -598,7 +597,9 @@ void NSPanel::erase() {
   this->reboot();
   this->reset_mqtt_topics();
   this->reset_ha_mqtt_topics();
-  // Not cleared in reset_mqtt_topics() as that runs on every config reload, and the retained command is what remembers the mute.
+  // Not cleared in reset_mqtt_topics() as that runs on every config reload. The retained buzzer command is what remembers the mute,
+  // and clearing the command topic publishes an empty message that the panel receives on every registration.
+  MQTT_Manager::clear_retain(this->_mqtt_command_topic);
   MQTT_Manager::clear_retain(this->_mqtt_buzzer_mute_command_topic);
   MQTT_Manager::clear_retain(this->_mqtt_buzzer_mute_state_topic);
 }
