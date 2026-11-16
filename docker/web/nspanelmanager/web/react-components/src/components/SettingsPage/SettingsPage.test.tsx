@@ -519,3 +519,105 @@ describe("buzzer sounds", () => {
     expect(previewButton("Screen touch")).toBeDisabled();
   });
 });
+
+describe("screensaver cards", () => {
+  const checkbox = () => screen.getByRole("checkbox", { name: "Show calendar card" });
+  const seconds = () => screen.getByLabelText("Calendar card seconds");
+
+  it("shows the cards that are stored", async () => {
+    await renderPage({ screensaver_cards: "calendar:15", screensaver_base_card_seconds: 8 });
+
+    expect(screen.getByLabelText("Weather card seconds")).toHaveValue(8);
+    expect(checkbox()).toBeChecked();
+    expect(seconds()).toHaveValue(15);
+  });
+
+  it("has the calendar card off, and its time disabled, when none is stored", async () => {
+    await renderPage();
+
+    expect(checkbox()).not.toBeChecked();
+    expect(seconds()).toBeDisabled();
+  });
+
+  it("turns the calendar card on with 10 seconds", async () => {
+    const user = await renderPage();
+
+    await user.click(checkbox());
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ screensaver_cards: "calendar:10" });
+  });
+
+  it("changes the time, and keeps card types it has no row for", async () => {
+    const user = await renderPage({ screensaver_cards: "news:7,calendar:15" });
+
+    await user.clear(seconds());
+    await user.type(seconds(), "30");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ screensaver_cards: "news:7,calendar:30" });
+  });
+
+  it("turns the calendar card off", async () => {
+    const user = await renderPage({ screensaver_cards: "calendar:15" });
+
+    await user.click(checkbox());
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ screensaver_cards: "" });
+  });
+
+  it("brings a time outside 3 to 300 back into range", async () => {
+    const user = await renderPage({ screensaver_cards: "calendar:15" });
+
+    await user.clear(seconds());
+    await user.type(seconds(), "1000");
+    await user.tab();
+
+    expect(seconds()).toHaveValue(300);
+    await save(user);
+    expect(patches()[0].body).toEqual({ screensaver_cards: "calendar:300" });
+  });
+
+  it("saves the weather card seconds", async () => {
+    const user = await renderPage();
+
+    await user.clear(screen.getByLabelText("Weather card seconds"));
+    await user.type(screen.getByLabelText("Weather card seconds"), "20");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ screensaver_base_card_seconds: 20 });
+  });
+});
+
+describe("calendar section", () => {
+  it("edits the calendars and their limits", async () => {
+    const user = await renderPage({ calendar_entity_ids: "calendar.family" });
+
+    expect(screen.getByLabelText("Calendars")).toHaveValue("calendar.family");
+    expect(screen.getByLabelText("Most events shown")).toHaveValue(5);
+    expect(screen.getByLabelText("Look ahead (hours)")).toHaveValue(48);
+    expect(screen.getByLabelText("Refresh every (minutes)")).toHaveValue(5);
+
+    await user.clear(screen.getByLabelText("Calendars"));
+    await user.type(screen.getByLabelText("Calendars"), "calendar.family, calendar.school");
+    await user.clear(screen.getByLabelText("Most events shown"));
+    await user.type(screen.getByLabelText("Most events shown"), "8");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "calendar.family, calendar.school", calendar_max_events: 8 });
+  });
+
+  it("is replaced by a hint when Home Assistant is not configured", async () => {
+    await renderPage({ home_assistant_address: "", home_assistant_token_set: false });
+
+    expect(screen.queryByLabelText("Calendars")).not.toBeInTheDocument();
+    expect(screen.getByText(/Calendars come from Home Assistant/)).toBeInTheDocument();
+  });
+
+  it("is hidden when Home Assistant has an address but no token", async () => {
+    await renderPage({ home_assistant_token_set: false });
+
+    expect(screen.queryByLabelText("Calendars")).not.toBeInTheDocument();
+  });
+});

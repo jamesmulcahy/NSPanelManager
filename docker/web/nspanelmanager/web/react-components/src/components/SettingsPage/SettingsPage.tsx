@@ -8,6 +8,7 @@ import { LOG_LEVELS, NSPANEL_TYPES, options, SCREENSAVER_MODES, TURN_ON_BEHAVIOR
 import { JoinButton, TestButton } from "../common/buttons";
 import { Alert, Card, Row } from "../common/layout";
 import { typedFields } from "../common/typedFields";
+import { ScreensaverCardsRows } from "./ScreensaverCardsRow";
 import { buildPatch, MODES_WITH_OUTSIDE_TEMPERATURE, toFormValues, type SettingsFormValues } from "./form";
 
 const { NumberInput, RadioGroup, SecretInput, Select, TextInput } = typedFields<SettingsFormValues>();
@@ -68,6 +69,7 @@ function SettingsForm({ settings: loaded, logDownloadUrl }: { settings: Settings
     formState: { isDirty, isSubmitting, dirtyFields },
   } = form;
   const addon = settings.is_home_assistant_addon;
+  const homeAssistantConfigured = Boolean(settings.home_assistant_address) && settings.home_assistant_token_set;
 
   const onSubmit = async (values: SettingsFormValues) => {
     const body = buildPatch(values, dirtyFields, addon);
@@ -204,6 +206,8 @@ function SettingsForm({ settings: loaded, logDownloadUrl }: { settings: Settings
               ]}
             />
           )}
+          <NumberInput name="screensaver_base_card_seconds" label="Weather card seconds" hint="How long the weather (or clock) card shows before the next card. 3 to 300." />
+          <ScreensaverCardsRows />
           <RadioGroup
             name="optimistic_mode"
             label="Entity update mode"
@@ -219,6 +223,21 @@ function SettingsForm({ settings: loaded, logDownloadUrl }: { settings: Settings
         </Card>
 
         <BuzzerCard />
+
+        <Card title="Calendar">
+          {homeAssistantConfigured ? (
+            <>
+              <TextInput name="calendar_entity_ids" label="Calendars" hint="Home Assistant calendar entities, comma-separated. Blank turns the calendar off." placeholder="calendar.family, calendar.school" />
+              <Row>
+                <NumberInput name="calendar_max_events" label="Most events shown" hint="1 to 10." />
+                <NumberInput name="calendar_lookahead_hours" label="Look ahead (hours)" hint="1 to 336." />
+                <NumberInput name="calendar_update_interval" label="Refresh every (minutes)" />
+              </Row>
+            </>
+          ) : (
+            <Alert level="info">Calendars come from Home Assistant. Set the Home Assistant address and token below to use them.</Alert>
+          )}
+        </Card>
 
         <Card title="MQTT">
           <Row>
