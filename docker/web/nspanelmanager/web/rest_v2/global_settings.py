@@ -135,6 +135,15 @@ def _rtttl(help_text):
     return _text(validators=[_validate_rtttl], help_text=help_text)
 
 
+_PRICE = re.compile(r"[0-9]{1,6}(\.[0-9]{1,6})?")
+
+
+def _validate_price(value):
+    # MQTTManager reads it with strtod. Plain decimals only, so "1e3", "nan" and "12,5" are rejected here.
+    if not _PRICE.fullmatch(value):
+        raise serializers.ValidationError("Must be a decimal number, such as 0.1092.")
+
+
 def _coordinate(limit):
     def validate(value):
         if value == "":
@@ -199,6 +208,16 @@ class SettingsUpdateSerializer(serializers.Serializer):
     calendar_max_events = _int(1, 10, help_text="Most events shown.")
     calendar_lookahead_hours = _int(1, 336, help_text="How far ahead to look for events.")
     calendar_update_interval = _int(1, help_text="Minutes between calendar updates.")
+
+    # Energy card (Home Assistant only, apart from counting NSPanel Manager's own lights)
+    energy_power_source = StrictChoiceField(choices=["home_assistant_energy", "entities", "off"], help_text="Where the house's power draw comes from: the power sensors in Home Assistant's Energy settings, the sensors in energy_power_entity_ids, or nowhere.")
+    energy_power_entity_ids = _trimmed(help_text="Comma-separated Home Assistant power sensors, added together, for energy_power_source entities.")
+    energy_price_source = StrictChoiceField(choices=["home_assistant_energy", "entity", "fixed", "off"], help_text="Where the price per kWh comes from: Home Assistant's Energy settings, energy_price_entity_id, energy_price_per_kwh, or nowhere.")
+    energy_price_entity_id = _trimmed(help_text="Home Assistant entity holding the price per kWh, for energy_price_source entity.")
+    energy_price_per_kwh = _trimmed(validators=[_validate_price], help_text="Price per kWh, for energy_price_source fixed.")
+    lights_on_source = StrictChoiceField(choices=["home_assistant", "nspanelmanager", "off"], help_text="What the lights on count counts: Home Assistant's lights, NSPanel Manager's lights, or nothing.")
+    lights_on_exclude_labels = _trimmed(help_text="Comma-separated Home Assistant label ids. Lights with any of them are not counted.")
+    lights_on_alert_threshold = _int(0, 1000, help_text="Lights on at which the count turns to the alert colour. 0 never does.")
 
     # Weather and time
     location_latitude = _coordinate(90)
