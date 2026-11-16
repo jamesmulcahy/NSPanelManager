@@ -218,7 +218,7 @@ private:
   static inline std::unordered_map<MQTT_MANAGER_SETTING, std::pair<std::string, std::string>> _setting_key_map = {
       {MQTT_MANAGER_SETTING::IS_HOME_ASSISTANT_ADDON, {"is_home_assistant_addon", "false"}},
       {MQTT_MANAGER_SETTING::BUTTON_LONG_PRESS_TIME, {"button_long_press_time", "5000"}},
-      {MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, {"calendar_entity_ids", ""}}, // Comma-separated calendar.* entity ids, empty turns the calendar off
+      {MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, {"calendar_entity_ids", ""}}, // Comma-separated calendar.* entity ids, "all" for every calendar, empty turns the calendar off
       {MQTT_MANAGER_SETTING::CALENDAR_LOOKAHEAD_HOURS, {"calendar_lookahead_hours", "48"}},
       {MQTT_MANAGER_SETTING::CALENDAR_MAX_EVENTS, {"calendar_max_events", "5"}},
       {MQTT_MANAGER_SETTING::CALENDAR_UPDATE_INTERVAL, {"calendar_update_interval", "5"}}, // Minutes
