@@ -45,6 +45,27 @@ public:
    */
   static long call_service_with_response(const std::string &domain, const std::string &service, nlohmann::json target, nlohmann::json service_data, ResultCallback callback);
 
+  /**
+   * Send any one-shot command (e.g. {"type":"get_config"}) and hand the reply to `callback`, with the same guarantees as
+   * call_service_with_response(). The "id" member is set here.
+   */
+  static long send_command_with_response(nlohmann::json command, ResultCallback callback);
+
+  // Called with each event of a subscription: success=true and the "event" member of the message. If Home Assistant
+  // refuses the subscribe command, it is called once with success=false and the error.
+  using SubscriptionCallback = std::function<void(bool success, const nlohmann::json &event)>;
+
+  /**
+   * Keep a subscription (e.g. {"type":"render_template","template":"..."}) open for as long as the manager runs: it
+   * is sent now if Home Assistant is connected, and again after every (re)connect, so callers need not watch the
+   * connection. Callbacks run on the websocket thread, never while an internal lock is held, and must not block.
+   * Returns a handle for unsubscribe().
+   */
+  static long subscribe(nlohmann::json command, SubscriptionCallback callback);
+
+  // Stop a subscription. Sends unsubscribe_events if it is active. Unknown handles are ignored.
+  static void unsubscribe(long handle);
+
   // True while connected to and authenticated with Home Assistant.
   static bool is_authenticated() { return HomeAssistantManager::_authenticated; }
 
@@ -101,6 +122,26 @@ public:
   // Deliver a raw message as if received from Home Assistant.
   static void test_process_websocket_message(const std::string &message) { HomeAssistantManager::_process_websocket_message(message); }
 
+  // Deliver an event message for a request id as if it had been received from Home Assistant.
+  static void test_deliver_event(long id, const nlohmann::json &event) {
+    nlohmann::json message = {{"type", "event"}, {"id", id}, {"event", event}};
+    HomeAssistantManager::_process_websocket_message(message.dump());
+  }
+
+  // Do what happens when authentication succeeds, without the state requests (which tests take as sent messages).
+  static void test_authenticate() {
+    HomeAssistantManager::_connected = true;
+    HomeAssistantManager::_authenticated = true;
+    HomeAssistantManager::_resubscribe_all();
+  }
+
+  // The websocket id a subscription is active under; 0: not active.
+  static long test_subscription_id(long handle) {
+    std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_subscriptions_mutex);
+    auto it = HomeAssistantManager::_subscriptions.find(handle);
+    return it == HomeAssistantManager::_subscriptions.end() ? 0 : it->second.id;
+  }
+
   static size_t test_pending_call_count() {
     std::lock_guard<std::mutex> lock_guard(HomeAssistantManager::_pending_calls_mutex);
     return HomeAssistantManager::_pending_calls.size();
@@ -147,6 +188,20 @@ private:
   static void _fail_pending_calls(bool all, std::chrono::steady_clock::time_point now);
   static void _expire_pending_calls(std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now()) { HomeAssistantManager::_fail_pending_calls(false, now); }
   static void _handle_connection_lost(); // Marks the connection as down and fails every pending call.
+
+  struct Subscription {
+    std::string command; // Serialised: the header only forward-declares nlohmann::json
+    SubscriptionCallback callback;
+    long id = 0; // The websocket id it is active under; 0: not sent on this connection
+  };
+  static inline std::mutex _subscriptions_mutex;
+  static inline std::unordered_map<long, Subscription> _subscriptions; // By handle
+  static inline std::unordered_map<long, long> _subscription_handles;   // Websocket id -> handle
+  static inline std::atomic<long> _next_subscription_handle = 1;
+  static void _send_subscription(long handle); // Sends it unless it is already active on this connection.
+  static void _resubscribe_all();
+  // Hand a message for a subscription's id to it. False: the id is not a subscription's.
+  static bool _process_subscription_message(long id, const nlohmann::json &data);
 
   static inline boost::signals2::signal<void()> _authenticated_observers;
 
