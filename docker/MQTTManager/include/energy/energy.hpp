@@ -12,6 +12,44 @@
 #ifndef MQTT_MANAGER_ENERGY
 #define MQTT_MANAGER_ENERGY
 
+// MQTTManagerEnergy's types, outside the class: its static members are initialised with them, which
+// a nested type's default member initialisers do not allow before the class ends.
+enum class EnergyPowerSource { OFF, HOME_ASSISTANT_ENERGY, ENTITIES };
+enum class EnergyPriceSource { OFF, HOME_ASSISTANT_ENERGY, ENTITY, FIXED };
+enum class EnergyLightsSource { OFF, HOME_ASSISTANT, NSPANELMANAGER };
+
+struct EnergySettings {
+  EnergyPowerSource power_source = EnergyPowerSource::HOME_ASSISTANT_ENERGY;
+  std::vector<std::string> power_entity_ids;
+  EnergyPriceSource price_source = EnergyPriceSource::HOME_ASSISTANT_ENERGY;
+  std::string price_entity_id;
+  double price_per_kwh = 0;
+  EnergyLightsSource lights_source = EnergyLightsSource::HOME_ASSISTANT;
+  std::vector<std::string> exclude_labels;
+  int alert_threshold = 15; // 0: never alert
+
+  bool operator==(const EnergySettings &) const = default;
+};
+
+// Where the values come from, once the settings and Home Assistant's Energy settings are combined.
+struct EnergySources {
+  bool resolved = false;                   // False until the Energy settings needed have been read
+  std::vector<std::string> power_entities; // Empty: power not configured
+  std::string price_entity;                // A price entity, read by the energy template
+  std::optional<double> fixed_price;       // Or a fixed price per kWh
+
+  bool power_configured() const { return !power_entities.empty(); }
+  bool price_configured() const { return !price_entity.empty() || fixed_price.has_value(); }
+  bool operator==(const EnergySources &) const = default;
+};
+
+// The latest values. nullopt: unavailable.
+struct EnergyReadings {
+  std::optional<double> power_watts;
+  std::optional<double> price_per_kwh; // From the price entity
+  std::optional<int> lights_on;
+};
+
 // The house's power draw, what a day would cost at that draw, and the number of lights on, for the panels' screensaver
 // energy card on nspanel/mqttmanager_<manager address>/status/energy.
 //
@@ -20,41 +58,12 @@
 // Energy settings (energy/get_prefs) unless the user picked them in the manager.
 class MQTTManagerEnergy {
 public:
-  enum class PowerSource { OFF, HOME_ASSISTANT_ENERGY, ENTITIES };
-  enum class PriceSource { OFF, HOME_ASSISTANT_ENERGY, ENTITY, FIXED };
-  enum class LightsSource { OFF, HOME_ASSISTANT, NSPANELMANAGER };
-
-  struct Settings {
-    PowerSource power_source = PowerSource::HOME_ASSISTANT_ENERGY;
-    std::vector<std::string> power_entity_ids;
-    PriceSource price_source = PriceSource::HOME_ASSISTANT_ENERGY;
-    std::string price_entity_id;
-    double price_per_kwh = 0;
-    LightsSource lights_source = LightsSource::HOME_ASSISTANT;
-    std::vector<std::string> exclude_labels;
-    int alert_threshold = 15; // 0: never alert
-
-    bool operator==(const Settings &) const = default;
-  };
-
-  // Where the values come from, once the settings and Home Assistant's Energy settings are combined.
-  struct Sources {
-    bool resolved = false;                   // False until the Energy settings needed have been read
-    std::vector<std::string> power_entities; // Empty: power not configured
-    std::string price_entity;                // A price entity, read by the energy template
-    std::optional<double> fixed_price;       // Or a fixed price per kWh
-
-    bool power_configured() const { return !power_entities.empty(); }
-    bool price_configured() const { return !price_entity.empty() || fixed_price.has_value(); }
-    bool operator==(const Sources &) const = default;
-  };
-
-  // The latest values. nullopt: unavailable.
-  struct Readings {
-    std::optional<double> power_watts;
-    std::optional<double> price_per_kwh; // From the price entity
-    std::optional<int> lights_on;
-  };
+  using PowerSource = EnergyPowerSource;
+  using PriceSource = EnergyPriceSource;
+  using LightsSource = EnergyLightsSource;
+  using Settings = EnergySettings;
+  using Sources = EnergySources;
+  using Readings = EnergyReadings;
 
   /**
    * Load config and start the thread that keeps the sources up to date and publishes.
