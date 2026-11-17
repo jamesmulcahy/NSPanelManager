@@ -36,6 +36,7 @@ class PageRenderTests(NSPMTestCase):
             reverse("edit_room", kwargs={"room_id": self.room.id}),
             reverse("edit_nspanel", kwargs={"panel_id": self.panel.id}),
             reverse("settings"),
+            reverse("home_assistant_sync"),
             reverse("relay_groups"),
             reverse("global_scenes"),
             reverse("weather_and_time"),

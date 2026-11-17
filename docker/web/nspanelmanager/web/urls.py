@@ -15,6 +15,7 @@ urlpatterns = [
     path("nspanel/<int:panel_id>", views.edit_nspanel, name="edit_nspanel"),
     path("save_nspanel_settings/<int:panel_id>", views.save_panel_settings, name="save_panel_settings"),
     path("settings", views.settings_page, name="settings"),
+    path("home_assistant_sync", views.home_assistant_sync_page, name="home_assistant_sync"),
     path("save_new_room", views.save_new_room, name="save_new_room"),
     path("save_new_firmware", views.save_new_firmware, name="save_new_firmware"),
     path("save_new_data_file", views.save_new_data_file, name="save_new_data_file"),

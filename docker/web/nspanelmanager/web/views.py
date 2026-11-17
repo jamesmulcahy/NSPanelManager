@@ -419,6 +419,11 @@ def settings_page(request):
     return render(request, "settings.html", get_base_data(request))
 
 
+def home_assistant_sync_page(request):
+    # The page is the React HomeAssistantSyncPage, which loads and saves through /rest/v2/home_assistant/*.
+    return render(request, "home_assistant_sync.html", get_base_data(request))
+
+
 @csrf_exempt
 def save_new_firmware(request):
     if request.method == "POST":
