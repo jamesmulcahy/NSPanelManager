@@ -2,7 +2,6 @@ asgiref==3.8.1
 certifi==2026.10.18
 charset-normalizer==3.3.2
 colorama==0.4.6
-conan==2.7.0
 distro==1.8.0
 Django==5.2.17
 djangorestframework==3.18.2
