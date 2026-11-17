@@ -89,6 +89,7 @@ LEGACY_ROWS = {
     "energy_price_per_kwh": "0.1092",
     "lights_on_source": "home_assistant",
     "lights_on_exclude_labels": "exclude_from_whats_on",
+    "home_assistant_sync_exclude_labels": "nspm_ignore,acmax",
     "lights_on_alert_threshold": "15",
     "location_latitude": "-33.8688",
     "location_longitude": "151.2093",
