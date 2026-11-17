@@ -1134,6 +1134,9 @@ bool NSPanel::has_firmware_update() {
 }
 
 bool NSPanel::has_littlefs_update() {
+  if (this->_current_littlefs_md5_checksum == NSPM_WEB_UI_EMBEDDED) {
+    return false;
+  }
   std::string file_checksum = "";
   if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF) {
     auto result = MqttManagerConfig::get_littlefs_sonoff_checksum();
