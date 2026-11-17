@@ -2,6 +2,7 @@
 
 #include "test_helpers.hpp"
 #include <calendar/calendar.hpp>
+#include <algorithm>
 #include <ctime>
 #include <map>
 #include <gtest/gtest.h>
@@ -316,6 +317,7 @@ protected:
   void SetUp() override {
     SendCaptureTest::SetUp();
     MQTTManagerCalendar::test_reset();
+    MQTTManagerCalendar::test_detach_observers();
     _saved_timezone = MqttManagerConfig::timezone;
     MqttManagerConfig::timezone = PACIFIC;
     MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CLOCK_US_STYLE, "True");
@@ -329,6 +331,7 @@ protected:
     MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CLOCK_US_STYLE, "False");
     HomeAssistantManager::test_set_authenticated(false);
     MQTTManagerCalendar::test_reset();
+    MQTTManagerCalendar::test_detach_observers();
   }
 
   static std::vector<NSPanelCalendarUpdate> published() {
@@ -444,4 +447,112 @@ TEST_F(CalendarPublishTest, turning_the_feature_off_clears_the_retained_topic_on
   EXPECT_EQ(after_first, before + 1);
   EXPECT_EQ(after_second, after_first);
   EXPECT_TRUE(published().empty());
+}
+
+// The setting "all"
+
+namespace {
+// What Home Assistant answered to calendar.get_events with target.entity_id "all" (2026-11-16): empty calendars, an all-day and a timed event.
+nlohmann::json all_reply() {
+  return nlohmann::json::parse(R"({"response": {
+    "calendar.oliver_choreops_calendar": {"events": []},
+    "calendar.alex_choreops_calendar": {"events": []},
+    "calendar.waste_collection_schedule_waste_management_wm": {"events": [{"start": "2026-11-16", "end": "2026-11-17", "summary": "Garbage"}]},
+    "calendar.family_calendar": {"events": [{"start": "2026-11-16T08:00:00-08:00", "end": "2026-11-16T09:00:00-08:00", "summary": "School run"}]}
+  }})");
+}
+
+std::vector<std::string> sorted(std::vector<std::string> values) {
+  std::sort(values.begin(), values.end());
+  return values;
+}
+} // namespace
+
+TEST(CalendarProcessing, a_reply_to_all_with_empty_calendars_and_mixed_events_is_processed) {
+  auto update = process(all_reply());
+
+  EXPECT_EQ(summaries(update), (std::vector<std::string>{"Garbage", "School run"}));
+  EXPECT_TRUE(update.events(0).all_day());
+  EXPECT_EQ(update.events(0).when_string(), "Tomorrow");
+  EXPECT_FALSE(update.events(1).all_day());
+  EXPECT_EQ(update.events(1).when_string(), "Tomorrow 8:00 AM");
+}
+
+TEST_F(CalendarPublishTest, the_setting_all_sends_all_as_the_target) {
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::HOME_ASSISTANT_ADDRESS, "http://ha.invalid:8123");
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, " All ");
+  HomeAssistantManager::test_set_authenticated(true);
+  HomeAssistantManager::test_take_sent_messages();
+
+  MQTTManagerCalendar::test_fetch();
+
+  auto sent = HomeAssistantManager::test_take_sent_messages();
+  ASSERT_EQ(sent.size(), 1u);
+  EXPECT_EQ(sent[0]["service"], "get_events");
+  EXPECT_EQ(sent[0]["return_response"], true);
+  EXPECT_EQ(sent[0]["target"], (nlohmann::json{{"entity_id", "all"}}));
+  EXPECT_TRUE(published().empty());
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::HOME_ASSISTANT_ADDRESS, "");
+}
+
+TEST_F(CalendarPublishTest, the_setting_all_does_not_clear_the_topic) {
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::HOME_ASSISTANT_ADDRESS, "http://ha.invalid:8123");
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, "all");
+  HomeAssistantManager::test_set_authenticated(false);
+  size_t before = MQTT_Manager::test_buffered_message_count();
+
+  MQTTManagerCalendar::test_fetch();
+
+  EXPECT_EQ(MQTT_Manager::test_buffered_message_count(), before);
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::HOME_ASSISTANT_ADDRESS, "");
+}
+
+TEST_F(CalendarPublishTest, a_reply_to_all_is_published) {
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, "all");
+
+  MQTTManagerCalendar::test_handle_result(true, all_reply(), NOW);
+
+  auto updates = published();
+  ASSERT_EQ(updates.size(), 1u);
+  EXPECT_EQ(summaries(updates[0]), (std::vector<std::string>{"Garbage", "School run"}));
+}
+
+TEST_F(CalendarPublishTest, with_all_the_observers_follow_the_response_keys) {
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, "all");
+  MQTTManagerCalendar::reload_config();
+  EXPECT_TRUE(MQTTManagerCalendar::test_observed_entities().empty());
+
+  MQTTManagerCalendar::test_handle_result(true, all_reply(), NOW);
+  EXPECT_EQ(MQTTManagerCalendar::test_observed_entities(),
+            sorted({"calendar.oliver_choreops_calendar", "calendar.alex_choreops_calendar", "calendar.waste_collection_schedule_waste_management_wm", "calendar.family_calendar"}));
+
+  // One is added in Home Assistant, one is removed.
+  nlohmann::json changed = all_reply();
+  changed["response"].erase("calendar.alex_choreops_calendar");
+  changed["response"]["calendar.new_one"] = {{"events", nlohmann::json::array()}};
+  MQTTManagerCalendar::test_handle_result(true, changed, NOW + 600);
+  EXPECT_EQ(MQTTManagerCalendar::test_observed_entities(),
+            sorted({"calendar.oliver_choreops_calendar", "calendar.new_one", "calendar.waste_collection_schedule_waste_management_wm", "calendar.family_calendar"}));
+
+  // A failed fetch leaves them as they are.
+  MQTTManagerCalendar::test_handle_result(false, nlohmann::json{{"code", "unknown_error"}}, NOW + 1200);
+  EXPECT_EQ(MQTTManagerCalendar::test_observed_entities().size(), 4u);
+}
+
+TEST_F(CalendarPublishTest, switching_from_all_to_a_list_or_off_detaches_the_observers) {
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, "all");
+  MQTTManagerCalendar::test_handle_result(true, all_reply(), NOW);
+  ASSERT_EQ(MQTTManagerCalendar::test_observed_entities().size(), 4u);
+
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, "calendar.family_calendar");
+  MQTTManagerCalendar::reload_config();
+  EXPECT_EQ(MQTTManagerCalendar::test_observed_entities(), (std::vector<std::string>{"calendar.family_calendar"}));
+
+  // A late reply to "all" does not bring the others back.
+  MQTTManagerCalendar::test_handle_result(true, all_reply(), NOW);
+  EXPECT_EQ(MQTTManagerCalendar::test_observed_entities(), (std::vector<std::string>{"calendar.family_calendar"}));
+
+  MqttManagerConfig::set_setting_value(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS, "");
+  MQTTManagerCalendar::reload_config();
+  EXPECT_TRUE(MQTTManagerCalendar::test_observed_entities().empty());
 }

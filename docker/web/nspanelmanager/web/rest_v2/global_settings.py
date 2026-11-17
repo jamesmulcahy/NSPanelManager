@@ -213,7 +213,7 @@ class SettingsUpdateSerializer(serializers.Serializer):
     screensaver_base_card_seconds = _int(3, 300, help_text="Seconds the weather or clock card shows before the next card.")
 
     # Calendar (Home Assistant only)
-    calendar_entity_ids = _trimmed(help_text="Comma-separated Home Assistant calendar.* entity ids. Blank turns the calendar off.")
+    calendar_entity_ids = _trimmed(help_text="Comma-separated Home Assistant calendar.* entity ids, or \"all\" for every calendar (including ones added later). Blank turns the calendar off.")
     calendar_max_events = _int(1, 10, help_text="Most events shown.")
     calendar_lookahead_hours = _int(1, 336, help_text="How far ahead to look for events.")
     calendar_update_interval = _int(1, help_text="Minutes between calendar updates.")

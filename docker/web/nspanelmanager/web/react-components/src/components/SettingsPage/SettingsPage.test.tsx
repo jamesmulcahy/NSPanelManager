@@ -14,6 +14,19 @@ type Reply = { status: number; body: unknown };
 let stored: Settings;
 let patchReply: Reply | null;
 let getReply: Reply | null;
+// The reply to GET /rest/home_assistant/entities; null makes the request fail.
+let entitiesReply: Reply | null;
+const CALENDARS_REPLY: Reply = {
+  status: 200,
+  body: {
+    items: [
+      { type: "home_assistant", label: "Family Calendar", item_id: "calendar.family", item: {} },
+      { type: "home_assistant", label: "School Calendar", item_id: "calendar.school", item: {} },
+      { type: "home_assistant", label: "Waste Collection", item_id: "calendar.waste", item: {} },
+    ],
+    errors: [],
+  },
+};
 const requests: { method: string; url: string; headers: Headers; body: unknown }[] = [];
 
 function json(reply: Reply) {
@@ -41,6 +54,12 @@ const fetchMock = vi.fn(async (input: Request | string, init?: RequestInit) => {
       }
     }
     return json({ status: 200, body: stored });
+  }
+  if (url.pathname === "/rest/home_assistant/entities") {
+    if (!entitiesReply) {
+      throw new TypeError("Failed to fetch");
+    }
+    return json(entitiesReply);
   }
   if (url.pathname === "/rest/get_ip_by_hostname") {
     return json({ status: 200, body: { ip: "10.0.0.5" } });
@@ -73,6 +92,7 @@ beforeEach(() => {
   requests.length = 0;
   patchReply = null;
   getReply = null;
+  entitiesReply = CALENDARS_REPLY;
 });
 
 afterEach(() => {
@@ -617,34 +637,157 @@ describe("screensaver cards", () => {
 });
 
 describe("calendar section", () => {
-  it("edits the calendars and their limits", async () => {
+  const picker = () => screen.getByLabelText("Calendar entities");
+
+  it("edits the calendar limits", async () => {
     const user = await renderPage({ calendar_entity_ids: "calendar.family" });
 
-    expect(screen.getByLabelText("Calendars")).toHaveValue("calendar.family");
     expect(screen.getByLabelText("Most events shown")).toHaveValue(5);
     expect(screen.getByLabelText("Look ahead (hours)")).toHaveValue(48);
     expect(screen.getByLabelText("Refresh every (minutes)")).toHaveValue(5);
 
-    await user.clear(screen.getByLabelText("Calendars"));
-    await user.type(screen.getByLabelText("Calendars"), "calendar.family, calendar.school");
     await user.clear(screen.getByLabelText("Most events shown"));
     await user.type(screen.getByLabelText("Most events shown"), "8");
     await save(user);
 
-    expect(patches()[0].body).toEqual({ calendar_entity_ids: "calendar.family, calendar.school", calendar_max_events: 8 });
+    expect(patches()[0].body).toEqual({ calendar_max_events: 8 });
+  });
+
+  it("asks Home Assistant for its calendars only", async () => {
+    await renderPage({ calendar_entity_ids: "calendar.family" });
+
+    await screen.findByText("Family Calendar");
+    const request = requests.find((entry) => entry.url.startsWith("/rest/home_assistant/entities"));
+    expect(request).toBeDefined();
+    expect(JSON.parse(new URL(request!.url, "http://localhost").searchParams.get("filter")!)).toEqual({ type: ["calendar"] });
+  });
+
+  it("shows the saved calendars by their friendly names and leaves the setting alone when nothing changes", async () => {
+    await renderPage({ calendar_entity_ids: "calendar.family, calendar.school" });
+
+    expect(await screen.findByText("Family Calendar")).toBeInTheDocument();
+    expect(screen.getByText("School Calendar")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Choose calendars" })).toBeChecked();
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it("chooses a calendar from the list and keeps the others", async () => {
+    const user = await renderPage({ calendar_entity_ids: "calendar.family" });
+    await screen.findByText("Family Calendar");
+
+    await user.type(picker(), "school{Enter}");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "calendar.family,calendar.school" });
+  });
+
+  it("removes a calendar", async () => {
+    const user = await renderPage({ calendar_entity_ids: "calendar.family,calendar.school" });
+    await screen.findByText("Family Calendar");
+
+    await user.click(screen.getByLabelText("Remove Family Calendar"));
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "calendar.school" });
+  });
+
+  it("starts on Choose, with nothing chosen, when the calendar has not been set up", async () => {
+    await renderPage({ calendar_entity_ids: "" });
+
+    expect(screen.getByRole("radio", { name: "Choose calendars" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "All calendars" })).not.toBeChecked();
+    expect(screen.getByText(/With none, the calendar stays off/)).toBeInTheDocument();
+  });
+
+  it("round-trips all", async () => {
+    const user = await renderPage({ calendar_entity_ids: "all" });
+
+    expect(screen.getByRole("radio", { name: "All calendars" })).toBeChecked();
+    expect(screen.queryByLabelText("Calendar entities")).not.toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+
+    await user.click(screen.getByRole("radio", { name: "Choose calendars" }));
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "" });
+  });
+
+  it("saves all when All calendars is picked, and brings the choice back when Choose is picked again", async () => {
+    const user = await renderPage({ calendar_entity_ids: "calendar.family,calendar.school" });
+    await screen.findByText("Family Calendar");
+
+    await user.click(screen.getByRole("radio", { name: "All calendars" }));
+    expect(screen.queryByLabelText("Calendar entities")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Choose calendars" }));
+    expect(await screen.findByText("School Calendar")).toBeInTheDocument();
+    expect(saveButton()).toBeDisabled();
+
+    await user.click(screen.getByRole("radio", { name: "All calendars" }));
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "all" });
+  });
+
+  it("keeps saved calendars that Home Assistant no longer has, and shows them as missing", async () => {
+    const user = await renderPage({ calendar_entity_ids: "calendar.family,calendar.gone" });
+
+    expect(await screen.findByText("calendar.gone (missing)")).toBeInTheDocument();
+    expect(screen.getByText(/Not in Home Assistant any more: calendar\.gone/)).toBeInTheDocument();
+
+    // Adding another one keeps it.
+    await user.type(picker(), "school{Enter}");
+    await save(user);
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "calendar.family,calendar.gone,calendar.school" });
+  });
+
+  it("lets a missing calendar be removed", async () => {
+    const user = await renderPage({ calendar_entity_ids: "calendar.family,calendar.gone" });
+    await screen.findByText("calendar.gone (missing)");
+
+    await user.click(screen.getByLabelText("Remove calendar.gone"));
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "calendar.family" });
+    expect(screen.queryByText(/Not in Home Assistant any more/)).not.toBeInTheDocument();
+  });
+
+  it("falls back to the text field when the calendars can't be fetched", async () => {
+    entitiesReply = null;
+    const user = await renderPage({ calendar_entity_ids: "calendar.family" });
+
+    const field = await screen.findByLabelText("Calendars");
+    expect(field).toHaveValue("calendar.family");
+    expect(screen.getByText(/Couldn't load the calendars from Home Assistant/)).toBeInTheDocument();
+
+    await user.clear(field);
+    await user.type(field, "calendar.family, calendar.school");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ calendar_entity_ids: "calendar.family, calendar.school" });
+  });
+
+  it.each([
+    ["an HTTP error", { status: 500, body: {} }],
+    ["Home Assistant not being reachable", { status: 200, body: { items: [], errors: ["Home Assistant address and/or access token not configured"] } }],
+  ])("falls back to the text field on %s", async (_name, reply) => {
+    entitiesReply = reply;
+    await renderPage({ calendar_entity_ids: "all" });
+
+    expect(await screen.findByLabelText("Calendars")).toHaveValue("all");
   });
 
   it("is replaced by a hint when Home Assistant is not configured", async () => {
     await renderPage({ home_assistant_address: "", home_assistant_token_set: false });
 
-    expect(screen.queryByLabelText("Calendars")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Calendar entities")).not.toBeInTheDocument();
     expect(screen.getByText(/Calendars come from Home Assistant/)).toBeInTheDocument();
   });
 
   it("is hidden when Home Assistant has an address but no token", async () => {
     await renderPage({ home_assistant_token_set: false });
 
-    expect(screen.queryByLabelText("Calendars")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Calendar entities")).not.toBeInTheDocument();
+    expect(requests.some((entry) => entry.url.startsWith("/rest/home_assistant/entities"))).toBe(false);
   });
 });
 

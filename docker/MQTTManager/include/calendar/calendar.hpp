@@ -13,6 +13,8 @@
 
 // Fetches upcoming events from Home Assistant calendars and publishes them, merged into one list, for the panels'
 // screensaver calendar card on nspanel/mqttmanager_<manager address>/status/calendar.
+//
+// The calendar_entity_ids setting is "" (off), "all" (every calendar in Home Assistant) or a comma separated list of entity ids.
 class MQTTManagerCalendar {
 public:
   /**
@@ -63,6 +65,15 @@ public:
     MQTTManagerCalendar::_last_published.clear();
     MQTTManagerCalendar::_topic_cleared = false;
   }
+
+  // Entities that have a state change observer attached right now.
+  static std::vector<std::string> test_observed_entities() {
+    std::lock_guard<std::mutex> lock_guard(MQTTManagerCalendar::_mutex);
+    return MQTTManagerCalendar::_observed_entities;
+  }
+
+  // Detach all observers and forget them.
+  static void test_detach_observers() { MQTTManagerCalendar::_set_observed_entities({}); }
 #endif
 
 private:
@@ -87,7 +98,14 @@ private:
   static void _handle_result(bool success, const nlohmann::json &result, std::time_t now);
   static void _publish(NSPanelCalendarUpdate &update);
 
+  // The configured calendars. Empty for "all" as well as when the feature is off, see _all_calendars().
   static std::vector<std::string> _configured_entities();
+
+  // True when the setting is the reserved value "all": every calendar in Home Assistant, including ones added later.
+  static bool _all_calendars();
+
+  // Make these the entities with a state change observer, attaching and detaching the difference.
+  static void _set_observed_entities(std::vector<std::string> entities);
   static std::string _cut_utf8(const std::string &text, size_t max_bytes);
 };
 

@@ -292,7 +292,34 @@ std::string MQTTManagerCalendar::_topic() {
   return fmt::format("nspanel/mqttmanager_{}/status/calendar", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::MANAGER_ADDRESS));
 }
 
+bool MQTTManagerCalendar::_all_calendars() {
+  std::string value = MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS);
+  boost::algorithm::trim(value);
+  return boost::algorithm::iequals(value, "all");
+}
+
+void MQTTManagerCalendar::_set_observed_entities(std::vector<std::string> entities) {
+  std::vector<std::string> old_entities;
+  {
+    std::lock_guard<std::mutex> lock_guard(MQTTManagerCalendar::_mutex);
+    old_entities = std::exchange(MQTTManagerCalendar::_observed_entities, entities);
+  }
+  for (const std::string &entity : old_entities) {
+    if (std::find(entities.begin(), entities.end(), entity) == entities.end()) {
+      HomeAssistantManager::detach_event_observer(entity, &MQTTManagerCalendar::home_assistant_event_callback);
+    }
+  }
+  for (const std::string &entity : entities) {
+    if (std::find(old_entities.begin(), old_entities.end(), entity) == old_entities.end()) {
+      HomeAssistantManager::attach_event_observer(entity, &MQTTManagerCalendar::home_assistant_event_callback);
+    }
+  }
+}
+
 std::vector<std::string> MQTTManagerCalendar::_configured_entities() {
+  if (MQTTManagerCalendar::_all_calendars()) {
+    return {};
+  }
   std::vector<std::string> parts;
   boost::algorithm::split(parts, MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::CALENDAR_ENTITY_IDS), boost::algorithm::is_any_of(","));
   std::vector<std::string> entities;
@@ -317,19 +344,15 @@ void MQTTManagerCalendar::start() {
 }
 
 void MQTTManagerCalendar::reload_config() {
-  std::vector<std::string> old_entities;
-  {
-    std::lock_guard<std::mutex> lock_guard(MQTTManagerCalendar::_mutex);
-    old_entities = std::exchange(MQTTManagerCalendar::_observed_entities, MQTTManagerCalendar::_configured_entities());
-  }
-  for (const std::string &entity : old_entities) {
-    HomeAssistantManager::detach_event_observer(entity, &MQTTManagerCalendar::home_assistant_event_callback);
-  }
+  // With "all" the calendars are not known until a fetch has answered, which then attaches the observers (see _handle_result).
+  // Until then, and when the feature is off, there are none.
   std::vector<std::string> entities = MQTTManagerCalendar::_configured_entities();
-  for (const std::string &entity : entities) {
-    HomeAssistantManager::attach_event_observer(entity, &MQTTManagerCalendar::home_assistant_event_callback);
+  MQTTManagerCalendar::_set_observed_entities(entities);
+  if (MQTTManagerCalendar::_all_calendars()) {
+    SPDLOG_INFO("Calendar: all calendars configured.");
+  } else {
+    SPDLOG_INFO("Calendar: {} calendar(s) configured.", entities.size());
   }
-  SPDLOG_INFO("Calendar: {} calendar(s) configured.", entities.size());
   MQTTManagerCalendar::_request_fetch();
 }
 
@@ -376,7 +399,9 @@ void MQTTManagerCalendar::_fetch() {
   std::vector<std::string> entities = MQTTManagerCalendar::_configured_entities();
   bool home_assistant_configured = !MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::HOME_ASSISTANT_ADDRESS).empty();
 
-  if (entities.empty() || !home_assistant_configured) {
+  bool all_calendars = MQTTManagerCalendar::_all_calendars();
+
+  if ((entities.empty() && !all_calendars) || !home_assistant_configured) {
     // Feature off. Remove what an earlier run (or setting) left on the broker, once, so that the panels stop showing it.
     if (!MQTTManagerCalendar::_topic_cleared.exchange(true)) {
       SPDLOG_INFO("Calendar is not in use, will clear retained calendar topic.");
@@ -396,7 +421,8 @@ void MQTTManagerCalendar::_fetch() {
     MQTTManagerCalendar::_last_fetch = std::chrono::steady_clock::now();
   }
   int hours = std::clamp<int>(MqttManagerConfig::get_setting_with_default<int32_t>(MQTT_MANAGER_SETTING::CALENDAR_LOOKAHEAD_HOURS), 1, 336);
-  nlohmann::json target = {{"entity_id", entities}};
+  // Home Assistant answers "all" with every calendar, keyed by entity id. Without a target it answers 400.
+  nlohmann::json target = all_calendars ? nlohmann::json{{"entity_id", "all"}} : nlohmann::json{{"entity_id", entities}};
   nlohmann::json service_data = {{"duration", {{"hours", hours}}}};
   HomeAssistantManager::call_service_with_response("calendar", "get_events", target, service_data, [](bool success, const nlohmann::json &result) {
     MQTTManagerCalendar::_handle_result(success, result, std::time(nullptr));
@@ -408,6 +434,19 @@ void MQTTManagerCalendar::_handle_result(bool success, const nlohmann::json &res
     SPDLOG_WARN("Calendar: fetching events from Home Assistant failed: {}", result.dump());
     return; // Publish nothing, the last retained list stays.
   }
+  if (MQTTManagerCalendar::_all_calendars()) {
+    // The calendars are whatever Home Assistant answered with. Follow their state changes from now on.
+    std::vector<std::string> entities;
+    const nlohmann::json *calendars = result.is_object() && result.contains("response") ? &result["response"] : &result;
+    if (calendars->is_object()) {
+      for (const auto &calendar : calendars->items()) {
+        entities.push_back(calendar.key());
+      }
+    }
+    std::sort(entities.begin(), entities.end());
+    MQTTManagerCalendar::_set_observed_entities(std::move(entities));
+  }
+
   int max_events = std::clamp<int>(MqttManagerConfig::get_setting_with_default<int32_t>(MQTT_MANAGER_SETTING::CALENDAR_MAX_EVENTS), 1, 10);
   int hours = std::clamp<int>(MqttManagerConfig::get_setting_with_default<int32_t>(MQTT_MANAGER_SETTING::CALENDAR_LOOKAHEAD_HOURS), 1, 336);
   bool us_style = MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::CLOCK_US_STYLE);
