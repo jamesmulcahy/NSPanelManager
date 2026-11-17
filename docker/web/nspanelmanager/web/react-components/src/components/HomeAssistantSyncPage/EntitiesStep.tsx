@@ -65,6 +65,11 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [labelDraft, setLabelDraft] = useState<string[] | null>(null);
   const [labelError, setLabelError] = useState<string | null>(null);
+  // The import result shows at the top of the step; bring it into view once it arrives.
+  const resultRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (summary || importError) resultRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }, [summary, importError]);
 
   const meta = useLoader(loadMeta);
   const candidatesLoader = useLoader<EntityCandidates>(async () => {
@@ -155,7 +160,8 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
   const labelValue = labelDraft ?? excluded;
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4">
+      <div ref={resultRef} />
       {summary && (
         <div role="status" className="alert alert-success flex-col items-start">
           <strong>
@@ -188,7 +194,7 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
       )}
       {importError && <ErrorBanner message={importError} />}
 
-      <div className="p-4 bg-base-100 rounded-md shadow-lg space-y-3">
+      <div className="p-4 bg-base-100 rounded-md shadow-lg flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="join">
             <button type="button" className="btn btn-sm join-item" onClick={() => setSelected((current) => selectAll(current, visible))}>
@@ -202,7 +208,7 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
             </button>
           </div>
           <select
-            className="select select-bordered select-sm"
+            className="select select-sm"
             aria-label="Filter by type"
             value={filters.type}
             onChange={(event) => setFilters({ ...filters, type: event.target.value as Filters["type"] })}
@@ -215,7 +221,7 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
             ))}
           </select>
           <select
-            className="select select-bordered select-sm"
+            className="select select-sm"
             aria-label="Filter by room"
             value={String(filters.roomId)}
             onChange={(event) => setFilters({ ...filters, roomId: event.target.value === "all" ? "all" : Number(event.target.value) })}
@@ -227,7 +233,7 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
               </option>
             ))}
           </select>
-          <span className="ml-auto font-medium" aria-live="polite">
+          <span className="ms-auto font-medium" aria-live="polite">
             {chosen.length} selected
             {hiddenSelected > 0 ? ` (${hiddenSelected} hidden by filters)` : ""}
           </span>
@@ -250,8 +256,8 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
 
         <details>
           <summary className="cursor-pointer">Excluded labels ({excluded.length})</summary>
-          <div className="mt-2 space-y-1">
-            {labels.length === 0 && <p className="text-base-content/70">Home Assistant has no labels.</p>}
+          <div className="mt-2 flex flex-col gap-2">
+            {labels.length === 0 && <p className="text-base-content/50">Home Assistant has no labels.</p>}
             {labels.map((label) => (
               <label key={label.label_id} className="flex items-center gap-2">
                 <input
@@ -264,24 +270,26 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
               </label>
             ))}
             {labelValue.filter((id) => !labels.some((label) => label.label_id === id)).map((id) => (
-              <p key={id} className="text-sm text-base-content/70">
+              <p key={id} className="text-sm text-base-content/50">
                 Excluded label {id} no longer exists in Home Assistant.
               </p>
             ))}
             {labelError && <ErrorBanner message={labelError} />}
-            <button type="button" className="btn btn-sm btn-info" disabled={labelDraft === null} onClick={saveLabels}>
-              Save excluded labels
-            </button>
+            <div>
+              <button type="button" className="btn btn-sm btn-info" disabled={labelDraft === null} onClick={saveLabels}>
+                Save excluded labels
+              </button>
+            </div>
           </div>
         </details>
 
         {loaded && loaded.entities_without_area > 0 && (
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-base-content/50">
             {loaded.entities_without_area} supported {loaded.entities_without_area === 1 ? "entity has" : "entities have"} no area in Home Assistant — assign an area there to import them.
           </p>
         )}
         {loaded && loaded.excluded_by_label > 0 && (
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-base-content/50">
             {loaded.excluded_by_label} {loaded.excluded_by_label === 1 ? "entity is" : "entities are"} left out because of an excluded label.
           </p>
         )}
@@ -290,7 +298,7 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
       {candidatesLoader.state.status === "loading" && <Loading text="Loading entities from Home Assistant..." />}
       {candidatesLoader.state.status === "error" && <ErrorBanner message={`Couldn't load entities: ${candidatesLoader.state.message}`} onRetry={candidatesLoader.reload} />}
 
-      {loaded && groups.length === 0 && <p className="p-4 bg-base-100 rounded-md shadow-lg text-base-content/70">Nothing to import.</p>}
+      {loaded && groups.length === 0 && <p className="p-4 bg-base-100 rounded-md shadow-lg text-base-content/50">Nothing to import.</p>}
 
       {loaded && groups.length > 0 && (
         <div className="overflow-x-auto bg-base-100 rounded-md shadow-lg">
@@ -338,7 +346,7 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
                       <td>
                         <input
                           type="text"
-                          className={`input input-bordered input-sm w-full ${problems[row.entity_id] ? "input-error" : ""}`}
+                          className={`input input-sm w-full ${problems[row.entity_id] ? "input-error" : ""}`}
                           aria-label={`Name for ${row.entity_id}`}
                           value={rowName(row, names)}
                           disabled={!selectable}
@@ -348,8 +356,8 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
                       </td>
                       <td>
                         <div>{row.entity_id}</div>
-                        <div className="text-xs text-base-content/70">{row.ha_name}</div>
-                        {(row.hidden || row.is_group) && <div className="text-xs text-base-content/70">{[row.hidden ? "hidden" : "", row.is_group ? "light group" : ""].filter(Boolean).join(", ")}</div>}
+                        <div className="text-xs text-base-content/50">{row.ha_name}</div>
+                        {(row.hidden || row.is_group) && <div className="text-xs text-base-content/50">{[row.hidden ? "hidden" : "", row.is_group ? "light group" : ""].filter(Boolean).join(", ")}</div>}
                       </td>
                       <td>{typeLabel(row.entity_type)}</td>
                       <td>
@@ -365,32 +373,36 @@ export default function EntitiesStep({ onShowRooms }: { onShowRooms: () => void 
         </div>
       )}
 
-      <div className="text-right">
+      <div className="flex justify-end p-4 mb-4 bg-base-100 rounded-md shadow-lg">
         <button type="button" className="btn btn-success" disabled={chosen.length === 0 || Object.keys(problems).length > 0 || importing} onClick={() => setConfirming(true)}>
           Import {chosen.length}
         </button>
       </div>
 
       {confirming && (
-        <div role="dialog" aria-label="Confirm import" className="p-4 bg-base-100 rounded-md shadow-lg border border-accent">
-          <h3 className="text-lg font-semibold">
-            Import {chosen.length} entit{chosen.length === 1 ? "y" : "ies"}?
-          </h3>
-          <ul className="my-2">
-            {countByRoom(candidates, selected).map((entry) => (
-              <li key={entry.roomId}>
-                {entry.roomName}: {entry.count}
-              </li>
-            ))}
-          </ul>
-          <div className="flex justify-end gap-2">
-            <button type="button" className="btn btn-neutral" onClick={() => setConfirming(false)}>
-              Cancel
-            </button>
-            <button type="button" className="btn btn-success" disabled={importing} onClick={runImport}>
-              Confirm import
-            </button>
+        <div className="modal modal-open" role="dialog" aria-modal="true" aria-label="Confirm import" onKeyDown={(event) => event.key === "Escape" && !importing && setConfirming(false)}>
+          <div className="modal-box">
+            <h3 className="text-lg font-semibold">
+              Import {chosen.length} entit{chosen.length === 1 ? "y" : "ies"}?
+            </h3>
+            <ul className="my-4 flex flex-col gap-1">
+              {countByRoom(candidates, selected).map((entry) => (
+                <li key={entry.roomId}>
+                  {entry.roomName}: {entry.count}
+                </li>
+              ))}
+            </ul>
+            <div className="modal-action">
+              <button type="button" className="btn btn-neutral" disabled={importing} onClick={() => setConfirming(false)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-success" autoFocus disabled={importing} onClick={runImport}>
+                {importing && <span className="loading loading-spinner loading-sm"></span>}
+                Confirm import
+              </button>
+            </div>
           </div>
+          <div className="modal-backdrop" onClick={() => !importing && setConfirming(false)}></div>
         </div>
       )}
     </div>

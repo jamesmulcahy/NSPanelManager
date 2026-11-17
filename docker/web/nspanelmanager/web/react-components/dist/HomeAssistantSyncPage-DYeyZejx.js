@@ -1,4 +1,4 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-DUoJrAcm.js";
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-CQgkDirJ.js";
 import { t as api } from "./client-CRfCe5X7.js";
 import { A as selectedRows, C as parseLabelIds, D as rowName, E as roomOptions, F as withIgnored, M as typeLabel, N as unsetRooms, O as selectAll, P as valueToChoice, S as nameErrors, T as restingAreas, _ as initialChoices, a as areasWithoutRoom, b as isSelectable, c as buildRoomsFromAreas, d as displayOrder, f as draftErrors, g as groupState, h as groupByRoom, i as areaOwners, j as toggleGroup, k as selectNone, l as choiceToValue, m as filterCandidates, n as NO_FILTERS, o as buildImportItems, p as errorMessage, r as applySuggestions, s as buildRoomLinks, t as ENTITY_TYPES, u as countByRoom, v as initialDrafts, w as pruneSelection, x as joinLabelIds, y as invertSelection } from "./sync-Dde6AJAS.js";
 //#region src/components/HomeAssistantSyncPage/common.tsx
@@ -95,6 +95,13 @@ function EntitiesStep({ onShowRooms }) {
 	const [summary, setSummary] = (0, import_react.useState)(null);
 	const [labelDraft, setLabelDraft] = (0, import_react.useState)(null);
 	const [labelError, setLabelError] = (0, import_react.useState)(null);
+	const resultRef = (0, import_react.useRef)(null);
+	(0, import_react.useEffect)(() => {
+		if (summary || importError) resultRef.current?.scrollIntoView?.({
+			behavior: "smooth",
+			block: "start"
+		});
+	}, [summary, importError]);
 	const meta = useLoader(loadMeta);
 	const candidatesLoader = useLoader(async () => {
 		const { data, error, response } = await api.GET("/rest/v2/home_assistant/entity_candidates", { params: { query: {
@@ -188,8 +195,9 @@ function EntitiesStep({ onShowRooms }) {
 	const { labels, excluded } = meta.state.data;
 	const labelValue = labelDraft ?? excluded;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "space-y-3",
+		className: "flex flex-col gap-4",
 		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { ref: resultRef }),
 			summary && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				role: "status",
 				className: "alert alert-success flex-col items-start",
@@ -223,7 +231,7 @@ function EntitiesStep({ onShowRooms }) {
 			}),
 			importError && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorBanner, { message: importError }),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "p-4 bg-base-100 rounded-md shadow-lg space-y-3",
+				className: "p-4 bg-base-100 rounded-md shadow-lg flex flex-col gap-4",
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "flex flex-wrap items-center gap-2",
@@ -252,7 +260,7 @@ function EntitiesStep({ onShowRooms }) {
 								]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
-								className: "select select-bordered select-sm",
+								className: "select select-sm",
 								"aria-label": "Filter by type",
 								value: filters.type,
 								onChange: (event) => setFilters({
@@ -268,7 +276,7 @@ function EntitiesStep({ onShowRooms }) {
 								}, type.value))]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
-								className: "select select-bordered select-sm",
+								className: "select select-sm",
 								"aria-label": "Filter by room",
 								value: String(filters.roomId),
 								onChange: (event) => setFilters({
@@ -284,7 +292,7 @@ function EntitiesStep({ onShowRooms }) {
 								}, room.roomId))]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-								className: "ml-auto font-medium",
+								className: "ms-auto font-medium",
 								"aria-live": "polite",
 								children: [
 									chosen.length,
@@ -334,10 +342,10 @@ function EntitiesStep({ onShowRooms }) {
 							")"
 						]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "mt-2 space-y-1",
+						className: "mt-2 flex flex-col gap-2",
 						children: [
 							labels.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-								className: "text-base-content/70",
+								className: "text-base-content/50",
 								children: "Home Assistant has no labels."
 							}),
 							labels.map((label) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
@@ -350,7 +358,7 @@ function EntitiesStep({ onShowRooms }) {
 								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: label.name })]
 							}, label.label_id)),
 							labelValue.filter((id) => !labels.some((label) => label.label_id === id)).map((id) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-								className: "text-sm text-base-content/70",
+								className: "text-sm text-base-content/50",
 								children: [
 									"Excluded label ",
 									id,
@@ -358,17 +366,17 @@ function EntitiesStep({ onShowRooms }) {
 								]
 							}, id)),
 							labelError && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorBanner, { message: labelError }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 								type: "button",
 								className: "btn btn-sm btn-info",
 								disabled: labelDraft === null,
 								onClick: saveLabels,
 								children: "Save excluded labels"
-							})
+							}) })
 						]
 					})] }),
 					loaded && loaded.entities_without_area > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						className: "text-sm text-base-content/70",
+						className: "text-sm text-base-content/50",
 						children: [
 							loaded.entities_without_area,
 							" supported ",
@@ -377,7 +385,7 @@ function EntitiesStep({ onShowRooms }) {
 						]
 					}),
 					loaded && loaded.excluded_by_label > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-						className: "text-sm text-base-content/70",
+						className: "text-sm text-base-content/50",
 						children: [
 							loaded.excluded_by_label,
 							" ",
@@ -393,7 +401,7 @@ function EntitiesStep({ onShowRooms }) {
 				onRetry: candidatesLoader.reload
 			}),
 			loaded && groups.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-				className: "p-4 bg-base-100 rounded-md shadow-lg text-base-content/70",
+				className: "p-4 bg-base-100 rounded-md shadow-lg text-base-content/50",
 				children: "Nothing to import."
 			}),
 			loaded && groups.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
@@ -441,7 +449,7 @@ function EntitiesStep({ onShowRooms }) {
 								}) }),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
 									type: "text",
-									className: `input input-bordered input-sm w-full ${problems[row.entity_id] ? "input-error" : ""}`,
+									className: `input input-sm w-full ${problems[row.entity_id] ? "input-error" : ""}`,
 									"aria-label": `Name for ${row.entity_id}`,
 									value: rowName(row, names),
 									disabled: !selectable,
@@ -456,11 +464,11 @@ function EntitiesStep({ onShowRooms }) {
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("td", { children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: row.entity_id }),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-xs text-base-content/70",
+										className: "text-xs text-base-content/50",
 										children: row.ha_name
 									}),
 									(row.hidden || row.is_group) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-xs text-base-content/70",
+										className: "text-xs text-base-content/50",
 										children: [row.hidden ? "hidden" : "", row.is_group ? "light group" : ""].filter(Boolean).join(", ")
 									})
 								] }),
@@ -475,7 +483,7 @@ function EntitiesStep({ onShowRooms }) {
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "text-right",
+				className: "flex justify-end p-4 mb-4 bg-base-100 rounded-md shadow-lg",
 				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 					type: "button",
 					className: "btn btn-success",
@@ -485,44 +493,54 @@ function EntitiesStep({ onShowRooms }) {
 				})
 			}),
 			confirming && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "modal modal-open",
 				role: "dialog",
+				"aria-modal": "true",
 				"aria-label": "Confirm import",
-				className: "p-4 bg-base-100 rounded-md shadow-lg border border-accent",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-						className: "text-lg font-semibold",
-						children: [
-							"Import ",
-							chosen.length,
-							" entit",
-							chosen.length === 1 ? "y" : "ies",
-							"?"
-						]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-						className: "my-2",
-						children: countByRoom(candidates, selected).map((entry) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
-							entry.roomName,
-							": ",
-							entry.count
-						] }, entry.roomId))
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex justify-end gap-2",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							className: "btn btn-neutral",
-							onClick: () => setConfirming(false),
-							children: "Cancel"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							className: "btn btn-success",
-							disabled: importing,
-							onClick: runImport,
-							children: "Confirm import"
-						})]
-					})
-				]
+				onKeyDown: (event) => event.key === "Escape" && !importing && setConfirming(false),
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "modal-box",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+							className: "text-lg font-semibold",
+							children: [
+								"Import ",
+								chosen.length,
+								" entit",
+								chosen.length === 1 ? "y" : "ies",
+								"?"
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+							className: "my-4 flex flex-col gap-1",
+							children: countByRoom(candidates, selected).map((entry) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
+								entry.roomName,
+								": ",
+								entry.count
+							] }, entry.roomId))
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "modal-action",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: "btn btn-neutral",
+								disabled: importing,
+								onClick: () => setConfirming(false),
+								children: "Cancel"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								className: "btn btn-success",
+								autoFocus: true,
+								disabled: importing,
+								onClick: runImport,
+								children: [importing && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "loading loading-spinner loading-sm" }), "Confirm import"]
+							})]
+						})
+					]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "modal-backdrop",
+					onClick: () => !importing && setConfirming(false)
+				})]
 			})
 		]
 	});
@@ -638,7 +656,7 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 		});
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "space-y-4",
+		className: "flex flex-col gap-4",
 		children: [
 			error && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ErrorBanner, { message: error }),
 			notice && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
@@ -670,10 +688,10 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 						children: "Apply all suggestions"
 					})]
 				}), unset.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					className: "text-base-content/70",
+					className: "text-base-content/50",
 					children: "Every room has been linked or marked as having no association."
 				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-					className: "space-y-2",
+					className: "flex flex-col gap-2",
 					children: unset.map((row) => {
 						const owners = areaOwners(rows, areas, choices, row.room_id);
 						const choice = choices[row.room_id] ?? valueToChoice("");
@@ -681,11 +699,11 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 							className: "flex flex-wrap items-center gap-2",
 							children: [
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "w-48 font-medium",
+									className: "w-52 font-medium",
 									children: row.name
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
-									className: "select select-bordered select-sm",
+									className: "select select-sm",
 									"aria-label": `Area for ${row.name}`,
 									value: choiceToValue(choice),
 									onChange: (event) => setChoices({
@@ -732,10 +750,10 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 					className: "text-xl mb-2",
 					children: "Home Assistant areas without a room"
 				}), withoutRoom.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-					className: "text-base-content/70",
+					className: "text-base-content/50",
 					children: "Every area has a room or has been dismissed."
 				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-					className: "space-y-2",
+					className: "flex flex-col gap-2",
 					children: withoutRoom.map((area) => {
 						const draft = drafts[area.area_id] ?? {
 							areaId: area.area_id,
@@ -761,7 +779,7 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
 									type: "text",
-									className: `input input-bordered input-sm ${problem ? "input-error" : ""}`,
+									className: `input input-sm ${problem ? "input-error" : ""}`,
 									"aria-label": `Room name for ${area.name}`,
 									maxLength: 30,
 									value: draft.name,
@@ -808,12 +826,12 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 						")"
 					]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "mt-2 space-y-4",
+					className: "mt-2 flex flex-col gap-4",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
 						className: "font-medium",
 						children: "Rooms"
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-						className: "space-y-1",
+						className: "flex flex-col gap-1",
 						children: rows.filter((row) => row.link !== "unset").map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", { children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
 								className: "link",
@@ -822,7 +840,7 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 							}),
 							" ",
 							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "text-base-content/70",
+								className: "text-base-content/50",
 								children: row.link === "none" ? "No association" : row.area_missing ? `Area missing in Home Assistant (${row.area_id})` : `Linked to ${row.area_name ?? row.area_id}`
 							})
 						] }, row.room_id))
@@ -830,10 +848,10 @@ function RoomsForm({ data, reload, onRoomsChanged }) {
 						className: "font-medium",
 						children: "Ignored areas"
 					}), resting.filter((area) => area.ignored).length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-base-content/70",
+						className: "text-base-content/50",
 						children: "None."
 					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-						className: "space-y-1",
+						className: "flex flex-col gap-1",
 						children: resting.filter((area) => area.ignored).map((area) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
 							className: "flex items-center gap-2",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: area.name }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
@@ -868,19 +886,19 @@ function HomeAssistantSyncPage() {
 		}),
 		/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			role: "tablist",
-			className: "tabs tabs-bordered my-3",
+			className: "tabs tabs-box tabs-lg my-4",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 				type: "button",
 				role: "tab",
 				"aria-selected": step === "rooms",
-				className: `tab ${step === "rooms" ? "tab-active" : ""}`,
+				className: `tab font-semibold ${step === "rooms" ? "tab-active" : ""}`,
 				onClick: () => setStep("rooms"),
 				children: "1. Rooms"
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 				type: "button",
 				role: "tab",
 				"aria-selected": step === "entities",
-				className: `tab ${step === "entities" ? "tab-active" : ""}`,
+				className: `tab font-semibold ${step === "entities" ? "tab-active" : ""}`,
 				onClick: () => setStep("entities"),
 				children: "2. Entities"
 			})]

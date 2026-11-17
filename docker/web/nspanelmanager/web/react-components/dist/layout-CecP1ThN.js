@@ -1,4 +1,4 @@
-import { r as require_react, t as require_jsx_runtime } from "./main-DUoJrAcm.js";
+import { r as require_react, t as require_jsx_runtime } from "./main-CQgkDirJ.js";
 require_react();
 var import_jsx_runtime = require_jsx_runtime();
 function Card({ title, actions, children }) {

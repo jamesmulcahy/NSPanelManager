@@ -109,7 +109,7 @@ function RoomsForm({ data, reload, onRoomsChanged }: { data: Data; reload: () =>
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {error && <ErrorBanner message={error} />}
       {notice && (
         <div role="status" className="alert alert-success my-2">
@@ -133,18 +133,18 @@ function RoomsForm({ data, reload, onRoomsChanged }: { data: Data; reload: () =>
           </button>
         </div>
         {unset.length === 0 ? (
-          <p className="text-base-content/70">Every room has been linked or marked as having no association.</p>
+          <p className="text-base-content/50">Every room has been linked or marked as having no association.</p>
         ) : (
           <>
-            <ul className="space-y-2">
+            <ul className="flex flex-col gap-2">
               {unset.map((row) => {
                 const owners = areaOwners(rows, areas, choices, row.room_id);
                 const choice = choices[row.room_id] ?? valueToChoice("");
                 return (
                   <li key={row.room_id} className="flex flex-wrap items-center gap-2">
-                    <span className="w-48 font-medium">{row.name}</span>
+                    <span className="w-52 font-medium">{row.name}</span>
                     <select
-                      className="select select-bordered select-sm"
+                      className="select select-sm"
                       aria-label={`Area for ${row.name}`}
                       value={choiceToValue(choice)}
                       onChange={(event) => setChoices({ ...choices, [row.room_id]: valueToChoice(event.target.value) })}
@@ -174,10 +174,10 @@ function RoomsForm({ data, reload, onRoomsChanged }: { data: Data; reload: () =>
       <section className="p-4 bg-base-100 rounded-md shadow-lg">
         <h3 className="text-xl mb-2">Home Assistant areas without a room</h3>
         {withoutRoom.length === 0 ? (
-          <p className="text-base-content/70">Every area has a room or has been dismissed.</p>
+          <p className="text-base-content/50">Every area has a room or has been dismissed.</p>
         ) : (
           <>
-            <ul className="space-y-2">
+            <ul className="flex flex-col gap-2">
               {withoutRoom.map((area) => {
                 const draft = drafts[area.area_id] ?? { areaId: area.area_id, name: area.name, checked: false };
                 const problem = draft.checked || showErrors ? errors[area.area_id] : undefined;
@@ -192,7 +192,7 @@ function RoomsForm({ data, reload, onRoomsChanged }: { data: Data; reload: () =>
                     />
                     <input
                       type="text"
-                      className={`input input-bordered input-sm ${problem ? "input-error" : ""}`}
+                      className={`input input-sm ${problem ? "input-error" : ""}`}
                       aria-label={`Room name for ${area.name}`}
                       maxLength={ROOM_NAME_MAX}
                       value={draft.name}
@@ -217,10 +217,10 @@ function RoomsForm({ data, reload, onRoomsChanged }: { data: Data; reload: () =>
 
       <details className="p-4 bg-base-100 rounded-md shadow-lg">
         <summary className="cursor-pointer text-xl">Linked / no association / ignored areas ({rows.filter((row) => row.link !== "unset").length + resting.filter((area) => area.ignored).length})</summary>
-        <div className="mt-2 space-y-4">
+        <div className="mt-2 flex flex-col gap-4">
           <div>
             <h4 className="font-medium">Rooms</h4>
-            <ul className="space-y-1">
+            <ul className="flex flex-col gap-1">
               {rows
                 .filter((row) => row.link !== "unset")
                 .map((row) => (
@@ -228,7 +228,7 @@ function RoomsForm({ data, reload, onRoomsChanged }: { data: Data; reload: () =>
                     <a className="link" href={`/rooms/${row.room_id}/`}>
                       {row.name}
                     </a>{" "}
-                    <span className="text-base-content/70">
+                    <span className="text-base-content/50">
                       {row.link === "none" ? "No association" : row.area_missing ? `Area missing in Home Assistant (${row.area_id})` : `Linked to ${row.area_name ?? row.area_id}`}
                     </span>
                   </li>
@@ -238,9 +238,9 @@ function RoomsForm({ data, reload, onRoomsChanged }: { data: Data; reload: () =>
           <div>
             <h4 className="font-medium">Ignored areas</h4>
             {resting.filter((area) => area.ignored).length === 0 ? (
-              <p className="text-base-content/70">None.</p>
+              <p className="text-base-content/50">None.</p>
             ) : (
-              <ul className="space-y-1">
+              <ul className="flex flex-col gap-1">
                 {resting
                   .filter((area) => area.ignored)
                   .map((area) => (

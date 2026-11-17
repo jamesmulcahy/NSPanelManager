@@ -1,15 +1,15 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-DUoJrAcm.js";
-import { r as useAvailableEntitiesStore } from "./MultiStep_AddEditEntity-x8U1vN19.js";
-import { t as useSettingsStore } from "./SettingsStore-BfXlBu12.js";
-import { t as StateManagedSelect$1 } from "./react-select.esm-BBO_09aN.js";
-import { l as useWatch, s as useForm } from "./index.esm-DWBystYh.js";
-import { n as Notify } from "./NSPanelToastContainer-Czemg6DK.js";
-import EntitiesPagesView from "./EntitiesPagesView-CUfeZ8E-.js";
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-CQgkDirJ.js";
+import { r as useAvailableEntitiesStore } from "./MultiStep_AddEditEntity-B71P2D0P.js";
+import { t as useSettingsStore } from "./SettingsStore-CxLpnkPU.js";
+import { t as StateManagedSelect$1 } from "./react-select.esm-tO78glWd.js";
+import { l as useWatch, s as useForm } from "./index.esm-8YJeVMft.js";
+import { n as Notify } from "./NSPanelToastContainer-ajQpaG1t.js";
+import EntitiesPagesView from "./EntitiesPagesView-BUmrlsZU.js";
 import { t as api } from "./client-CRfCe5X7.js";
 import { p as errorMessage } from "./sync-Dde6AJAS.js";
-import { t as useStompStore } from "./StompStore-hhtjbIYs.js";
-import { t as useEntityStatesStore } from "./EntityStore-DnyrMaHW.js";
-import { d as mdiTextShort, x as require_Icon } from "./mdi-C3nsW8m6.js";
+import { t as useStompStore } from "./StompStore-Bu_NjXtP.js";
+import { t as useEntityStatesStore } from "./EntityStore-Dw7rF-_D.js";
+import { d as mdiTextShort, x as require_Icon } from "./mdi-CQAOves1.js";
 //#region src/components/RoomPage/HomeAssistantAreaField.tsx
 var import_Icon = require_Icon();
 var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
@@ -112,7 +112,7 @@ function HomeAssistantAreaField({ roomId }) {
 				className: "flex items-center gap-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
 					id: "home_assistant_area",
-					className: "select select-bordered bg-base-300 flex-1",
+					className: "select bg-base-300 flex-1",
 					value: choice,
 					onChange: (event) => setChoice(event.target.value),
 					children: [
