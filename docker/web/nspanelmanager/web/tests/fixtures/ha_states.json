@@ -1,0 +1,301 @@
+{
+ "live": {
+  "light.garage_main_lights": {
+   "entity_id": "light.garage_main_lights",
+   "state": "off",
+   "attributes": {
+    "supported_color_modes": [
+     "onoff"
+    ],
+    "color_mode": null,
+    "friendly_name": "Garage Main Lights",
+    "supported_features": 0
+   }
+  },
+  "light.kitchen_main_lights": {
+   "entity_id": "light.kitchen_main_lights",
+   "state": "on",
+   "attributes": {
+    "supported_color_modes": [
+     "brightness"
+    ],
+    "color_mode": "brightness",
+    "brightness": 255,
+    "friendly_name": "Kitchen Main Lights",
+    "supported_features": 32
+   }
+  },
+  "light.tree": {
+   "entity_id": "light.tree",
+   "state": "off",
+   "attributes": {
+    "effect_list": [
+     "off",
+     "0 Tropical",
+     "1 Flare"
+    ],
+    "supported_color_modes": [
+     "rgbw"
+    ],
+    "effect": null,
+    "color_mode": null,
+    "brightness": null,
+    "hs_color": null,
+    "rgb_color": null,
+    "xy_color": null,
+    "rgbw_color": null,
+    "friendly_name": "Tree",
+    "supported_features": 4
+   }
+  },
+  "climate.upstairs": {
+   "entity_id": "climate.upstairs",
+   "state": "heat",
+   "attributes": {
+    "hvac_modes": [
+     "heat_cool",
+     "heat",
+     "cool",
+     "off"
+    ],
+    "min_temp": 44.6,
+    "max_temp": 95,
+    "target_temp_step": 0.5,
+    "fan_modes": [
+     "auto",
+     "on"
+    ],
+    "preset_modes": [
+     "away",
+     "home",
+     "sleep",
+     "away_indefinitely"
+    ],
+    "current_temperature": 69,
+    "temperature_unit": "°F",
+    "temperature": 69,
+    "fan_mode": "auto",
+    "preset_mode": "home",
+    "friendly_name": "Upstairs",
+    "supported_features": 411
+   }
+  },
+  "climate.downstairs": {
+   "entity_id": "climate.downstairs",
+   "state": "heat",
+   "attributes": {
+    "hvac_modes": [
+     "heat_cool",
+     "heat",
+     "cool",
+     "off"
+    ],
+    "min_temp": 44.6,
+    "max_temp": 95,
+    "target_temp_step": 0.5,
+    "fan_modes": [
+     "auto",
+     "on"
+    ],
+    "preset_modes": [
+     "away",
+     "home",
+     "sleep",
+     "away_indefinitely"
+    ],
+    "current_temperature": 69.7,
+    "temperature_unit": "°F",
+    "temperature": 70,
+    "fan_mode": "auto",
+    "preset_mode": "temp",
+    "friendly_name": "Downstairs",
+    "supported_features": 411
+   }
+  },
+  "cover.living_room_blinds_5": {
+   "entity_id": "cover.living_room_blinds_5",
+   "state": "closed",
+   "attributes": {
+    "is_closed": true,
+    "current_position": 0,
+    "device_class": "window",
+    "friendly_name": "Blinds 5",
+    "supported_features": 15
+   }
+  },
+  "cover.double_door": {
+   "entity_id": "cover.double_door",
+   "state": "closed",
+   "attributes": {
+    "is_closed": true,
+    "door_id": 1,
+    "device_class": "garage",
+    "friendly_name": "ismartgate Double Door",
+    "supported_features": 3
+   }
+  },
+  "media_player.acmax24_gym": {
+   "entity_id": "media_player.acmax24_gym",
+   "state": "paused",
+   "attributes": {
+    "source_list": [
+     "Movie Theatre",
+     "Gym TV",
+     "James Matrix",
+     "Jo Matrix",
+     "Disconnected",
+     "Kitchen TV",
+     "Alexa 1"
+    ],
+    "volume_level": 0.56,
+    "is_volume_muted": true,
+    "source": "Jo Matrix",
+    "active_source_entity_id": "media_player.jo_matrix",
+    "source_volume_level": 0.31,
+    "icon": "mdi:speaker-off",
+    "friendly_name": "Gym",
+    "supported_features": 19517
+   }
+  },
+  "media_player.panasonic_blu_ray": {
+   "entity_id": "media_player.panasonic_blu_ray",
+   "state": "idle",
+   "attributes": {
+    "icon": "mdi:disc-player",
+    "friendly_name": "Panasonic Blu-Ray",
+    "supported_features": 20865
+   }
+  }
+ },
+ "synthetic": {
+  "light.hue_color_lamp": {
+   "entity_id": "light.hue_color_lamp",
+   "state": "on",
+   "attributes": {
+    "supported_color_modes": [
+     "color_temp",
+     "xy"
+    ],
+    "color_mode": "xy",
+    "min_color_temp_kelvin": 2000,
+    "max_color_temp_kelvin": 6535,
+    "brightness": 200,
+    "friendly_name": "Hue Color Lamp",
+    "supported_features": 44
+   }
+  },
+  "light.hue_white_ambiance": {
+   "entity_id": "light.hue_white_ambiance",
+   "state": "on",
+   "attributes": {
+    "supported_color_modes": [
+     "color_temp"
+    ],
+    "color_mode": "color_temp",
+    "brightness": 120,
+    "friendly_name": "Hue White Ambiance",
+    "supported_features": 0
+   }
+  },
+  "light.hs_lamp": {
+   "entity_id": "light.hs_lamp",
+   "state": "off",
+   "attributes": {
+    "supported_color_modes": [
+     "hs"
+    ],
+    "friendly_name": "HS Lamp",
+    "supported_features": 0
+   }
+  },
+  "light.rgbww_strip": {
+   "entity_id": "light.rgbww_strip",
+   "state": "off",
+   "attributes": {
+    "supported_color_modes": [
+     "color_temp",
+     "rgbww"
+    ],
+    "friendly_name": "RGBWW Strip",
+    "supported_features": 4
+   }
+  },
+  "light.rgb_bulb": {
+   "entity_id": "light.rgb_bulb",
+   "state": "off",
+   "attributes": {
+    "supported_color_modes": [
+     "rgb"
+    ],
+    "friendly_name": "RGB Bulb",
+    "supported_features": 0
+   }
+  },
+  "light.kitchen_all_lights": {
+   "entity_id": "light.kitchen_all_lights",
+   "state": "on",
+   "attributes": {
+    "entity_id": [
+     "light.kitchen_main_lights",
+     "light.kitchen_nook"
+    ],
+    "supported_color_modes": [
+     "brightness"
+    ],
+    "friendly_name": "Kitchen All Lights",
+    "supported_features": 0
+   }
+  },
+  "light.no_modes": {
+   "entity_id": "light.no_modes",
+   "state": "unavailable",
+   "attributes": {
+    "friendly_name": "Unavailable Light"
+   }
+  },
+  "cover.tilt_blind": {
+   "entity_id": "cover.tilt_blind",
+   "state": "open",
+   "attributes": {
+    "current_position": 100,
+    "current_tilt_position": 50,
+    "device_class": "blind",
+    "friendly_name": "Tilt Blind",
+    "supported_features": 255
+   }
+  },
+  "climate.mini_split": {
+   "entity_id": "climate.mini_split",
+   "state": "cool",
+   "attributes": {
+    "hvac_modes": [
+     "off",
+     "cool",
+     "heat",
+     "dry",
+     "fan_only"
+    ],
+    "fan_modes": [
+     "auto",
+     "low",
+     "high"
+    ],
+    "swing_modes": [
+     "off",
+     "vertical"
+    ],
+    "swing_horizontal_modes": [
+     "off",
+     "on"
+    ],
+    "preset_modes": null,
+    "min_temp": 16,
+    "max_temp": 30,
+    "current_temperature": 22,
+    "temperature": 23,
+    "friendly_name": "Mini Split",
+    "supported_features": 1459
+   }
+  }
+ }
+}
