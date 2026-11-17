@@ -1,6 +1,7 @@
 #ifndef MQTTMANAGER_WEBSOCKET_SERVER_HPP
 #define MQTTMANAGER_WEBSOCKET_SERVER_HPP
 
+#include <atomic>
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/signals2.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -59,7 +60,7 @@ public:
 
 private:
   boost::uuids::random_generator _uuid_generator = boost::uuids::random_generator(); // Used to generate unique UUIDs for STOMP clients
-  bool _retained = false;
+  std::atomic<bool> _retained = false;
   const std::string _topic_name;
   std::string _current_value;
   nlohmann::json _current_json_data;

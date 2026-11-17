@@ -70,6 +70,8 @@ void StompTopic::unsubscribe(ix::WebSocket &webSocket, std::string subscription_
 
 void StompTopic::update_value(std::string value) {
   if (this->_retained) {
+    // subscribe() copies the retained value under this mutex, so it must be written under it as well.
+    std::unique_lock<std::shared_mutex> _lock_guard(this->_subscribers_mutex);
     this->_current_value = value;
   }
 
@@ -91,6 +93,7 @@ void StompTopic::update_value(std::string value) {
 
 void StompTopic::update_value(nlohmann::json &data) {
   if (this->_retained) {
+    std::unique_lock<std::shared_mutex> _lock_guard(this->_subscribers_mutex);
     this->_current_json_data = data;
   }
 
@@ -298,23 +301,32 @@ void WebsocketServer::_websocket_message_callback(std::shared_ptr<ix::Connection
             }
 
             SPDLOG_DEBUG("STOMP subscribing to topic {} (id: {})", frame->headers["destination"], frame->headers["id"]);
-            std::shared_lock<std::shared_mutex> lock_guard(WebsocketServer::_server_mutex);
-            for (auto &topic : WebsocketServer::_stomp_topics) {
-              if (topic->get_name() == frame->headers["destination"]) {
-                topic->subscribe(webSocket, frame->headers["id"]);
-                return; // We found the topics and subscribed to it, nothing else to do.
+            {
+              std::shared_lock<std::shared_mutex> lock_guard(WebsocketServer::_server_mutex);
+              for (auto &topic : WebsocketServer::_stomp_topics) {
+                if (topic->get_name() == frame->headers["destination"]) {
+                  topic->subscribe(webSocket, frame->headers["id"]);
+                  return; // We found the topics and subscribed to it, nothing else to do.
+                }
               }
             }
 
-            // Topic was not found, create topic and subscribe to it
+            // Topic was not found, create topic and subscribe to it. Adding to _stomp_topics needs the exclusive lock, readers iterate it concurrently.
+            std::unique_lock<std::shared_mutex> lock_guard(WebsocketServer::_server_mutex);
+            for (auto &topic : WebsocketServer::_stomp_topics) { // Another thread may have created it between the two locks.
+              if (topic->get_name() == frame->headers["destination"]) {
+                topic->subscribe(webSocket, frame->headers["id"]);
+                return;
+              }
+            }
             SPDLOG_WARN("STOMP Topic '{}' not found in call to subscribe. Will create topic.", frame->headers["destination"]);
             WebsocketServer::_stomp_topics.push_back(std::make_shared<StompTopic>(frame->headers["destination"], ""));
             WebsocketServer::_stomp_topics.back()->subscribe(webSocket, frame->headers["id"]);
           } else if (frame->type == StompFrame::UNSUBSCRIBE) {
             SPDLOG_DEBUG("STOMP subscription ID {} unsubscribing.", frame->headers["id"]);
+            std::shared_lock<std::shared_mutex> lock_guard(WebsocketServer::_server_mutex);
             for (auto &topic : WebsocketServer::_stomp_topics) {
               if (topic->get_name() == frame->headers["destination"]) {
-                std::shared_lock<std::shared_mutex> lock_guard(WebsocketServer::_server_mutex);
                 topic->unsubscribe(webSocket, frame->headers["id"]);
                 return; // We found the topics and unsubscribed from it, nothing else to do.
               }
@@ -398,6 +410,12 @@ void WebsocketServer::set_stomp_topic_retained(std::string topic_name, bool reta
 
   // We didn't find topic, create it and set retained flag
   std::unique_lock<std::shared_mutex> lock_guard(WebsocketServer::_server_mutex);
+  for (auto &topic : WebsocketServer::_stomp_topics) { // Another thread may have created it between the two locks.
+    if (topic->get_name().compare(topic_name) == 0) {
+      topic->set_retained(retained);
+      return;
+    }
+  }
   WebsocketServer::_stomp_topics.push_back(std::make_shared<StompTopic>(topic_name, ""));
   WebsocketServer::_stomp_topics.back()->set_retained(retained);
 }
