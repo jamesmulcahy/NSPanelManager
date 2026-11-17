@@ -10,6 +10,7 @@ const NSPanelWarnings = lazy(() => import("./components/NSPanelPage/Warnings"));
 const NSPanelLogs = lazy(() => import("./components/NSPanelPage/Logs"));
 const RoomPage = lazy(() => import("./components/RoomPage/RoomPage"));
 const SettingsPage = lazy(() => import("./components/SettingsPage/SettingsPage"));
+const HomeAssistantSyncPage = lazy(() => import("./components/HomeAssistantSyncPage/HomeAssistantSyncPage"));
 const RoomsView = lazy(() => import("./components/RoomsPage/RoomsView"));
 
 const componentMap = {
@@ -23,6 +24,7 @@ const componentMap = {
   NSPanelLogs,
   RoomPage,
   RoomsView,
+  HomeAssistantSyncPage,
   SettingsPage,
 };
 
