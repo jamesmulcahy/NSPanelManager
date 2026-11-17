@@ -142,7 +142,7 @@ class RoomRESTTests(NSPMTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual([(r["id"], r["friendly_name"]) for r in response.json()], [(office.id, "Office"), (lounge.id, "Lounge")])
-        self.assertEqual(set(response.json()[0]), {"id", "friendly_name", "displayOrder", "room_temp_provider", "room_temp_sensor"})
+        self.assertEqual(set(response.json()[0]), {"id", "friendly_name", "displayOrder", "room_temp_provider", "room_temp_sensor", "home_assistant_link", "home_assistant_area_id"})
 
     def test_get_single_room(self):
         self.make_room("Office")

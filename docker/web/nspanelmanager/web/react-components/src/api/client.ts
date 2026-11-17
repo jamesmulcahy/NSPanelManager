@@ -47,3 +47,13 @@ export type SettingsErrors = components["schemas"]["SettingsErrors"];
 export type Room = components["schemas"]["Room"];
 export type RoomUpdateRequest = components["schemas"]["PatchedRoomRequest"];
 export type RoomErrors = components["schemas"]["RoomErrors"];
+
+export type HomeAssistantArea = components["schemas"]["HomeAssistantArea"];
+export type HomeAssistantLabel = components["schemas"]["HomeAssistantLabel"];
+export type RoomLink = components["schemas"]["RoomLink"];
+export type RoomLinkUpdateRequest = components["schemas"]["RoomLinkUpdateRequest"];
+export type RoomFromAreaRequest = components["schemas"]["RoomFromAreaRequest"];
+export type EntityCandidate = components["schemas"]["EntityCandidate"];
+export type EntityCandidates = components["schemas"]["EntityCandidates"];
+export type ImportItem = components["schemas"]["ImportItemRequest"];
+export type ImportResult = components["schemas"]["ImportResult"];

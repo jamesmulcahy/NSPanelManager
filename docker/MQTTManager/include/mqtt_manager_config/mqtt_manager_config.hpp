@@ -40,6 +40,7 @@ enum MQTT_MANAGER_SETTING {
   ENERGY_PRICE_PER_KWH,
   ENERGY_PRICE_SOURCE,
   LIGHTS_ON_ALERT_THRESHOLD,
+  HOME_ASSISTANT_SYNC_EXCLUDE_LABELS,
   LIGHTS_ON_EXCLUDE_LABELS,
   LIGHTS_ON_SOURCE,
   IS_HOME_ASSISTANT_ADDON,
@@ -229,6 +230,7 @@ private:
       {MQTT_MANAGER_SETTING::ENERGY_PRICE_PER_KWH, {"energy_price_per_kwh", "0"}},                     // For energy_price_source "fixed"
       {MQTT_MANAGER_SETTING::ENERGY_PRICE_SOURCE, {"energy_price_source", "home_assistant_energy"}},   // home_assistant_energy, entity, fixed or off
       {MQTT_MANAGER_SETTING::LIGHTS_ON_ALERT_THRESHOLD, {"lights_on_alert_threshold", "15"}},          // 0: never alert
+      {MQTT_MANAGER_SETTING::HOME_ASSISTANT_SYNC_EXCLUDE_LABELS, {"home_assistant_sync_exclude_labels", ""}}, // Comma-separated Home Assistant label ids left out of the entity sync (web only)
       {MQTT_MANAGER_SETTING::LIGHTS_ON_EXCLUDE_LABELS, {"lights_on_exclude_labels", ""}},              // Comma-separated Home Assistant label ids
       {MQTT_MANAGER_SETTING::LIGHTS_ON_SOURCE, {"lights_on_source", "home_assistant"}},                // home_assistant, nspanelmanager or off
       {MQTT_MANAGER_SETTING::COLOR_TEMP_MAX, {"color_temp_max", "6000"}},

@@ -226,6 +226,7 @@ class SettingsUpdateSerializer(serializers.Serializer):
     energy_price_per_kwh = _trimmed(validators=[_validate_price], help_text="Price per kWh, for energy_price_source fixed.")
     lights_on_source = StrictChoiceField(choices=["home_assistant", "nspanelmanager", "off"], help_text="What the lights on count counts: Home Assistant's lights, NSPanel Manager's lights, or nothing.")
     lights_on_exclude_labels = _trimmed(help_text="Comma-separated Home Assistant label ids. Lights with any of them are not counted.")
+    home_assistant_sync_exclude_labels = _trimmed(help_text="Comma-separated Home Assistant label ids. Entities with any of them are never offered by the sync from Home Assistant.")
     lights_on_alert_threshold = _int(0, 1000, help_text="Lights on at which the count turns to the alert colour. 0 never does.")
 
     # Weather and time

@@ -32,13 +32,27 @@ class Room(models.Model):
         else:
             return no + 1
 
+    class HomeAssistantLink(models.TextChoices):
+        UNSET = "unset"  # Never decided; the Home Assistant room sync asks about it
+        LINKED = "linked"  # home_assistant_area_id is set
+        NONE = "none"  # The user said "no association"; the room sync skips it
+
     friendly_name = models.CharField(max_length=30)
     displayOrder = models.IntegerField(default=number)
     room_temp_provider = models.CharField(max_length=255, default="")
     room_temp_sensor = models.CharField(max_length=255, default="")
+    home_assistant_link = models.CharField(max_length=8, choices=HomeAssistantLink.choices, default=HomeAssistantLink.UNSET)
+    # The HA area_id (not its name, which can be renamed). Empty unless home_assistant_link is "linked".
+    home_assistant_area_id = models.CharField(max_length=255, default="", blank=True)
 
     def __str__(self) -> str:
         return "room_obj: " + str(self.id) + "::" + self.friendly_name
+
+
+class IgnoredHomeAssistantArea(models.Model):
+    """A Home Assistant area the user doesn't want to be asked about again when syncing rooms."""
+
+    area_id = models.CharField(max_length=255, unique=True)
 
 
 class RoomEntitiesPage(models.Model):

@@ -50,4 +50,6 @@ else:
         "SCHEMA_PATH_PREFIX": "/rest/v2",
         # CsrfOnlyAuthentication isn't a security scheme a client has to choose; there are no credentials.
         "AUTHENTICATION_WHITELIST": [],
+        # One name for the room link choices (unset/linked/none) used by Room and the sync endpoints.
+        "ENUM_NAME_OVERRIDES": {"HomeAssistantLinkEnum": "web.models.Room.HomeAssistantLink"},
     }

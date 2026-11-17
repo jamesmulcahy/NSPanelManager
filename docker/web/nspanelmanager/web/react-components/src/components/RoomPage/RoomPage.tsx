@@ -10,6 +10,7 @@ import Select, { type OptionProps } from "react-select";
 import { type IOptionType } from "../../stores/AvailableEntitiesStore";
 import { useAvailableEntitiesStore } from "../../stores/AvailableEntitiesStore";
 import { Notify } from "../NSPanelToastContainer";
+import HomeAssistantAreaField from "./HomeAssistantAreaField";
 
 export default function RoomPage({ room_id }: { room_id: number }) {
   const { status: stompStatus } = useStompStore();
@@ -252,6 +253,8 @@ export default function RoomPage({ room_id }: { room_id: number }) {
               />
             </div>
             {/*{% component "alert" level="info" text="A specific temperature sensor is not a requirement but it can be used to provide a more accurate value on the screensaver. If no sensor is selected the temperature will be read using the built-in NTC thermistor. If a sensor is selected the panel will still report its temperature over MQTT to Home Assistant and OpenHAB." %}{% endcomponent %}*/}
+
+            <HomeAssistantAreaField roomId={room.id} />
 
             {!can_delete && (
               <div role="alert" className="alert alert-info my-4">

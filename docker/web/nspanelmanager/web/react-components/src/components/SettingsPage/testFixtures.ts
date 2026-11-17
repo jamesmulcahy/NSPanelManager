@@ -42,6 +42,7 @@ export function settingsFixture(overrides: Partial<Settings> = {}): Settings {
     energy_price_per_kwh: "0",
     lights_on_source: "home_assistant",
     lights_on_exclude_labels: "",
+    home_assistant_sync_exclude_labels: "",
     lights_on_alert_threshold: 15,
     location_latitude: "",
     location_longitude: "",
