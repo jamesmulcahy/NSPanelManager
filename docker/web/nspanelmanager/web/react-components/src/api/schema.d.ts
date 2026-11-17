@@ -4,6 +4,70 @@
  */
 
 export interface paths {
+    "/rest/v2/home_assistant/areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_home_assistant_areas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rest/v2/home_assistant/ignored_areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["set_ignored_home_assistant_areas"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rest/v2/home_assistant/room_links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_room_links"];
+        put: operations["update_room_links"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rest/v2/home_assistant/rooms_from_areas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_rooms_from_home_assistant_areas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rest/v2/nspanels/{id}/settings": {
         parameters: {
             query?: never;
@@ -82,6 +146,10 @@ export interface components {
     schemas: {
         /** @enum {unknown} */
         BlankEnum: "";
+        CreatedRoom: {
+            room_id: number;
+            area_id: string;
+        };
         /**
          * @description * `eu` - eu
          *     * `us` - us
@@ -113,6 +181,35 @@ export interface components {
          * @enum {string}
          */
         EnergyPriceSourceEnum: "home_assistant_energy" | "entity" | "fixed" | "off";
+        HomeAssistantArea: {
+            area_id: string;
+            name: string;
+            /** @description The room linked to this area, if any. */
+            linked_room_id: number | null;
+            /** @description The user asked not to be offered this area as a new room. */
+            ignored: boolean;
+        };
+        /** @description DRF's error body for a request it rejects, e.g. a 502 from Home Assistant or a 400 for a duplicate area. */
+        HomeAssistantDetail: {
+            detail: string;
+        };
+        /**
+         * @description * `unset` - Unset
+         *     * `linked` - Linked
+         *     * `none` - None
+         * @enum {string}
+         */
+        HomeAssistantLinkEnum: "unset" | "linked" | "none";
+        /** @description Unknown request fields are a 400. */
+        IgnoredAreas: {
+            /** @description The complete set of ignored areas; anything not listed stops being ignored. */
+            area_ids: string[];
+        };
+        /** @description Unknown request fields are a 400. */
+        IgnoredAreasRequest: {
+            /** @description The complete set of ignored areas; anything not listed stops being ignored. */
+            area_ids: string[];
+        };
         /**
          * @description * `home_assistant` - home_assistant
          *     * `nspanelmanager` - nspanelmanager
@@ -246,6 +343,16 @@ export interface components {
             room_temp_provider?: string;
             /** @description Leading and trailing whitespace is removed. */
             room_temp_sensor?: string;
+            /**
+             * @description Whether the room is linked to a Home Assistant area. Anything but linked clears home_assistant_area_id.
+             *
+             *     * `unset` - Unset
+             *     * `linked` - Linked
+             *     * `none` - None
+             */
+            home_assistant_link?: components["schemas"]["HomeAssistantLinkEnum"];
+            /** @description Leading and trailing whitespace is removed. Required (and unique across rooms) when linked. */
+            home_assistant_area_id?: string;
         };
         /** @description A PATCH /rest/v2/settings body. Send only the settings that change. */
         PatchedSettingsUpdateRequest: {
@@ -379,6 +486,16 @@ export interface components {
             room_temp_provider?: string;
             /** @description Leading and trailing whitespace is removed. */
             room_temp_sensor?: string;
+            /**
+             * @description Whether the room is linked to a Home Assistant area. Anything but linked clears home_assistant_area_id.
+             *
+             *     * `unset` - Unset
+             *     * `linked` - Linked
+             *     * `none` - None
+             */
+            home_assistant_link?: components["schemas"]["HomeAssistantLinkEnum"];
+            /** @description Leading and trailing whitespace is removed. Required (and unique across rooms) when linked. */
+            home_assistant_area_id?: string;
         };
         /** @description DRF's error body for a request it rejects before validation, e.g. invalid JSON or a failed CSRF check. */
         RoomDetail: {
@@ -391,8 +508,45 @@ export interface components {
             displayOrder?: string[];
             room_temp_provider?: string[];
             room_temp_sensor?: string[];
+            home_assistant_link?: string[];
+            home_assistant_area_id?: string[];
             non_field_errors?: string[];
             detail?: string;
+        };
+        /** @description Unknown request fields are a 400. */
+        RoomFromAreaRequest: {
+            area_id: string;
+            /** @description Leading and trailing whitespace is removed. */
+            friendly_name: string;
+        };
+        RoomLink: {
+            room_id: number;
+            name: string;
+            link: components["schemas"]["HomeAssistantLinkEnum"];
+            /** @description Empty unless the room is linked. */
+            area_id: string;
+            /** @description The linked area's current name; null when not linked or the area no longer exists. */
+            area_name: string | null;
+            /** @description The room is linked to an area Home Assistant no longer has. It is kept linked, never reset. */
+            area_missing: boolean;
+            /** @description For an unset room: the area its name matches, if there is a clear one. */
+            suggested_area_id: string | null;
+            /** @description More than one area could match; see suggestion_candidates. */
+            suggestion_ambiguous: boolean;
+            /** @description Every area that matched the room's name, best first. */
+            suggestion_candidates: string[];
+        };
+        RoomLinkResult: {
+            room_id: number;
+            link: components["schemas"]["HomeAssistantLinkEnum"];
+            area_id: string;
+        };
+        /** @description Unknown request fields are a 400. */
+        RoomLinkUpdateRequest: {
+            room_id: number;
+            link: components["schemas"]["HomeAssistantLinkEnum"];
+            /** @description Required when link is linked; ignored (stored empty) otherwise. */
+            area_id?: string;
         };
         RoomOrderItemRequest: {
             id: number;
@@ -407,6 +561,16 @@ export interface components {
             room_temp_provider?: string;
             /** @description Leading and trailing whitespace is removed. */
             room_temp_sensor?: string;
+            /**
+             * @description Whether the room is linked to a Home Assistant area. Anything but linked clears home_assistant_area_id.
+             *
+             *     * `unset` - Unset
+             *     * `linked` - Linked
+             *     * `none` - None
+             */
+            home_assistant_link?: components["schemas"]["HomeAssistantLinkEnum"];
+            /** @description Leading and trailing whitespace is removed. Required (and unique across rooms) when linked. */
+            home_assistant_area_id?: string;
         };
         /**
          * @description * `with_background` - with_background
@@ -566,6 +730,11 @@ export interface components {
          * @enum {string}
          */
         TurnOnBehaviorEnum: "color_temp" | "restore";
+        /** @description A 400 for a malformed body: {"detail": message}, or messages by field (one object per list item). */
+        ValidationError: {
+            detail?: string;
+            non_field_errors?: string[];
+        };
         /**
          * @description * `mm` - mm
          *     * `inch` - inch
@@ -589,6 +758,209 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_home_assistant_areas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantArea"][];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
+    set_ignored_home_assistant_areas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IgnoredAreasRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IgnoredAreas"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
+    list_room_links: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomLink"][];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
+    update_room_links: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoomLinkUpdateRequest"][];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoomLinkResult"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
+    create_rooms_from_home_assistant_areas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoomFromAreaRequest"][];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedRoom"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
     nspanels_settings_retrieve: {
         parameters: {
             query?: never;

@@ -2,6 +2,7 @@ from django.urls import path
 
 from . import api, htmx, rest, views
 from .rest_v2 import global_settings as rest_v2_settings
+from .rest_v2 import home_assistant_sync as rest_v2_ha_sync
 from .rest_v2 import nspanel_settings as rest_v2_nspanel_settings
 from .rest_v2 import rooms as rest_v2_rooms
 
@@ -80,6 +81,10 @@ urlpatterns = [
     path("rest/v2/settings", rest_v2_settings.SettingsView.as_view(), name="rest_v2_settings"),
     path("rest/v2/rooms", rest_v2_rooms.RoomListView.as_view(), name="rest_v2_rooms"),
     path("rest/v2/rooms/<int:pk>", rest_v2_rooms.RoomDetailView.as_view(), name="rest_v2_rooms_detail"),
+    path("rest/v2/home_assistant/areas", rest_v2_ha_sync.AreasView.as_view(), name="rest_v2_ha_areas"),
+    path("rest/v2/home_assistant/room_links", rest_v2_ha_sync.RoomLinksView.as_view(), name="rest_v2_ha_room_links"),
+    path("rest/v2/home_assistant/ignored_areas", rest_v2_ha_sync.IgnoredAreasView.as_view(), name="rest_v2_ha_ignored_areas"),
+    path("rest/v2/home_assistant/rooms_from_areas", rest_v2_ha_sync.RoomsFromAreasView.as_view(), name="rest_v2_ha_rooms_from_areas"),
     path("rest/v2/nspanels/<int:pk>/settings", rest_v2_nspanel_settings.NSPanelSettingsView.as_view(), name="rest_v2_nspanel_settings"),
     # Scene URLs
     path("rest/scenes", rest.scenes, name="rest_lights"),

@@ -36,6 +36,13 @@ class StrictCharField(serializers.CharField):
         return super().to_internal_value(data)
 
 
+class StrictChoiceField(serializers.ChoiceField):
+    def to_internal_value(self, data):
+        if not isinstance(data, str):
+            self.fail("invalid_choice", input=data)
+        return super().to_internal_value(data)
+
+
 class TrimmedCharField(StrictCharField):
     """Leading and trailing whitespace is removed. Only-whitespace input is an error, not blank, so a
     stray space can't be stored in place of a real value. max_length applies to the trimmed value."""
@@ -66,11 +73,30 @@ class RoomSerializer(serializers.ModelSerializer):
     displayOrder = StrictIntegerField(min_value=1, max_value=65535, required=False)
     room_temp_provider = TrimmedCharField(allow_blank=True, max_length=_max_length("room_temp_provider"), required=False, help_text=_TRIMMED)
     room_temp_sensor = TrimmedCharField(allow_blank=True, max_length=_max_length("room_temp_sensor"), required=False, help_text=_TRIMMED)
+    home_assistant_link = StrictChoiceField(choices=Room.HomeAssistantLink.choices, required=False, help_text="Whether the room is linked to a Home Assistant area. Anything but linked clears home_assistant_area_id.")
+    home_assistant_area_id = TrimmedCharField(allow_blank=True, max_length=_max_length("home_assistant_area_id"), required=False, help_text=_TRIMMED + " Required (and unique across rooms) when linked.")
 
     class Meta:
         model = Room
-        fields = ["id", "friendly_name", "displayOrder", "room_temp_provider", "room_temp_sensor"]
+        fields = ["id", "friendly_name", "displayOrder", "room_temp_provider", "room_temp_sensor", "home_assistant_link", "home_assistant_area_id"]
         read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        instance = self.instance
+        link = attrs.get("home_assistant_link", instance.home_assistant_link if instance else Room.HomeAssistantLink.UNSET)
+        if link == Room.HomeAssistantLink.LINKED:
+            area_id = attrs.get("home_assistant_area_id", instance.home_assistant_area_id if instance else "")
+            if not area_id:
+                raise serializers.ValidationError({"home_assistant_area_id": ["Required when the room is linked to a Home Assistant area."]})
+            others = Room.objects.filter(home_assistant_link=Room.HomeAssistantLink.LINKED, home_assistant_area_id=area_id)
+            if instance:
+                others = others.exclude(pk=instance.pk)
+            other = others.first()
+            if other:
+                raise serializers.ValidationError({"home_assistant_area_id": [f'Already linked to the room "{other.friendly_name}" (id {other.id}).']})
+        else:
+            attrs["home_assistant_area_id"] = ""
+        return attrs
 
     def to_internal_value(self, data):
         # Unknown keys are an error rather than ignored: the UI is built with the server, so one it
