@@ -201,6 +201,9 @@ def fleet():
                 desc="Panel temperature sensor, converted to °C by the manager.", legend_calcs=("min", "max", "lastNotNull")))
     P.append(ts(L, "Heap used", [target("max by (panel) (nspm_panel_heap_used_ratio)", "{{panel}}")], unit="percentunit",
                 legend_calcs=("max", "lastNotNull")))
+    P.append(ts(L, "Lowest task stack headroom", [target('min by (panel) (nspanel_task_stack_unused_bytes{job="nspanelmanager",role="panel"})', "{{panel}}")],
+                unit="bytes", legend_calcs=("min", "lastNotNull"), steps=[("red", None), ("orange", 512), ("green", 1024)],
+                desc="The least unused stack of any task on each panel (metrics firmware only). Detail on the panel dashboard."))
     P.append(ts(L, "Status report age", [target(f"max by (panel) (max_over_time((time() - nspm_panel_last_status_report_timestamp_seconds)[5m:30s]))", "{{panel}}")],
                 unit="s", desc="Worst seconds-since-last-status-report in each 5 min window. A panel that is 'up' but stops reporting shows here first.",
                 steps=[("green", None), ("orange", 120)], legend_calcs=("max", "lastNotNull")))
@@ -394,10 +397,12 @@ def panel_detail():
     ], w=8, legend_calcs=("max", "mean")))
     P.append(ts(L, "Internal heap free", [target(f"min by (panel) (nspanel_heap_free_bytes{{{SP},pool=\"internal\"}})", "{{panel}} free"),
                                           target(f"min by (panel) (nspanel_heap_min_free_bytes{{{SP},pool=\"internal\"}})", "{{panel}} min since boot", "B"),
-                                          target(f"min by (panel) (nspanel_heap_largest_free_block_bytes{{{SP},pool=\"internal\"}})", "{{panel}} largest free block", "C")],
+                                          target(f"min by (panel) (nspanel_heap_largest_free_block_bytes{{{SP},pool=\"internal\"}})", "{{panel}} largest free block", "C"),
+                                          target(f"min by (panel) (nspanel_heap_window_min_free_bytes{{{SP},pool=\"internal\"}})", "{{panel}} low point per scrape", "D")],
                 unit="bytes", min0=False, legend_calcs=("min", "lastNotNull"),
                 desc="Internal RAM only (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT, as the status report's heap_used_pct). "
-                     "Every allocation under 16 KB comes from it; the largest free block is what decides whether one fits."))
+                     "Every allocation under 16 KB comes from it; the largest free block is what decides whether one fits. "
+                     "'Low point per scrape' is the lowest free heap since the previous scrape, so it shows which moments dip; 'min since boot' never recovers."))
     P.append(ts(L, "Log queue high-water", [target(f"max by (panel) (nspanel_log_queue_high_water{{{SP}}})", "{{panel}}")],
                 legend_calcs=("max", "lastNotNull"), steps=[("green", None), ("orange", 16)],
                 desc="Highest number of log lines waiting since boot. The queue holds 16 (main.cpp:202); at 16, lines are being dropped."))
@@ -405,6 +410,23 @@ def panel_detail():
         f"1 - max by (panel, pool) (nspanel_heap_free_bytes{{{SP}}}) / max by (panel, pool) (nspanel_heap_size_bytes{{{SP}}})", "{{panel}} {{pool}}")],
         unit="percentunit", w=24, h=7, legend_calcs=("max", "lastNotNull"),
         desc="Used fraction of each heap pool. Internal should match the status report's heap_used_pct; PSRAM is the large, mostly idle pool."))
+
+    P.append(row(L, "Task stacks"))
+    P.append(ts(L, "Lowest stack headroom", [target(
+        f"bottomk(10, min by (panel, task) (nspanel_task_stack_unused_bytes{{{SP}}}))", "{{panel}} {{task}}")],
+        unit="bytes", w=16, h=9, legend_calcs=("min", "lastNotNull"), steps=[("red", None), ("orange", 512), ("green", 1024)],
+        desc="Bytes of a task's stack never used (its high-water mark), the ten tasks closest to overflowing. "
+             "Under 512 B is at risk. Only goes down until the task is restarted."))
+    P.append(table(L, "Stack headroom by task", [
+        target(f"min by (panel, task, mem) (nspanel_task_stack_unused_bytes{{{SP}}})", "", "A", True, "table")],
+        w=8, h=9, desc="Current unused stack per task.",
+        transformations=[{"id": "organize", "options": {"excludeByName": {"Time": True}, "renameByName": {"Value": "unused bytes"}}},
+                         {"id": "sortBy", "options": {"sort": [{"field": "unused bytes"}]}}]))
+    P.append(ts(L, "Task count and stack scan time", [
+        target(f"max by (panel) (nspanel_tasks{{{SP}}})", "{{panel}} tasks"),
+        target(f"max by (panel) (nspanel_task_scan_seconds{{{SP}}})", "{{panel}} scan time", "B")],
+        w=24, h=6, min0=True, legend_calcs=("max", "lastNotNull"),
+        desc="Tasks in the system, and how long the scrape spent reading their stacks (the scan briefly suspends the scheduler)."))
 
     return dashboard("nspanel-panel", "NSPanel: Panel detail", P, [datasource_var(), var],
                      "Per-panel internals from the panel's own /metrics (metrics firmware only), plus manager-side status-report values.",
