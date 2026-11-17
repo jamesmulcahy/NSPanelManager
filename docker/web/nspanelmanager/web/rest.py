@@ -18,6 +18,13 @@ from web.settings_helper import (
     set_setting_value,
 )
 
+from .entity_data import (
+    MEDIA_PLAYER_DEFAULT_VOLUME_STEP,
+    build_cover_entity_data,
+    build_light_entity_data,
+    build_media_player_entity_data,
+    build_thermostat_entity_data,
+)
 from .apps import create_entity_pages_for_room, send_mqttmanager_reload_command
 from .models import Entity, LightState, NSPanel, RelayGroup, Room, RoomEntitiesPage, Scene, Settings
 
@@ -235,7 +242,7 @@ def rooms_get(request):
 
 
 # The entities page layouts the panel GUI has.
-PAGE_SIZES = (4, 8, 12)
+from .entity_placement import PAGE_SIZES  # noqa: E402
 
 
 def get_page_size_error(page_type):
@@ -865,20 +872,21 @@ def put_light_entity(request):
         if controller_error:
             return JsonResponse({"status": "error", "message": controller_error}, status=400)
 
-        entity_data = {
-            "controller": data["controller"],
-            "home_assistant_name": data.get("home_assistant_name", ""),
-            "openhab_control_mode": "dimmer" if data.get("can_dim", False) else "switch",
-            "openhab_item_dimmer": data.get("openhab_item_dimmer", ""),
-            "openhab_item_switch": data.get("openhab_item_switch", ""),
-            "openhab_item_color_temp": data.get("openhab_item_color_temp", ""),
-            "openhab_item_rgb": data.get("openhab_item_rgb", ""),
-            "can_dim": str(data["can_dim"]).lower() == "true",
-            "can_color_temperature": str(data["can_color_temperature"]).lower() == "true",
-            "can_rgb": str(data["can_rgb"]).lower() == "true",
-            "is_ceiling_light": str(data["is_ceiling_light"]).lower() == "true",
-            "controlled_by_nspanel_main_page": str(data["controlled_by_nspanel_main_page"]).lower() == "true",
-        }
+        entity_data = build_light_entity_data(
+            controller=data["controller"],
+            home_assistant_name=data.get("home_assistant_name", ""),
+            # Follows the truthiness of the raw value, as it always has.
+            openhab_control_mode="dimmer" if data.get("can_dim", False) else "switch",
+            openhab_item_dimmer=data.get("openhab_item_dimmer", ""),
+            openhab_item_switch=data.get("openhab_item_switch", ""),
+            openhab_item_color_temp=data.get("openhab_item_color_temp", ""),
+            openhab_item_rgb=data.get("openhab_item_rgb", ""),
+            can_dim=str(data["can_dim"]).lower() == "true",
+            can_color_temperature=str(data["can_color_temperature"]).lower() == "true",
+            can_rgb=str(data["can_rgb"]).lower() == "true",
+            is_ceiling_light=str(data["is_ceiling_light"]).lower() == "true",
+            controlled_by_nspanel_main_page=str(data["controlled_by_nspanel_main_page"]).lower() == "true",
+        )
         if "id" in data and data["id"]:
             new_light = Entity.objects.get(id=int(data["id"]))
         else:
@@ -1104,24 +1112,24 @@ def put_thermostat_entity(request):
         if controller_error:
             return JsonResponse({"status": "error", "message": controller_error}, status=400)
 
-        entity_data = {
-            "controller": data.get("controller", ""),
-            "fan_modes": data.get("fan_modes", []),
-            "hvac_modes": data.get("hvac_modes", []),
-            "preset_modes": data.get("preset_modes", []),
-            "swing_modes": data.get("swing_modes", []),
-            "swingh_modes": data.get("swingh_modes", []),
-            "use_current_temperature": data.get("use_current_temperature", "True") == "True",
-            "home_assistant_name": data.get("home_assistant_name", ""),
-            "openhab_fan_mode_item": data.get("openhab_fan_mode_item", ""),
-            "openhab_hvac_mode_item": data.get("openhab_hvac_mode_item", ""),
-            "openhab_preset_mode_item": data.get("openhab_preset_mode_item", ""),
-            "openhab_swing_mode_item": data.get("openhab_swing_mode_item", ""),
-            "openhab_swingh_mode_item": data.get("openhab_swingh_mode_item", ""),
-            "openhab_temperature_item": data.get("openhab_temperature_item", ""),
-            "openhab_current_temperature_item": data.get("openhab_current_temperature_item", ""),
-            "step_size": float(data.get("step_size", 1)),
-        }
+        entity_data = build_thermostat_entity_data(
+            controller=data.get("controller", ""),
+            fan_modes=data.get("fan_modes", []),
+            hvac_modes=data.get("hvac_modes", []),
+            preset_modes=data.get("preset_modes", []),
+            swing_modes=data.get("swing_modes", []),
+            swingh_modes=data.get("swingh_modes", []),
+            use_current_temperature=data.get("use_current_temperature", "True") == "True",
+            home_assistant_name=data.get("home_assistant_name", ""),
+            openhab_fan_mode_item=data.get("openhab_fan_mode_item", ""),
+            openhab_hvac_mode_item=data.get("openhab_hvac_mode_item", ""),
+            openhab_preset_mode_item=data.get("openhab_preset_mode_item", ""),
+            openhab_swing_mode_item=data.get("openhab_swing_mode_item", ""),
+            openhab_swingh_mode_item=data.get("openhab_swingh_mode_item", ""),
+            openhab_temperature_item=data.get("openhab_temperature_item", ""),
+            openhab_current_temperature_item=data.get("openhab_current_temperature_item", ""),
+            step_size=data.get("step_size", 1),
+        )
         if "id" in data and data["id"]:
             new_thermostat = Entity.objects.get(id=int(data["id"]))
         else:
@@ -1158,9 +1166,6 @@ def put_thermostat_entity(request):
 # How the volume of the source feeding a media player is found in Home Assistant.
 # See HomeAssistantSourceVolumeStrategy in the MQTTManager for what each one expects.
 MEDIA_PLAYER_SOURCE_VOLUME_STRATEGIES = ["none", "player_attributes", "source_entity"]
-
-# Volume in % that one volume up/down press on the panel changes, unless set per media player.
-MEDIA_PLAYER_DEFAULT_VOLUME_STEP = 5
 
 
 def entities_media_players(request):
@@ -1256,14 +1261,14 @@ def put_media_player_entity(request):
         if volume_step is None:
             volume_step = new_media_player.entity_data.get("volume_step", MEDIA_PLAYER_DEFAULT_VOLUME_STEP)
 
-        entity_data = {
-            "controller": data["controller"],
-            "home_assistant_name": data["home_assistant_name"],
-            "source_volume_strategy": source_volume_strategy,
-            "source_entity_attribute": source_entity_attribute,
-            "source_volume_attribute": source_volume_attribute,
-            "volume_step": volume_step,
-        }
+        entity_data = build_media_player_entity_data(
+            controller=data["controller"],
+            home_assistant_name=data["home_assistant_name"],
+            source_volume_strategy=source_volume_strategy,
+            source_entity_attribute=source_entity_attribute,
+            source_volume_attribute=source_volume_attribute,
+            volume_step=volume_step,
+        )
         new_media_player.friendly_name = data["friendly_name"]
         new_media_player.room = room
         new_media_player.entities_page = entities_page
@@ -1373,19 +1378,19 @@ def put_cover_entity(request):
         if placement_error:
             return JsonResponse({"status": "error", "message": placement_error}, status=400)
 
-        entity_data = {
-            "controller": data["controller"],
-            "home_assistant_name": home_assistant_name,
-            "openhab_item": openhab_item,
-            "openhab_tilt_item": openhab_tilt_item,
-            "invert_positions": invert_positions,
-            "position_preset1": int(data["position_preset1"]),
-            "position_preset2": int(data["position_preset2"]),
-            "position_preset3": int(data["position_preset3"]),
-            "tilt_preset1": int(data["tilt_preset1"]),
-            "tilt_preset2": int(data["tilt_preset2"]),
-            "tilt_preset3": int(data["tilt_preset3"]),
-        }
+        entity_data = build_cover_entity_data(
+            controller=data["controller"],
+            home_assistant_name=home_assistant_name,
+            openhab_item=openhab_item,
+            openhab_tilt_item=openhab_tilt_item,
+            invert_positions=invert_positions,
+            position_preset1=data["position_preset1"],
+            position_preset2=data["position_preset2"],
+            position_preset3=data["position_preset3"],
+            tilt_preset1=data["tilt_preset1"],
+            tilt_preset2=data["tilt_preset2"],
+            tilt_preset3=data["tilt_preset3"],
+        )
         new_cover.friendly_name = data["friendly_name"].strip()
         if not new_cover.friendly_name:
             return JsonResponse({"status": "error", "message": "friendly_name must not be empty."}, status=400)
