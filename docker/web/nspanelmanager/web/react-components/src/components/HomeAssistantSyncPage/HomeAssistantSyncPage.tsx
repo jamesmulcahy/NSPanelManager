@@ -15,11 +15,11 @@ export default function HomeAssistantSyncPage() {
           Back to rooms
         </a>
       </div>
-      <div role="tablist" className="tabs tabs-bordered my-3">
-        <button type="button" role="tab" aria-selected={step === "rooms"} className={`tab ${step === "rooms" ? "tab-active" : ""}`} onClick={() => setStep("rooms")}>
+      <div role="tablist" className="tabs tabs-box tabs-lg my-4">
+        <button type="button" role="tab" aria-selected={step === "rooms"} className={`tab font-semibold ${step === "rooms" ? "tab-active" : ""}`} onClick={() => setStep("rooms")}>
           1. Rooms
         </button>
-        <button type="button" role="tab" aria-selected={step === "entities"} className={`tab ${step === "entities" ? "tab-active" : ""}`} onClick={() => setStep("entities")}>
+        <button type="button" role="tab" aria-selected={step === "entities"} className={`tab font-semibold ${step === "entities" ? "tab-active" : ""}`} onClick={() => setStep("entities")}>
           2. Entities
         </button>
       </div>

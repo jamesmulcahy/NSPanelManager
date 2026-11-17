@@ -104,7 +104,7 @@ export default function HomeAssistantAreaField({ roomId }: { roomId: number }) {
         Home Assistant area
       </label>
       <div className="flex items-center gap-2">
-        <select id="home_assistant_area" className="select select-bordered bg-base-300 flex-1" value={choice} onChange={(event) => setChoice(event.target.value)}>
+        <select id="home_assistant_area" className="select bg-base-300 flex-1" value={choice} onChange={(event) => setChoice(event.target.value)}>
           <option value={UNSET}>Not set</option>
           <option value={NONE}>None</option>
           {missing && <option value={room.home_assistant_area_id ?? ""}>{room.home_assistant_area_id} (missing)</option>}

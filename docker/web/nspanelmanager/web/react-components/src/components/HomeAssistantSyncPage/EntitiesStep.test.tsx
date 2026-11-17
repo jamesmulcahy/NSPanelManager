@@ -265,6 +265,33 @@ describe("importing", () => {
     expect(box("light.k1").checked).toBe(true);
   });
 
+  it("Escape closes the confirmation without importing", async () => {
+    const user = await renderStep();
+    await user.click(box("light.k1"));
+    await user.click(screen.getByRole("button", { name: "Import 1" }));
+    expect(screen.getByRole("dialog", { name: "Confirm import" })).toHaveAttribute("aria-modal", "true");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(importCalls()).toHaveLength(0);
+  });
+
+  it("scrolls the import result into view", async () => {
+    overrides["POST /rest/v2/home_assistant/import"] = () => ok({ created: created.slice(0, 1), skipped: [], pages_added: 0 }, 201);
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      const user = await renderStep();
+      await user.click(box("light.k1"));
+      await user.click(screen.getByRole("button", { name: "Import 1" }));
+      expect(scrollIntoView).not.toHaveBeenCalled();
+      await user.click(screen.getByRole("button", { name: "Confirm import" }));
+      await screen.findByRole("status");
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+    } finally {
+      delete (Element.prototype as Partial<Element>).scrollIntoView;
+    }
+  });
+
   it("blocks the import while a selected row has an empty name", async () => {
     const user = await renderStep();
     await user.click(box("light.k1"));
