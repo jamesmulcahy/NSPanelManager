@@ -17,7 +17,7 @@ protobuf==5.27.0
 psutil==6.0.0
 python-dateutil==2.9.0.post0
 PyYAML==6.0.2
-requests==2.32.3
+requests==2.33.0
 setuptools==84.1.0
 six==1.16.0
 sqlparse==0.6.0
