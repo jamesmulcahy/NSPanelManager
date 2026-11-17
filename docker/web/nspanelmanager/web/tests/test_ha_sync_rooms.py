@@ -115,7 +115,7 @@ class FetchTests(NSPMTestCase):
             labels=[{"label_id": "acmax", "name": "ACMax"}],
             entities=[
                 {"entity_id": "light.a", "area_id": "kitchen", "hidden": False, "labels": ["acmax"]},
-                {"entity_id": "cover.b", "area_id": None, "hidden": True, "labels": []},
+                {"entity_id": "cover.b", "friendly_name": "Blind B", "attributes": {"x": 1}, "area_id": None, "hidden": True, "labels": []},
                 {"entity_id": "switch.not_supported", "area_id": "kitchen", "hidden": False, "labels": []},
             ],
         )
@@ -127,8 +127,8 @@ class FetchTests(NSPMTestCase):
         self.assertEqual(
             registry["entities"],
             [
-                {"entity_id": "light.a", "area_id": "kitchen", "hidden": False, "labels": ["acmax"]},
-                {"entity_id": "cover.b", "area_id": None, "hidden": True, "labels": []},
+                {"entity_id": "light.a", "friendly_name": "light.a", "attributes": {}, "area_id": "kitchen", "hidden": False, "labels": ["acmax"]},
+                {"entity_id": "cover.b", "friendly_name": "Blind B", "attributes": {"x": 1}, "area_id": None, "hidden": True, "labels": []},
             ],
         )
         args, kwargs = post.call_args

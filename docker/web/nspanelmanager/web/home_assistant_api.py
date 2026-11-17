@@ -61,8 +61,12 @@ class HomeAssistantError(Exception):
 
 SYNC_ENTITY_DOMAINS = ("light", "media_player", "cover", "climate")
 
+# The state attributes the importer's inference reads (web.entity_data); the rest (source lists, pictures, ...) stay in HA.
+SYNC_STATE_ATTRIBUTES = ("supported_color_modes", "brightness", "entity_id", "fan_modes", "hvac_modes", "preset_modes", "swing_modes", "swing_horizontal_modes", "target_temp_step")
+
 # One render returns everything the sync needs. area_id() also covers areas an entity inherits from its device.
 _SYNC_TEMPLATE = """\
+{%- set keep = """ + json.dumps(list(SYNC_STATE_ATTRIBUTES)) + """ -%}
 {%- set ns = namespace(areas=[], labels=[], entities=[]) -%}
 {%- for a in areas() -%}
   {%- set ns.areas = ns.areas + [{"area_id": a, "name": area_name(a)}] -%}
@@ -73,6 +77,8 @@ _SYNC_TEMPLATE = """\
 {%- for s in states if s.domain in ["light", "media_player", "cover", "climate"] -%}
   {%- set ns.entities = ns.entities + [{
         "entity_id": s.entity_id,
+        "friendly_name": s.name,
+        "attributes": dict(s.attributes.items() | selectattr("0", "in", keep) | list),
         "area_id": area_id(s.entity_id),
         "hidden": is_hidden_entity(s.entity_id),
         "labels": labels(s.entity_id)
@@ -89,7 +95,8 @@ def _is_home_assistant_addon():
 def fetch_home_assistant_registry():
     """Fetch areas, labels and the supported entities (with their area, hidden flag and labels) from Home Assistant.
 
-    Returns {"areas": [{area_id, name}], "labels": [{label_id, name}], "entities": [{entity_id, area_id, hidden, labels}]}.
+    Returns {"areas": [{area_id, name}], "labels": [{label_id, name}], "entities": [{entity_id, friendly_name, attributes, area_id, hidden, labels}]}.
+    attributes holds only SYNC_STATE_ATTRIBUTES. Entities without a state (disabled ones) are not in Home Assistant's states, so they never appear.
     area_id is None for an entity without an area. Raises HomeAssistantError for anything that goes wrong, so a
     failure can never be mistaken for "Home Assistant has no areas".
     """
@@ -123,7 +130,13 @@ def fetch_home_assistant_registry():
             "areas": [{"area_id": a["area_id"], "name": a["name"] or a["area_id"]} for a in data["areas"]],
             "labels": [{"label_id": l["label_id"], "name": l["name"] or l["label_id"]} for l in data["labels"]],
             "entities": [
-                {"entity_id": e["entity_id"], "area_id": e["area_id"] or None, "hidden": bool(e["hidden"]), "labels": list(e["labels"] or [])}
+                {
+                    "entity_id": e["entity_id"],
+                    "friendly_name": e.get("friendly_name") or e["entity_id"],
+                    "attributes": e.get("attributes") or {},
+                    "area_id": e["area_id"] or None, "hidden": bool(e["hidden"]),
+                    "labels": list(e["labels"] or []),
+                }
                 for e in data["entities"]
                 if e["entity_id"].split(".")[0] in SYNC_ENTITY_DOMAINS
             ],
