@@ -1,8 +1,9 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-BuM1aTkv.js";
-import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm } from "./index.esm-BJESMUdv.js";
-import { n as Notify } from "./NSPanelToastContainer-DKXAAJPZ.js";
-import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-CdXeToUn.js";
-import { a as TextInput$1, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-Cb5EBc98.js";
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-LU0y8h9I.js";
+import { n as components, t as StateManagedSelect$1 } from "./react-select.esm-DXyNfAo7.js";
+import { c as useFormContext, i as get, l as useWatch, n as FormProvider, s as useForm, t as Controller } from "./index.esm-C17iYtX7.js";
+import { n as Notify } from "./NSPanelToastContainer-ClnRbGGM.js";
+import { a as getCookie, i as api, n as Card, r as Row, t as Alert } from "./layout-DmUnJdGW.js";
+import { a as TextInput$2, i as Select$1, n as RadioGroup$1, r as SecretInput$1, t as NumberInput$1 } from "./fields-BqSzUcJ0.js";
 //#region src/api/connectionTests.ts
 var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
 async function errorMessage(response) {
@@ -621,6 +622,202 @@ function formatDuration(ms) {
 	return ms < 1e3 ? `${ms} ms` : `${(ms / 1e3).toFixed(ms < 1e4 ? 2 : 1)} s`;
 }
 //#endregion
+//#region src/components/common/typedFields.ts
+/** The inputs in ./fields with their field names checked against the form T. Call it once, at module level. */
+function typedFields() {
+	return {
+		TextInput: TextInput$2,
+		NumberInput: NumberInput$1,
+		Select: Select$1,
+		RadioGroup: RadioGroup$1,
+		SecretInput: SecretInput$1
+	};
+}
+/** What the stored string means. Blank entries and repeats are dropped. */
+function parseCalendarIds(value) {
+	const text = (value ?? "").trim();
+	if (text.toLowerCase() === "all") return { all: true };
+	const ids = [];
+	for (const part of text.split(",")) {
+		const id = part.trim();
+		if (id !== "" && !ids.includes(id)) ids.push(id);
+	}
+	return {
+		all: false,
+		ids
+	};
+}
+/** The string to store for these calendars. */
+function formatCalendarIds(ids) {
+	return ids.join(",");
+}
+//#endregion
+//#region src/components/SettingsPage/CalendarPicker.tsx
+var { TextInput: TextInput$1 } = typedFields();
+var FILTER = encodeURIComponent(JSON.stringify({ type: ["calendar"] }));
+/** The calendar entities Home Assistant has, with their friendly names. Fails when the manager can't get them. */
+function useHomeAssistantCalendars() {
+	const [calendars, setCalendars] = (0, import_react.useState)({ status: "loading" });
+	(0, import_react.useEffect)(() => {
+		const abort = new AbortController();
+		(async () => {
+			try {
+				const response = await fetch(`/rest/home_assistant/entities?filter=${FILTER}`, {
+					credentials: "same-origin",
+					signal: abort.signal
+				});
+				if (!response.ok) throw new Error(`HTTP ${response.status}`);
+				const data = await response.json();
+				const items = data?.items;
+				if (!Array.isArray(items) || items.length === 0 && Array.isArray(data.errors) && data.errors.length > 0) throw new Error("No calendars returned");
+				const options = items.filter((item) => typeof item?.item_id === "string").map((item) => ({
+					value: item.item_id,
+					label: item.label || item.item_id
+				})).sort((a, b) => a.label.localeCompare(b.label));
+				setCalendars({
+					status: "loaded",
+					options
+				});
+			} catch {
+				if (!abort.signal.aborted) setCalendars({ status: "failed" });
+			}
+		})();
+		return () => abort.abort();
+	}, []);
+	return calendars;
+}
+/** react-select labels the remove button from the rendered label, which here is an element, so label it from the option. */
+function RemoveButton(props) {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(components.MultiValueRemove, {
+		...props,
+		innerProps: {
+			...props.innerProps,
+			"aria-label": `Remove ${props.data.label}`
+		}
+	});
+}
+var classNames = {
+	control: (state) => `${state.isFocused ? "border" : "border-0"} border-accent p-2.5 text-sm rounded-box bg-base-300 rounded-md`,
+	menu: () => "bg-base-300 p-2.5 rounded-box",
+	option: (state) => `p-1 ${state.isSelected || state.isFocused ? "bg-primary/20 rounded-sm" : ""}`,
+	multiValue: (state) => `flex items-center gap-1 rounded-md px-2 py-0.5 mr-1 ${state.data.missing ? "bg-warning/30" : "bg-primary/20"}`,
+	multiValueRemove: () => "cursor-pointer px-1 rounded-sm hover:bg-base-100",
+	valueContainer: () => "gap-1",
+	placeholder: () => "opacity-60"
+};
+/**
+* The calendar_entity_ids setting: every calendar, or a choice from the ones Home Assistant has. Saved ids that Home
+* Assistant no longer has stay, shown as missing, until they are removed. When the calendars can't be loaded it is
+* the comma-separated text field, so that the setting can still be edited.
+*/
+function CalendarPicker() {
+	const calendars = useHomeAssistantCalendars();
+	if (calendars.status === "failed") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput$1, {
+		name: "calendar_entity_ids",
+		label: "Calendars",
+		hint: `Couldn't load the calendars from Home Assistant. Enter calendar entities, comma-separated, or "all" for every calendar. Blank turns the calendar off.`,
+		placeholder: "calendar.family, calendar.school"
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CalendarChoice, { calendars });
+}
+function CalendarChoice({ calendars }) {
+	const { control } = useFormContext();
+	const [remembered, setRemembered] = (0, import_react.useState)([]);
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Controller, {
+		control,
+		name: "calendar_entity_ids",
+		render: ({ field, fieldState }) => {
+			const selection = parseCalendarIds(field.value);
+			const known = calendars.status === "loaded" ? calendars.options : [];
+			const chosen = selection.all ? [] : selection.ids.map((id) => known.find((option) => option.value === id) ?? {
+				value: id,
+				label: id,
+				missing: calendars.status === "loaded"
+			});
+			const missing = chosen.filter((option) => option.missing);
+			const chooseAll = () => {
+				if (!selection.all) setRemembered(selection.ids);
+				field.onChange("all");
+			};
+			const chooseSome = () => field.onChange(formatCalendarIds(remembered));
+			return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("fieldset", {
+				className: "mb-2 w-full",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("legend", {
+						className: "block mb-1 text-sm font-medium",
+						children: "Calendars"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-wrap border border-neutral rounded-lg mb-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex items-center gap-2 flex-1 px-3 py-3 text-sm font-medium cursor-pointer",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "radio",
+								className: "radio radio-accent radio-sm",
+								name: "calendar_mode",
+								checked: selection.all,
+								onChange: chooseAll
+							}), "All calendars"]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+							className: "flex items-center gap-2 flex-1 px-3 py-3 text-sm font-medium cursor-pointer",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "radio",
+								className: "radio radio-accent radio-sm",
+								name: "calendar_mode",
+								checked: !selection.all,
+								onChange: chooseSome
+							}), "Choose calendars"]
+						})]
+					}),
+					selection.all ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "mt-1 text-sm opacity-60",
+						children: "Every calendar in Home Assistant, including ones added later."
+					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(StateManagedSelect$1, {
+							isMulti: true,
+							inputId: "calendar_entity_ids",
+							"aria-label": "Calendar entities",
+							placeholder: calendars.status === "loading" ? "Loading calendars…" : "Choose calendars…",
+							isLoading: calendars.status === "loading",
+							options: known,
+							value: chosen,
+							onChange: (next) => field.onChange(formatCalendarIds(next.map((option) => option.value))),
+							onBlur: field.onBlur,
+							unstyled: true,
+							components: { MultiValueRemove: RemoveButton },
+							classNames,
+							noOptionsMessage: () => "No calendars in Home Assistant",
+							formatOptionLabel: (option, { context }) => context === "menu" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: option.label }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "block text-xs opacity-60",
+								children: option.value
+							})] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								title: option.value,
+								children: option.missing ? `${option.label} (missing)` : option.label
+							})
+						}),
+						missing.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+							className: "mt-1 text-sm text-warning",
+							children: [
+								"Not in Home Assistant any more: ",
+								missing.map((option) => option.value).join(", "),
+								". They stay saved until you remove them."
+							]
+						}),
+						!fieldState.error && selection.ids.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "mt-1 text-sm opacity-60",
+							children: "Choose at least one calendar. With none, the calendar stays off."
+						})
+					] }),
+					fieldState.error?.message && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "mt-1 text-sm text-error",
+						children: fieldState.error.message
+					})
+				]
+			});
+		}
+	});
+}
+//#endregion
 //#region src/components/SettingsPage/choices.ts
 var LOG_LEVELS = {
 	error: "Error",
@@ -703,18 +900,6 @@ function TestButton({ label, run, disabledReason }) {
 			children: disabledReason
 		})]
 	});
-}
-//#endregion
-//#region src/components/common/typedFields.ts
-/** The inputs in ./fields with their field names checked against the form T. Call it once, at module level. */
-function typedFields() {
-	return {
-		TextInput: TextInput$1,
-		NumberInput: NumberInput$1,
-		Select: Select$1,
-		RadioGroup: RadioGroup$1,
-		SecretInput: SecretInput$1
-	};
 }
 var CARD_TYPES = {
 	calendar: "Calendar",
@@ -1190,12 +1375,7 @@ function SettingsForm({ settings: loaded, logDownloadUrl }) {
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(BuzzerCard, {}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Card, {
 					title: "Calendar",
-					children: homeAssistantConfigured ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TextInput, {
-						name: "calendar_entity_ids",
-						label: "Calendars",
-						hint: "Home Assistant calendar entities, comma-separated. Blank turns the calendar off.",
-						placeholder: "calendar.family, calendar.school"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Row, { children: [
+					children: homeAssistantConfigured ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CalendarPicker, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(Row, { children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NumberInput, {
 							name: "calendar_max_events",
 							label: "Most events shown",
