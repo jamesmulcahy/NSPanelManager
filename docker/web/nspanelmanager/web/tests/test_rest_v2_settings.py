@@ -20,7 +20,7 @@ from django.utils.crypto import get_random_string
 
 import web.rest_v2.schema
 from web.models import Settings
-from web.rest_v2.global_settings import SECRETS, SettingsSerializer, SettingsUpdateSerializer
+from web.rest_v2.global_settings import BUZZER_SOUND_TIMER_FIRED_DEFAULT, DEFAULTS, SECRETS, SettingsSerializer, SettingsUpdateSerializer
 from web.settings_helper import get_setting_with_default, set_setting_value
 
 from .harness import NSPMTestCase
@@ -104,6 +104,7 @@ LEGACY_ROWS = {
     "buzzer_sound_touch": "",
     "buzzer_sound_scene_activated": "",
     "buzzer_sound_scene_saved": "",
+    "buzzer_sound_timer_fired": "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7",
     "mqtt_server": "mqtt.local",
     "mqtt_port": "1883",
     "mqtt_username": "nspm",
@@ -303,6 +304,22 @@ class CompatibilityTests(RestV2TestCase):
 
         self.assertEqual([data[key] for key in ("mqtt_port", "optimistic_mode", "screensaver_mode", "theme")], [None, None, None, None])
 
+    def test_missing_timer_sound_row_reports_the_default(self):
+        Settings.objects.filter(name="buzzer_sound_timer_fired").delete()
+
+        self.assertEqual(self.get()["buzzer_sound_timer_fired"], BUZZER_SOUND_TIMER_FIRED_DEFAULT)
+
+    def test_stored_blank_timer_sound_is_not_replaced_by_the_default(self):
+        set_setting_value("buzzer_sound_timer_fired", "")
+
+        self.assertEqual(self.get()["buzzer_sound_timer_fired"], "")
+
+    @needs_manager_source
+    def test_defaults_match_the_manager(self):
+        for name, default in DEFAULTS.items():
+            with self.subTest(name=name):
+                self.assertEqual(MANAGER_KEYS[name], default)
+
     def test_missing_row_is_created(self):
         Settings.objects.filter(name="mqtt_wait_time").delete()
 
@@ -432,7 +449,8 @@ class GetTests(RestV2TestCase):
 
         data = self.get()
 
-        self.assertTrue(all(value is None for key, value in data.items() if key not in READ_ONLY))
+        self.assertTrue(all(value is None for key, value in data.items() if key not in READ_ONLY and key not in DEFAULTS))
+        self.assertEqual({key: data[key] for key in DEFAULTS}, DEFAULTS)
         self.assertEqual([data[f"{secret}_set"] for secret in SECRETS], [False, False, False])
 
     def test_get_changes_nothing(self):

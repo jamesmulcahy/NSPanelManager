@@ -530,6 +530,7 @@ void NSPanel::send_config(const char *reason) {
       {NSPanelConfig_NSPanelSoundEvent_TOUCH, "buzzer_sound_touch", MQTT_MANAGER_SETTING::BUZZER_SOUND_TOUCH},
       {NSPanelConfig_NSPanelSoundEvent_SCENE_ACTIVATED, "buzzer_sound_scene_activated", MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_ACTIVATED},
       {NSPanelConfig_NSPanelSoundEvent_SCENE_SAVED, "buzzer_sound_scene_saved", MQTT_MANAGER_SETTING::BUZZER_SOUND_SCENE_SAVED},
+      {NSPanelConfig_NSPanelSoundEvent_TIMER_FIRED, "buzzer_sound_timer_fired", MQTT_MANAGER_SETTING::BUZZER_SOUND_TIMER_FIRED},
   };
   for (const auto &[event, nspanel_setting_key, global_setting] : sound_settings) {
     std::string rtttl = this->_get_nspanel_setting_with_default(nspanel_setting_key, MqttManagerConfig::get_setting_with_default<std::string>(global_setting));

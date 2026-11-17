@@ -379,8 +379,12 @@ describe("buzzer sounds", () => {
     filters.length = 0;
   });
 
-  it("is off by default", async () => {
+  it("is off by default, except for the timer", async () => {
     await renderPage();
+
+    expect(choice("Timer finished")).toHaveDisplayValue("Alarm");
+    expect(rtttl("Timer finished")).toHaveValue("timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7");
+    expect(screen.getByText(/repeated every few seconds until it is dismissed. Plays for 1.05 s./)).toBeInTheDocument();
 
     expect(choice("Screen touch")).toHaveDisplayValue("Off");
     expect(choice("Scene activated")).toHaveDisplayValue("Same as screen touch");
@@ -420,6 +424,28 @@ describe("buzzer sounds", () => {
     await save(user);
 
     expect(patches()[0].body).toEqual({ buzzer_sound_scene_saved: "" });
+  });
+
+  it("turns the timer sound off by saving it blank", async () => {
+    const user = await renderPage();
+
+    await user.selectOptions(choice("Timer finished"), "Off");
+    expect(rtttl("Timer finished")).toHaveValue("");
+    await save(user);
+
+    expect(patches()).toHaveLength(1);
+    expect(patches()[0].body).toEqual({ buzzer_sound_timer_fired: "" });
+  });
+
+  it("round-trips a timer preset and offers the Alarm first", async () => {
+    const user = await renderPage({ buzzer_sound_timer_fired: "" });
+
+    const options = Array.from(choice("Timer finished").options).map((option) => option.text);
+    expect(options.slice(0, 3)).toEqual(["Off", "Alarm", "Rising"]);
+    await user.selectOptions(choice("Timer finished"), "Alarm");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ buzzer_sound_timer_fired: "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7" });
   });
 
   it("lets a preset be edited as a custom sound", async () => {

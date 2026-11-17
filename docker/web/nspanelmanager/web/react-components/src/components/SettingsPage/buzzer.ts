@@ -1,11 +1,11 @@
-// The buzzer sounds: three RTTTL settings, one per panel event. A preset only fills in the RTTTL; the
+// The buzzer sounds: four RTTTL settings, one per panel event. A preset only fills in the RTTTL; the
 // RTTTL is what is stored, so a preset is recognised by comparing strings.
 //
 // What the panel does with each setting (NSPanelManager-firmware BuzzerManager):
 //   * Blank: no sound. Except "scene activated": a scene press then plays the touch sound, like any press.
 //   * RTTTL the panel can't parse: no sound (the API rejects it, see web/rest_v2/rtttl.py).
 
-export type BuzzerSetting = "buzzer_sound_touch" | "buzzer_sound_scene_activated" | "buzzer_sound_scene_saved";
+export type BuzzerSetting = "buzzer_sound_touch" | "buzzer_sound_scene_activated" | "buzzer_sound_scene_saved" | "buzzer_sound_timer_fired";
 
 export type Preset = { id: string; name: string; rtttl: string };
 
@@ -21,6 +21,8 @@ export const PRESETS = {
   confirm: { id: "confirm", name: "Confirm", rtttl: "confirm:d=16,o=6,b=357:e,g" },
   rising: { id: "rising", name: "Rising", rtttl: "rising:d=16,o=6,b=180:c,e,g" },
   saved: { id: "saved", name: "Saved", rtttl: "saved:d=16,o=6,b=200:c,e,g,8c7" },
+  // The default for the timer: four C7 beeps over about a second, repeated by the panel until dismissed.
+  alarm: { id: "alarm", name: "Alarm", rtttl: "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7" },
   // A 4 ms pause: a scene press then plays this instead of the touch sound, i.e. nothing.
   silent: { id: "silent", name: "Silent", rtttl: "silent:d=64,o=6,b=900:p" },
 } as const satisfies Record<string, Preset>;
@@ -41,21 +43,28 @@ export const BUZZER_EVENTS: readonly BuzzerEvent[] = [
     label: "Screen touch",
     blankLabel: "Off",
     hint: "Played on every press of the screen.",
-    presets: [PRESETS.tick, PRESETS.pip, PRESETS.midTick, PRESETS.tuk, PRESETS.tock, PRESETS.chime, PRESETS.confirm, PRESETS.rising, PRESETS.saved],
+    presets: [PRESETS.tick, PRESETS.pip, PRESETS.midTick, PRESETS.tuk, PRESETS.tock, PRESETS.chime, PRESETS.confirm, PRESETS.rising, PRESETS.saved, PRESETS.alarm],
   },
   {
     name: "buzzer_sound_scene_activated",
     label: "Scene activated",
     blankLabel: "Same as screen touch",
     hint: "Played instead of the touch sound when a scene is activated from the panel.",
-    presets: [PRESETS.silent, PRESETS.confirm, PRESETS.rising, PRESETS.chime, PRESETS.tick, PRESETS.pip, PRESETS.midTick, PRESETS.tuk, PRESETS.tock, PRESETS.saved],
+    presets: [PRESETS.silent, PRESETS.confirm, PRESETS.rising, PRESETS.chime, PRESETS.tick, PRESETS.pip, PRESETS.midTick, PRESETS.tuk, PRESETS.tock, PRESETS.saved, PRESETS.alarm],
   },
   {
     name: "buzzer_sound_scene_saved",
     label: "Scene saved",
     blankLabel: "Off",
     hint: "Played when a scene is saved with a long press on the panel.",
-    presets: [PRESETS.saved, PRESETS.rising, PRESETS.confirm, PRESETS.chime, PRESETS.tick, PRESETS.pip, PRESETS.midTick, PRESETS.tuk, PRESETS.tock],
+    presets: [PRESETS.saved, PRESETS.rising, PRESETS.confirm, PRESETS.chime, PRESETS.tick, PRESETS.pip, PRESETS.midTick, PRESETS.tuk, PRESETS.tock, PRESETS.alarm],
+  },
+  {
+    name: "buzzer_sound_timer_fired",
+    label: "Timer finished",
+    blankLabel: "Off",
+    hint: "Played when a timer started on the panel finishes, and repeated every few seconds until it is dismissed.",
+    presets: [PRESETS.alarm, PRESETS.rising, PRESETS.chime, PRESETS.confirm, PRESETS.saved, PRESETS.tick, PRESETS.pip, PRESETS.midTick, PRESETS.tuk, PRESETS.tock],
   },
 ];
 

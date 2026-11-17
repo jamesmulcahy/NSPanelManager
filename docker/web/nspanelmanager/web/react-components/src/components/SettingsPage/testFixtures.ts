@@ -57,6 +57,7 @@ export function settingsFixture(overrides: Partial<Settings> = {}): Settings {
     buzzer_sound_touch: "",
     buzzer_sound_scene_activated: "",
     buzzer_sound_scene_saved: "",
+    buzzer_sound_timer_fired: "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7",
     mqtt_server: "mqtt.local",
     mqtt_port: 1883,
     mqtt_username: "nspm",

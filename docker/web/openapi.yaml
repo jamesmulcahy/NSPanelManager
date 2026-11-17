@@ -834,6 +834,11 @@ components:
           description: RTTTL played when a scene is saved from the panel. Blank for
             no sound.
           maxLength: 255
+        buzzer_sound_timer_fired:
+          type: string
+          description: RTTTL played, repeating, when a timer started on the panel
+            finishes. Blank for no sound.
+          maxLength: 255
         mqtt_server:
           type: string
           description: Leading and trailing whitespace is removed.
@@ -1175,6 +1180,9 @@ components:
         buzzer_sound_scene_saved:
           type: string
           nullable: true
+        buzzer_sound_timer_fired:
+          type: string
+          nullable: true
         mqtt_server:
           type: string
           nullable: true
@@ -1208,6 +1216,7 @@ components:
       - button_long_press_time
       - buzzer_sound_scene_activated
       - buzzer_sound_scene_saved
+      - buzzer_sound_timer_fired
       - buzzer_sound_touch
       - calendar_entity_ids
       - calendar_lookahead_hours
@@ -1501,6 +1510,10 @@ components:
           items:
             type: string
         buzzer_sound_scene_saved:
+          type: array
+          items:
+            type: string
+        buzzer_sound_timer_fired:
           type: array
           items:
             type: string

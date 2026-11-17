@@ -244,6 +244,7 @@ enum NSPanelConfig_NSPanelSoundEvent : int {
   NSPanelConfig_NSPanelSoundEvent_TOUCH = 0,
   NSPanelConfig_NSPanelSoundEvent_SCENE_ACTIVATED = 1,
   NSPanelConfig_NSPanelSoundEvent_SCENE_SAVED = 2,
+  NSPanelConfig_NSPanelSoundEvent_TIMER_FIRED = 3,
   NSPanelConfig_NSPanelSoundEvent_NSPanelConfig_NSPanelSoundEvent_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   NSPanelConfig_NSPanelSoundEvent_NSPanelConfig_NSPanelSoundEvent_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -253,8 +254,8 @@ enum NSPanelConfig_NSPanelSoundEvent : int {
 bool NSPanelConfig_NSPanelSoundEvent_IsValid(int value);
 extern const uint32_t NSPanelConfig_NSPanelSoundEvent_internal_data_[];
 constexpr NSPanelConfig_NSPanelSoundEvent NSPanelConfig_NSPanelSoundEvent_NSPanelSoundEvent_MIN = static_cast<NSPanelConfig_NSPanelSoundEvent>(0);
-constexpr NSPanelConfig_NSPanelSoundEvent NSPanelConfig_NSPanelSoundEvent_NSPanelSoundEvent_MAX = static_cast<NSPanelConfig_NSPanelSoundEvent>(2);
-constexpr int NSPanelConfig_NSPanelSoundEvent_NSPanelSoundEvent_ARRAYSIZE = 2 + 1;
+constexpr NSPanelConfig_NSPanelSoundEvent NSPanelConfig_NSPanelSoundEvent_NSPanelSoundEvent_MAX = static_cast<NSPanelConfig_NSPanelSoundEvent>(3);
+constexpr int NSPanelConfig_NSPanelSoundEvent_NSPanelSoundEvent_ARRAYSIZE = 3 + 1;
 const ::google::protobuf::EnumDescriptor*
 NSPanelConfig_NSPanelSoundEvent_descriptor();
 template <typename T>
@@ -267,7 +268,7 @@ const std::string& NSPanelConfig_NSPanelSoundEvent_Name(T value) {
 template <>
 inline const std::string& NSPanelConfig_NSPanelSoundEvent_Name(NSPanelConfig_NSPanelSoundEvent value) {
   return ::google::protobuf::internal::NameOfDenseEnum<NSPanelConfig_NSPanelSoundEvent_descriptor,
-                                                 0, 2>(
+                                                 0, 3>(
       static_cast<int>(value));
 }
 inline bool NSPanelConfig_NSPanelSoundEvent_Parse(absl::string_view name, NSPanelConfig_NSPanelSoundEvent* value) {
@@ -6891,6 +6892,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
   static constexpr NSPanelSoundEvent TOUCH = NSPanelConfig_NSPanelSoundEvent_TOUCH;
   static constexpr NSPanelSoundEvent SCENE_ACTIVATED = NSPanelConfig_NSPanelSoundEvent_SCENE_ACTIVATED;
   static constexpr NSPanelSoundEvent SCENE_SAVED = NSPanelConfig_NSPanelSoundEvent_SCENE_SAVED;
+  static constexpr NSPanelSoundEvent TIMER_FIRED = NSPanelConfig_NSPanelSoundEvent_TIMER_FIRED;
   static inline bool NSPanelSoundEvent_IsValid(int value) {
     return NSPanelConfig_NSPanelSoundEvent_IsValid(value);
   }

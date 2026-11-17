@@ -84,6 +84,7 @@ message NSPanelConfig {
     TOUCH = 0;           // The screen was touched
     SCENE_ACTIVATED = 1; // A scene was triggered from the panel. Played instead of the TOUCH sound for that touch.
     SCENE_SAVED = 2;     // A scene was saved from the panel
+    TIMER_FIRED = 3;     // A timer started on the panel finished. Repeated until dismissed.
   }
   message Sound {
     NSPanelSoundEvent event = 1;

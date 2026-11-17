@@ -49,6 +49,7 @@ export const PAGE_FIELDS = [
   "buzzer_sound_touch",
   "buzzer_sound_scene_activated",
   "buzzer_sound_scene_saved",
+  "buzzer_sound_timer_fired",
 ] as const satisfies readonly (keyof Settings & keyof SettingsUpdateRequest)[];
 
 export const SECRETS = ["mqtt_password", "home_assistant_token", "openhab_token"] as const;
