@@ -1,16 +1,165 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-LU0y8h9I.js";
-import { r as useAvailableEntitiesStore } from "./MultiStep_AddEditEntity-B0CCLm07.js";
-import { t as StateManagedSelect$1 } from "./react-select.esm-DXyNfAo7.js";
-import { l as useWatch, s as useForm } from "./index.esm-C17iYtX7.js";
-import { n as Notify } from "./NSPanelToastContainer-ClnRbGGM.js";
-import EntitiesPagesView from "./EntitiesPagesView-907Q_ROC.js";
-import { t as useStompStore } from "./StompStore-DKnOxdkK.js";
-import { t as useEntityStatesStore } from "./EntityStore-BoAOBj97.js";
-import { d as mdiTextShort, x as require_Icon } from "./mdi-DZ0LDg5T.js";
-//#region src/components/RoomPage/RoomPage.tsx
-var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-DUoJrAcm.js";
+import { r as useAvailableEntitiesStore } from "./MultiStep_AddEditEntity-x8U1vN19.js";
+import { t as useSettingsStore } from "./SettingsStore-BfXlBu12.js";
+import { t as StateManagedSelect$1 } from "./react-select.esm-BBO_09aN.js";
+import { l as useWatch, s as useForm } from "./index.esm-DWBystYh.js";
+import { n as Notify } from "./NSPanelToastContainer-Czemg6DK.js";
+import EntitiesPagesView from "./EntitiesPagesView-CUfeZ8E-.js";
+import { t as api } from "./client-CRfCe5X7.js";
+import { p as errorMessage } from "./sync-Dde6AJAS.js";
+import { t as useStompStore } from "./StompStore-hhtjbIYs.js";
+import { t as useEntityStatesStore } from "./EntityStore-DnyrMaHW.js";
+import { d as mdiTextShort, x as require_Icon } from "./mdi-C3nsW8m6.js";
+//#region src/components/RoomPage/HomeAssistantAreaField.tsx
 var import_Icon = require_Icon();
+var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
 var import_jsx_runtime = require_jsx_runtime();
+var UNSET = "__unset__";
+var NONE = "__none__";
+var toChoice = (room) => room.home_assistant_link === "linked" ? room.home_assistant_area_id ?? "" : room.home_assistant_link === "none" ? NONE : UNSET;
+/**
+* The "Home Assistant area" field of the room page. It saves on its own (PATCH /rest/v2/rooms/<id>),
+* because the rest of the form goes through the older /rest/rooms endpoint.
+*/
+function HomeAssistantAreaField({ roomId }) {
+	const [room, setRoom] = (0, import_react.useState)(null);
+	const [areas, setAreas] = (0, import_react.useState)(null);
+	const [areasError, setAreasError] = (0, import_react.useState)(null);
+	const [loadError, setLoadError] = (0, import_react.useState)(null);
+	const [choice, setChoice] = (0, import_react.useState)(UNSET);
+	const { status: settingsStatus, settings, fetchData } = useSettingsStore();
+	const tokenSet = settings?.home_assistant_token_set ?? false;
+	const [saving, setSaving] = (0, import_react.useState)(false);
+	const [message, setMessage] = (0, import_react.useState)(null);
+	(0, import_react.useEffect)(() => {
+		if (settingsStatus === "none") fetchData();
+	}, [settingsStatus, fetchData]);
+	(0, import_react.useEffect)(() => {
+		let current = true;
+		api.GET("/rest/v2/rooms/{id}", { params: { path: { id: roomId } } }).then(({ data, error, response }) => {
+			if (!current) return;
+			if (data) {
+				setRoom(data);
+				setChoice(toChoice(data));
+			} else setLoadError(errorMessage(error, response));
+		}).catch((caught) => current && setLoadError(errorMessage(caught)));
+		return () => {
+			current = false;
+		};
+	}, [roomId]);
+	(0, import_react.useEffect)(() => {
+		if (!tokenSet) return;
+		let current = true;
+		api.GET("/rest/v2/home_assistant/areas").then(({ data, error, response }) => {
+			if (!current) return;
+			if (data) setAreas(data);
+			else setAreasError(errorMessage(error, response));
+		}).catch((caught) => current && setAreasError(errorMessage(caught)));
+		return () => {
+			current = false;
+		};
+	}, [tokenSet]);
+	if (loadError) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		role: "alert",
+		className: "alert alert-error my-2",
+		children: ["Couldn't load the Home Assistant area: ", loadError]
+	});
+	if (!room || settingsStatus === "loaded" && !tokenSet && room.home_assistant_link === "unset") return null;
+	const missing = room.home_assistant_link === "linked" && areas !== null && !areas.some((area) => area.area_id === room.home_assistant_area_id);
+	const dirty = choice !== toChoice(room);
+	async function save() {
+		if (!room) return;
+		setSaving(true);
+		setMessage(null);
+		const body = choice === UNSET ? { home_assistant_link: "unset" } : choice === NONE ? { home_assistant_link: "none" } : {
+			home_assistant_link: "linked",
+			home_assistant_area_id: choice
+		};
+		try {
+			const { data, error, response } = await api.PATCH("/rest/v2/rooms/{id}", {
+				params: { path: { id: roomId } },
+				body
+			});
+			if (data) {
+				setRoom(data);
+				setChoice(toChoice(data));
+				setMessage({
+					kind: "success",
+					text: "Saved the Home Assistant area."
+				});
+			} else setMessage({
+				kind: "error",
+				text: `Couldn't save the Home Assistant area: ${errorMessage(error, response)}`
+			});
+		} catch (caught) {
+			setMessage({
+				kind: "error",
+				text: errorMessage(caught)
+			});
+		} finally {
+			setSaving(false);
+		}
+	}
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: "my-2 w-full md:ms-1",
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+				htmlFor: "home_assistant_area",
+				className: "block mb-2 text-sm font-medium",
+				children: "Home Assistant area"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-2",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+					id: "home_assistant_area",
+					className: "select select-bordered bg-base-300 flex-1",
+					value: choice,
+					onChange: (event) => setChoice(event.target.value),
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+							value: UNSET,
+							children: "Not set"
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+							value: NONE,
+							children: "None"
+						}),
+						missing && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("option", {
+							value: room.home_assistant_area_id ?? "",
+							children: [room.home_assistant_area_id, " (missing)"]
+						}),
+						(areas ?? []).map((area) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+							value: area.area_id,
+							disabled: area.linked_room_id !== null && area.linked_room_id !== roomId,
+							children: area.name
+						}, area.area_id))
+					]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					className: "btn btn-info",
+					disabled: !dirty || saving,
+					onClick: save,
+					children: "Save area"
+				})]
+			}),
+			missing && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				className: "text-sm text-warning mt-1",
+				children: "Area missing in Home Assistant. The room stays linked; pick another area, or choose None."
+			}),
+			areasError && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+				className: "text-sm text-error mt-1",
+				children: ["Couldn't load the Home Assistant areas: ", areasError]
+			}),
+			message && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+				role: "status",
+				className: `text-sm mt-1 ${message.kind === "error" ? "text-error" : "text-success"}`,
+				children: message.text
+			})
+		]
+	});
+}
+//#endregion
+//#region src/components/RoomPage/RoomPage.tsx
 function RoomPage({ room_id }) {
 	const { status: stompStatus } = useStompStore();
 	const { status: entityStatus, rooms, _nspanels } = useEntityStatesStore();
@@ -287,6 +436,7 @@ function RoomPage({ room_id }) {
 								}
 							})]
 						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HomeAssistantAreaField, { roomId: room.id }),
 						!can_delete && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 							role: "alert",
 							className: "alert alert-info my-4",

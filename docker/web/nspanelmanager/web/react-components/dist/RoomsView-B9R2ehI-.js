@@ -1,13 +1,15 @@
-import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-LU0y8h9I.js";
-import { r as DragDropProvider, t as useSortable } from "./sortable-JvsJgtNx.js";
-import { n as FormProvider, s as useForm } from "./index.esm-C17iYtX7.js";
-import { n as Notify } from "./NSPanelToastContainer-ClnRbGGM.js";
-import { t as motion } from "./proxy-BuVvNVBd.js";
-import { n as useMotionTemplate, r as useMotionValue, t as useSpring } from "./use-spring-CHbK_3zE.js";
-import { t as useEntityStatesStore } from "./EntityStore-BoAOBj97.js";
-import { o as mdiMenu, x as require_Icon } from "./mdi-DZ0LDg5T.js";
-import { i as api, t as Alert } from "./layout-DmUnJdGW.js";
-import { a as TextInput } from "./fields-BqSzUcJ0.js";
+import { c as __toESM, r as require_react, t as require_jsx_runtime } from "./main-DUoJrAcm.js";
+import { r as DragDropProvider, t as useSortable } from "./sortable-BTDA7JLX.js";
+import { t as useSettingsStore } from "./SettingsStore-BfXlBu12.js";
+import { n as FormProvider, s as useForm } from "./index.esm-DWBystYh.js";
+import { n as Notify } from "./NSPanelToastContainer-Czemg6DK.js";
+import { t as motion } from "./proxy-D_17gJLQ.js";
+import { n as useMotionTemplate, r as useMotionValue, t as useSpring } from "./use-spring-BgpYwwWK.js";
+import { t as api } from "./client-CRfCe5X7.js";
+import { t as useEntityStatesStore } from "./EntityStore-DnyrMaHW.js";
+import { o as mdiMenu, x as require_Icon } from "./mdi-C3nsW8m6.js";
+import { t as Alert } from "./layout-DrtVJTw7.js";
+import { a as TextInput } from "./fields-BKm1WpGB.js";
 //#region src/components/RoomsPage/RoomBox.tsx
 var import_react = /* @__PURE__ */ __toESM(require_react(), 1);
 var import_Icon = require_Icon();
@@ -444,6 +446,7 @@ var RoomsView = () => {
 	const [state, setState] = (0, import_react.useState)({ status: "loading" });
 	const { status: entityStatesStatus, fetchData } = useEntityStatesStore();
 	const newRoomDialogRef = (0, import_react.useRef)(null);
+	const { status: settingsStatus, settings, fetchData: fetchGlobalSettings } = useSettingsStore();
 	const fetchSettings = (0, import_react.useCallback)(() => {
 		api.GET("/rest/v2/rooms").then(({ data, response }) => setState(data ? {
 			status: "loaded",
@@ -459,6 +462,9 @@ var RoomsView = () => {
 	(0, import_react.useEffect)(() => {
 		if (entityStatesStatus === "none") fetchData();
 	}, [entityStatesStatus, fetchData]);
+	(0, import_react.useEffect)(() => {
+		if (settingsStatus === "none") fetchGlobalSettings();
+	}, [settingsStatus, fetchGlobalSettings]);
 	(0, import_react.useEffect)(fetchSettings, [fetchSettings]);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
 		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NewRoomDialog, {
@@ -476,11 +482,18 @@ var RoomsView = () => {
 					if (entityStatesStatus != "loaded") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "loading loading-spinner loading-sm mr-2" });
 					return null;
 				})()]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-				className: "btn btn-info font-medium",
-				onClick: () => newRoomDialogRef.current?.showModal(),
-				children: "New room"
-			}) })]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-2",
+				children: [settings?.home_assistant_token_set && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+					href: "/home_assistant_sync",
+					className: "btn btn-outline btn-info font-medium",
+					children: "Sync from Home Assistant"
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					className: "btn btn-info font-medium",
+					onClick: () => newRoomDialogRef.current?.showModal(),
+					children: "New room"
+				})]
+			})]
 		}),
 		/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: (() => {
 			if (state.status != "loaded") return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
