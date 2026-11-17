@@ -242,7 +242,7 @@ def rooms_get(request):
 
 
 # The entities page layouts the panel GUI has.
-PAGE_SIZES = (4, 8, 12)
+from .entity_placement import PAGE_SIZES  # noqa: E402
 
 
 def get_page_size_error(page_type):
