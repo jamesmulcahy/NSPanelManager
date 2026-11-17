@@ -1357,6 +1357,16 @@ TEST_F(NSPanelTest, panel_in_lvgl_mode_without_a_terminal_tft_has_no_update) {
   EXPECT_FALSE(panel->has_tft_update());
 }
 
+// Panels whose web UI is embedded in the firmware have no LittleFS image to update.
+TEST_F(NSPanelTest, panel_with_an_embedded_web_ui_has_no_littlefs_update) {
+  load_panel();
+  NSPanelStatusReport report;
+  report.set_md5_littlefs(NSPM_WEB_UI_EMBEDDED);
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+
+  EXPECT_FALSE(panel->has_littlefs_update());
+}
+
 // A look chosen on the panel, docs/LVGL_PANEL_MODE.md.
 
 TEST_F(NSPanelTest, look_chosen_on_the_panel_is_saved_and_confirmed_by_the_config) {
@@ -1512,6 +1522,15 @@ nlohmann::json register_request(std::optional<nlohmann::json> metrics_port) {
 }
 
 } // namespace
+
+TEST_F(NSPanelTest, panel_with_an_embedded_web_ui_has_no_littlefs_update_from_its_register_request) {
+  auto request = register_request(std::nullopt);
+  request["md5_data_file"] = NSPM_WEB_UI_EMBEDDED;
+  load_panel();
+  panel->register_to_manager(request);
+
+  EXPECT_FALSE(panel->has_littlefs_update());
+}
 
 TEST_F(NSPanelTest, metrics_snapshot_has_the_latest_status_report) {
   load_panel();

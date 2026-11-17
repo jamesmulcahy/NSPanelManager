@@ -15,6 +15,10 @@
 #include <optional>
 #include <string>
 
+// What panels whose web UI is part of the firmware image report as their LittleFS md5 (status report `md5_littlefs`,
+// register request `md5_data_file`). There is no LittleFS image to update on them, so the firmware md5 alone says what they run.
+inline constexpr const char *NSPM_WEB_UI_EMBEDDED = "embedded";
+
 class Room; // Forward declare "Room" as to avoid dependancy loops in CMake
 
 enum MQTT_MANAGER_NSPANEL_STATE {
@@ -166,6 +170,7 @@ public:
 
   /**
    * Compare stored LittleFS checksum with current LittleFS checksum and return true if they are different.
+   * Always false for panels that report NSPM_WEB_UI_EMBEDDED, they have no LittleFS image to update.
    */
   bool has_littlefs_update();
 
