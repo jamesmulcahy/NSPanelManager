@@ -27,6 +27,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/HomeAssistantDetail'
           description: ''
+  /rest/v2/home_assistant/entity_candidates:
+    get:
+      operationId: list_home_assistant_entity_candidates
+      parameters:
+      - in: query
+        name: include_groups
+        schema:
+          type: boolean
+          default: false
+        description: Also list light groups (lights that have an entity_id attribute).
+      - in: query
+        name: include_hidden
+        schema:
+          type: boolean
+          default: false
+        description: Also list entities hidden in Home Assistant.
+      - in: query
+        name: include_imported
+        schema:
+          type: boolean
+          default: false
+        description: Also list entities already imported into some room (see already_imported_room_id).
+      tags:
+      - home_assistant
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityCandidates'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: ''
+        '502':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeAssistantDetail'
+          description: ''
   /rest/v2/home_assistant/ignored_areas:
     put:
       operationId: set_ignored_home_assistant_areas
@@ -60,6 +105,72 @@ paths:
                 $ref: '#/components/schemas/HomeAssistantDetail'
           description: ''
         '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeAssistantDetail'
+          description: ''
+  /rest/v2/home_assistant/import:
+    post:
+      operationId: import_home_assistant_entities
+      tags:
+      - home_assistant
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeAssistantDetail'
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeAssistantDetail'
+          description: ''
+        '502':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeAssistantDetail'
+          description: ''
+  /rest/v2/home_assistant/labels:
+    get:
+      operationId: list_home_assistant_labels
+      tags:
+      - home_assistant
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HomeAssistantLabel'
+          description: ''
+        '502':
           content:
             application/json:
               schema:
@@ -564,6 +675,84 @@ components:
         * `entity` - entity
         * `fixed` - fixed
         * `off` - off
+    EntityCandidate:
+      type: object
+      properties:
+        entity_id:
+          type: string
+        ha_name:
+          type: string
+          description: Home Assistant's friendly name.
+        suggested_name:
+          type: string
+          description: ha_name without the room or area name in front; what the import
+            should use unless the user edits it.
+        entity_type:
+          $ref: '#/components/schemas/EntityTypeEnum'
+        room_id:
+          type: integer
+        room_name:
+          type: string
+        area_id:
+          type: string
+        hidden:
+          type: boolean
+        is_group:
+          type: boolean
+        labels:
+          type: array
+          items:
+            type: string
+          description: Home Assistant label ids.
+        already_imported_room_id:
+          type: integer
+          nullable: true
+          description: The room that already holds this entity, if any.
+      required:
+      - already_imported_room_id
+      - area_id
+      - entity_id
+      - entity_type
+      - ha_name
+      - hidden
+      - is_group
+      - labels
+      - room_id
+      - room_name
+      - suggested_name
+    EntityCandidates:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityCandidate'
+          description: Sorted by room order, then type (light, cover, media_player,
+            thermostat), then suggested_name.
+        entities_without_area:
+          type: integer
+          description: Supported entities with no area in Home Assistant that would
+            otherwise be listed; they can't be placed in a room.
+        excluded_by_label:
+          type: integer
+          description: Entities in linked rooms' areas left out because they carry
+            a label of the home_assistant_sync_exclude_labels setting.
+      required:
+      - candidates
+      - entities_without_area
+      - excluded_by_label
+    EntityTypeEnum:
+      enum:
+      - light
+      - cover
+      - media_player
+      - thermostat
+      type: string
+      description: |-
+        * `light` - light
+        * `cover` - cover
+        * `media_player` - media_player
+        * `thermostat` - thermostat
     HomeAssistantArea:
       type: object
       properties:
@@ -592,6 +781,16 @@ components:
           type: string
       required:
       - detail
+    HomeAssistantLabel:
+      type: object
+      properties:
+        label_id:
+          type: string
+        name:
+          type: string
+      required:
+      - label_id
+      - name
     HomeAssistantLinkEnum:
       enum:
       - unset
@@ -629,6 +828,87 @@ components:
             being ignored.
       required:
       - area_ids
+    ImportItemRequest:
+      type: object
+      description: Unknown request fields are a 400.
+      properties:
+        entity_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        room_id:
+          type: integer
+        entity_type:
+          allOf:
+          - $ref: '#/components/schemas/EntityTypeEnum'
+          description: |-
+            Must match the entity's Home Assistant domain: light, cover, media_player or climate (thermostat).
+
+            * `light` - light
+            * `cover` - cover
+            * `media_player` - media_player
+            * `thermostat` - thermostat
+        friendly_name:
+          type: string
+          minLength: 1
+          description: Leading and trailing whitespace is removed.
+          maxLength: 255
+      required:
+      - entity_id
+      - entity_type
+      - friendly_name
+      - room_id
+    ImportRequestRequest:
+      type: object
+      description: Unknown request fields are a 400.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportItemRequest'
+          description: 'In the order they should be placed in each room: the order
+            of the candidates table.'
+      required:
+      - items
+    ImportResult:
+      type: object
+      properties:
+        created:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportedEntity'
+        skipped:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkippedEntity'
+          description: Entities imported by someone else since the candidates were
+            listed.
+        pages_added:
+          type: integer
+          description: Entity pages created because the rooms had too few free slots.
+      required:
+      - created
+      - pages_added
+      - skipped
+    ImportedEntity:
+      type: object
+      properties:
+        entity_id:
+          type: string
+        entity_pk:
+          type: integer
+        room_id:
+          type: integer
+        page_id:
+          type: integer
+        position:
+          type: integer
+      required:
+      - entity_id
+      - entity_pk
+      - page_id
+      - position
+      - room_id
     LightsOnSourceEnum:
       enum:
       - home_assistant
@@ -1032,6 +1312,12 @@ components:
           description: Leading and trailing whitespace is removed. Comma-separated
             Home Assistant label ids. Lights with any of them are not counted.
           maxLength: 255
+        home_assistant_sync_exclude_labels:
+          type: string
+          description: Leading and trailing whitespace is removed. Comma-separated
+            Home Assistant label ids. Entities with any of them are never offered
+            by the sync from Home Assistant.
+          maxLength: 255
         lights_on_alert_threshold:
           type: integer
           maximum: 1000
@@ -1138,6 +1424,11 @@ components:
           description: Leading and trailing whitespace is removed. Blank clears the
             token.
           maxLength: 255
+    ReasonEnum:
+      enum:
+      - already_imported
+      type: string
+      description: '* `already_imported` - already_imported'
     Room:
       type: object
       description: A room, for reading and (with partial=True) for PATCH.
@@ -1513,6 +1804,9 @@ components:
         lights_on_exclude_labels:
           type: string
           nullable: true
+        home_assistant_sync_exclude_labels:
+          type: string
+          nullable: true
         lights_on_alert_threshold:
           type: integer
           nullable: true
@@ -1618,6 +1912,7 @@ components:
       - energy_price_per_kwh
       - energy_price_source
       - home_assistant_address
+      - home_assistant_sync_exclude_labels
       - home_assistant_token_set
       - is_home_assistant_addon
       - light_turn_on_brightness
@@ -1838,6 +2133,10 @@ components:
           type: array
           items:
             type: string
+        home_assistant_sync_exclude_labels:
+          type: array
+          items:
+            type: string
         lights_on_alert_threshold:
           type: array
           items:
@@ -1940,6 +2239,16 @@ components:
             type: string
         detail:
           type: string
+    SkippedEntity:
+      type: object
+      properties:
+        entity_id:
+          type: string
+        reason:
+          $ref: '#/components/schemas/ReasonEnum'
+      required:
+      - entity_id
+      - reason
     TurnOnBehaviorEnum:
       enum:
       - color_temp

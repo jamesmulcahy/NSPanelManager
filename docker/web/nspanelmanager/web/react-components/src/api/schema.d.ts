@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rest/v2/home_assistant/entity_candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_home_assistant_entity_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rest/v2/home_assistant/ignored_areas": {
         parameters: {
             query?: never;
@@ -29,6 +45,38 @@ export interface paths {
         };
         get?: never;
         put: operations["set_ignored_home_assistant_areas"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rest/v2/home_assistant/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["import_home_assistant_entities"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rest/v2/home_assistant/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_home_assistant_labels"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -181,6 +229,39 @@ export interface components {
          * @enum {string}
          */
         EnergyPriceSourceEnum: "home_assistant_energy" | "entity" | "fixed" | "off";
+        EntityCandidate: {
+            entity_id: string;
+            /** @description Home Assistant's friendly name. */
+            ha_name: string;
+            /** @description ha_name without the room or area name in front; what the import should use unless the user edits it. */
+            suggested_name: string;
+            entity_type: components["schemas"]["EntityTypeEnum"];
+            room_id: number;
+            room_name: string;
+            area_id: string;
+            hidden: boolean;
+            is_group: boolean;
+            /** @description Home Assistant label ids. */
+            labels: string[];
+            /** @description The room that already holds this entity, if any. */
+            already_imported_room_id: number | null;
+        };
+        EntityCandidates: {
+            /** @description Sorted by room order, then type (light, cover, media_player, thermostat), then suggested_name. */
+            candidates: components["schemas"]["EntityCandidate"][];
+            /** @description Supported entities with no area in Home Assistant that would otherwise be listed; they can't be placed in a room. */
+            entities_without_area: number;
+            /** @description Entities in linked rooms' areas left out because they carry a label of the home_assistant_sync_exclude_labels setting. */
+            excluded_by_label: number;
+        };
+        /**
+         * @description * `light` - light
+         *     * `cover` - cover
+         *     * `media_player` - media_player
+         *     * `thermostat` - thermostat
+         * @enum {string}
+         */
+        EntityTypeEnum: "light" | "cover" | "media_player" | "thermostat";
         HomeAssistantArea: {
             area_id: string;
             name: string;
@@ -192,6 +273,10 @@ export interface components {
         /** @description DRF's error body for a request it rejects, e.g. a 502 from Home Assistant or a 400 for a duplicate area. */
         HomeAssistantDetail: {
             detail: string;
+        };
+        HomeAssistantLabel: {
+            label_id: string;
+            name: string;
         };
         /**
          * @description * `unset` - Unset
@@ -209,6 +294,41 @@ export interface components {
         IgnoredAreasRequest: {
             /** @description The complete set of ignored areas; anything not listed stops being ignored. */
             area_ids: string[];
+        };
+        /** @description Unknown request fields are a 400. */
+        ImportItemRequest: {
+            entity_id: string;
+            room_id: number;
+            /**
+             * @description Must match the entity's Home Assistant domain: light, cover, media_player or climate (thermostat).
+             *
+             *     * `light` - light
+             *     * `cover` - cover
+             *     * `media_player` - media_player
+             *     * `thermostat` - thermostat
+             */
+            entity_type: components["schemas"]["EntityTypeEnum"];
+            /** @description Leading and trailing whitespace is removed. */
+            friendly_name: string;
+        };
+        /** @description Unknown request fields are a 400. */
+        ImportRequestRequest: {
+            /** @description In the order they should be placed in each room: the order of the candidates table. */
+            items: components["schemas"]["ImportItemRequest"][];
+        };
+        ImportResult: {
+            created: components["schemas"]["ImportedEntity"][];
+            /** @description Entities imported by someone else since the candidates were listed. */
+            skipped: components["schemas"]["SkippedEntity"][];
+            /** @description Entity pages created because the rooms had too few free slots. */
+            pages_added: number;
+        };
+        ImportedEntity: {
+            entity_id: string;
+            entity_pk: number;
+            room_id: number;
+            page_id: number;
+            position: number;
         };
         /**
          * @description * `home_assistant` - home_assistant
@@ -429,6 +549,8 @@ export interface components {
             lights_on_source?: components["schemas"]["LightsOnSourceEnum"];
             /** @description Leading and trailing whitespace is removed. Comma-separated Home Assistant label ids. Lights with any of them are not counted. */
             lights_on_exclude_labels?: string;
+            /** @description Leading and trailing whitespace is removed. Comma-separated Home Assistant label ids. Entities with any of them are never offered by the sync from Home Assistant. */
+            home_assistant_sync_exclude_labels?: string;
             /** @description Lights on at which the count turns to the alert colour. 0 never does. */
             lights_on_alert_threshold?: number;
             /** @description Leading and trailing whitespace is removed. */
@@ -476,6 +598,11 @@ export interface components {
             /** @description Leading and trailing whitespace is removed. Blank clears the token. */
             openhab_token?: string;
         };
+        /**
+         * @description * `already_imported` - already_imported
+         * @enum {string}
+         */
+        ReasonEnum: "already_imported";
         /** @description A room, for reading and (with partial=True) for PATCH. */
         Room: {
             readonly id: number;
@@ -622,6 +749,7 @@ export interface components {
             energy_price_per_kwh: string | null;
             lights_on_source: (components["schemas"]["LightsOnSourceEnum"] | components["schemas"]["NullEnum"]) | null;
             lights_on_exclude_labels: string | null;
+            home_assistant_sync_exclude_labels: string | null;
             lights_on_alert_threshold: number | null;
             location_latitude: string | null;
             location_longitude: string | null;
@@ -697,6 +825,7 @@ export interface components {
             energy_price_per_kwh?: string[];
             lights_on_source?: string[];
             lights_on_exclude_labels?: string[];
+            home_assistant_sync_exclude_labels?: string[];
             lights_on_alert_threshold?: string[];
             location_latitude?: string[];
             location_longitude?: string[];
@@ -723,6 +852,10 @@ export interface components {
             openhab_token?: string[];
             non_field_errors?: string[];
             detail?: string;
+        };
+        SkippedEntity: {
+            entity_id: string;
+            reason: components["schemas"]["ReasonEnum"];
         };
         /**
          * @description * `color_temp` - color_temp
@@ -785,6 +918,48 @@ export interface operations {
             };
         };
     };
+    list_home_assistant_entity_candidates: {
+        parameters: {
+            query?: {
+                /** @description Also list light groups (lights that have an entity_id attribute). */
+                include_groups?: boolean;
+                /** @description Also list entities hidden in Home Assistant. */
+                include_hidden?: boolean;
+                /** @description Also list entities already imported into some room (see already_imported_room_id). */
+                include_imported?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntityCandidates"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
     set_ignored_home_assistant_areas: {
         parameters: {
             query?: never;
@@ -823,6 +998,88 @@ export interface operations {
                 };
             };
             415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
+    import_home_assistant_entities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantDetail"];
+                };
+            };
+        };
+    };
+    list_home_assistant_labels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HomeAssistantLabel"][];
+                };
+            };
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

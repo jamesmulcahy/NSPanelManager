@@ -85,6 +85,9 @@ urlpatterns = [
     path("rest/v2/home_assistant/room_links", rest_v2_ha_sync.RoomLinksView.as_view(), name="rest_v2_ha_room_links"),
     path("rest/v2/home_assistant/ignored_areas", rest_v2_ha_sync.IgnoredAreasView.as_view(), name="rest_v2_ha_ignored_areas"),
     path("rest/v2/home_assistant/rooms_from_areas", rest_v2_ha_sync.RoomsFromAreasView.as_view(), name="rest_v2_ha_rooms_from_areas"),
+    path("rest/v2/home_assistant/labels", rest_v2_ha_sync.LabelsView.as_view(), name="rest_v2_ha_labels"),
+    path("rest/v2/home_assistant/entity_candidates", rest_v2_ha_sync.EntityCandidatesView.as_view(), name="rest_v2_ha_entity_candidates"),
+    path("rest/v2/home_assistant/import", rest_v2_ha_sync.ImportView.as_view(), name="rest_v2_ha_import"),
     path("rest/v2/nspanels/<int:pk>/settings", rest_v2_nspanel_settings.NSPanelSettingsView.as_view(), name="rest_v2_nspanel_settings"),
     # Scene URLs
     path("rest/scenes", rest.scenes, name="rest_lights"),
