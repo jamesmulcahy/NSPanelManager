@@ -6,6 +6,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { move } from "@dnd-kit/helpers";
 import { useEntityStatesStore } from "../../stores/EntityStore.ts";
 import NewRoomDialog from "./NewRoomDialog.tsx";
+import { useSettingsStore } from "../../stores/SettingsStore.ts";
 
 type LoadState = { status: "loading" } | { status: "error"; message: string } | { status: "loaded"; rooms: Room[] };
 
@@ -13,6 +14,7 @@ const RoomsView = () => {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const { status: entityStatesStatus, fetchData } = useEntityStatesStore();
   const newRoomDialogRef = useRef<HTMLDialogElement>(null);
+  const { status: settingsStatus, settings, fetchData: fetchGlobalSettings } = useSettingsStore();
 
   // Sets the state only once the request finishes.
   const fetchSettings = useCallback(() => {
@@ -27,6 +29,12 @@ const RoomsView = () => {
       fetchData();
     }
   }, [entityStatesStatus, fetchData]);
+
+  useEffect(() => {
+    if (settingsStatus === "none") {
+      fetchGlobalSettings();
+    }
+  }, [settingsStatus, fetchGlobalSettings]);
 
   useEffect(fetchSettings, [fetchSettings]);
 
@@ -44,7 +52,12 @@ const RoomsView = () => {
             return null;
           })()}
         </div>
-        <div>
+        <div className="flex items-center gap-2">
+          {settings?.home_assistant_token_set && (
+            <a href="/home_assistant_sync" className="btn btn-outline btn-info font-medium">
+              Sync from Home Assistant
+            </a>
+          )}
           <button className="btn btn-info font-medium" onClick={() => newRoomDialogRef.current?.showModal()}>
             New room
           </button>
