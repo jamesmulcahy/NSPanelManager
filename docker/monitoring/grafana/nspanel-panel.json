@@ -1868,7 +1868,7 @@
     {
       "type": "timeseries",
       "title": "Internal heap free",
-      "description": "Internal RAM only (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT, as the status report's heap_used_pct). Every allocation under 16 KB comes from it; the largest free block is what decides whether one fits.",
+      "description": "Internal RAM only (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT, as the status report's heap_used_pct). Every allocation under 16 KB comes from it; the largest free block is what decides whether one fits. 'Low point per scrape' is the lowest free heap since the previous scrape, so it shows which moments dip; 'min since boot' never recovers.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -1911,6 +1911,17 @@
           "expr": "min by (panel) (nspanel_heap_largest_free_block_bytes{job=\"nspanelmanager\",role=\"panel\",panel=~\"${panel:regex}\",pool=\"internal\"})",
           "legendFormat": "{{panel}} largest free block",
           "refId": "C",
+          "range": true,
+          "instant": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "min by (panel) (nspanel_heap_window_min_free_bytes{job=\"nspanelmanager\",role=\"panel\",panel=~\"${panel:regex}\",pool=\"internal\"})",
+          "legendFormat": "{{panel}} low point per scrape",
+          "refId": "D",
           "range": true,
           "instant": false
         }
@@ -2095,6 +2106,270 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "gradientMode": "none",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "Task stacks",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 86,
+        "w": 24,
+        "h": 1
+      },
+      "id": 32,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Lowest stack headroom",
+      "description": "Bytes of a task's stack never used (its high-water mark), the ten tasks closest to overflowing. Under 512 B is at risk. Only goes down until the task is restarted.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "id": 33,
+      "gridPos": {
+        "x": 0,
+        "y": 87,
+        "w": 16,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "bottomk(10, min by (panel, task) (nspanel_task_stack_unused_bytes{job=\"nspanelmanager\",role=\"panel\",panel=~\"${panel:regex}\"}))",
+          "legendFormat": "{{panel}} {{task}}",
+          "refId": "A",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "min",
+            "lastNotNull"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "gradientMode": "none",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 512
+              },
+              {
+                "color": "green",
+                "value": 1024
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "table",
+      "title": "Stack headroom by task",
+      "description": "Current unused stack per task.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "id": 34,
+      "gridPos": {
+        "x": 16,
+        "y": 87,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "min by (panel, task, mem) (nspanel_task_stack_unused_bytes{job=\"nspanelmanager\",role=\"panel\",panel=~\"${panel:regex}\"})",
+          "legendFormat": "",
+          "refId": "A",
+          "range": false,
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Panel",
+            "desc": false
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "unused bytes"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "unused bytes"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Task count and stack scan time",
+      "description": "Tasks in the system, and how long the scrape spent reading their stacks (the scan briefly suspends the scheduler).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "id": 35,
+      "gridPos": {
+        "x": 0,
+        "y": 96,
+        "w": 24,
+        "h": 6
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (panel) (nspanel_tasks{job=\"nspanelmanager\",role=\"panel\",panel=~\"${panel:regex}\"})",
+          "legendFormat": "{{panel}} tasks",
+          "refId": "A",
+          "range": true,
+          "instant": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (panel) (nspanel_task_scan_seconds{job=\"nspanelmanager\",role=\"panel\",panel=~\"${panel:regex}\"})",
+          "legendFormat": "{{panel}} scan time",
+          "refId": "B",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "max",
+            "lastNotNull"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
           "custom": {
             "lineWidth": 2,
             "fillOpacity": 0,

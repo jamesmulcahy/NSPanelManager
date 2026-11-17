@@ -1116,8 +1116,8 @@
     },
     {
       "type": "timeseries",
-      "title": "Status report age",
-      "description": "Worst seconds-since-last-status-report in each 5 min window. A panel that is 'up' but stops reporting shows here first.",
+      "title": "Lowest task stack headroom",
+      "description": "The least unused stack of any task on each panel (metrics firmware only). Detail on the panel dashboard.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -1126,6 +1126,93 @@
       "gridPos": {
         "x": 12,
         "y": 39,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "min by (panel) (nspanel_task_stack_unused_bytes{job=\"nspanelmanager\",role=\"panel\"})",
+          "legendFormat": "{{panel}}",
+          "refId": "A",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "min",
+            "lastNotNull"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "drawStyle": "line",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "gradientMode": "none",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 512
+              },
+              {
+                "color": "green",
+                "value": 1024
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Status report age",
+      "description": "Worst seconds-since-last-status-report in each 5 min window. A panel that is 'up' but stops reporting shows here first.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "id": 15,
+      "gridPos": {
+        "x": 0,
+        "y": 47,
         "w": 12,
         "h": 8
       },
@@ -1205,9 +1292,9 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 15,
+      "id": 16,
       "gridPos": {
-        "x": 0,
+        "x": 12,
         "y": 47,
         "w": 12,
         "h": 8
@@ -1284,10 +1371,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 16,
+      "id": 17,
       "gridPos": {
-        "x": 12,
-        "y": 47,
+        "x": 0,
+        "y": 55,
         "w": 12,
         "h": 8
       },
@@ -1360,11 +1447,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 55,
+        "y": 63,
         "w": 24,
         "h": 1
       },
-      "id": 17,
+      "id": 18,
       "panels": []
     },
     {
@@ -1375,10 +1462,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 18,
+      "id": 19,
       "gridPos": {
         "x": 0,
-        "y": 56,
+        "y": 64,
         "w": 4,
         "h": 4
       },
@@ -1454,10 +1541,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 19,
+      "id": 20,
       "gridPos": {
         "x": 4,
-        "y": 56,
+        "y": 64,
         "w": 4,
         "h": 4
       },
@@ -1520,10 +1607,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 20,
+      "id": 21,
       "gridPos": {
         "x": 8,
-        "y": 56,
+        "y": 64,
         "w": 4,
         "h": 4
       },
@@ -1586,10 +1673,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 21,
+      "id": 22,
       "gridPos": {
         "x": 12,
-        "y": 56,
+        "y": 64,
         "w": 4,
         "h": 4
       },
@@ -1655,10 +1742,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 22,
+      "id": 23,
       "gridPos": {
         "x": 16,
-        "y": 56,
+        "y": 64,
         "w": 4,
         "h": 4
       },
@@ -1720,10 +1807,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 23,
+      "id": 24,
       "gridPos": {
         "x": 20,
-        "y": 56,
+        "y": 64,
         "w": 4,
         "h": 4
       },
@@ -1781,10 +1868,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 24,
+      "id": 25,
       "gridPos": {
         "x": 0,
-        "y": 60,
+        "y": 68,
         "w": 12,
         "h": 8
       },
@@ -1861,10 +1948,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 25,
+      "id": 26,
       "gridPos": {
         "x": 12,
-        "y": 60,
+        "y": 68,
         "w": 12,
         "h": 8
       },
@@ -1941,10 +2028,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 26,
+      "id": 27,
       "gridPos": {
         "x": 0,
-        "y": 68,
+        "y": 76,
         "w": 12,
         "h": 8
       },
@@ -2021,10 +2108,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 27,
+      "id": 28,
       "gridPos": {
         "x": 12,
-        "y": 68,
+        "y": 76,
         "w": 12,
         "h": 8
       },
@@ -2101,10 +2188,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 28,
+      "id": 29,
       "gridPos": {
         "x": 0,
-        "y": 76,
+        "y": 84,
         "w": 12,
         "h": 8
       },
@@ -2191,10 +2278,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 29,
+      "id": 30,
       "gridPos": {
         "x": 12,
-        "y": 76,
+        "y": 84,
         "w": 12,
         "h": 8
       },
@@ -2292,10 +2379,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 30,
+      "id": 31,
       "gridPos": {
         "x": 0,
-        "y": 84,
+        "y": 92,
         "w": 6,
         "h": 8
       },
@@ -2372,10 +2459,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 31,
+      "id": 32,
       "gridPos": {
         "x": 6,
-        "y": 84,
+        "y": 92,
         "w": 6,
         "h": 8
       },
@@ -2452,10 +2539,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 32,
+      "id": 33,
       "gridPos": {
         "x": 12,
-        "y": 84,
+        "y": 92,
         "w": 6,
         "h": 8
       },
@@ -2541,10 +2628,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 33,
+      "id": 34,
       "gridPos": {
         "x": 18,
-        "y": 84,
+        "y": 92,
         "w": 6,
         "h": 8
       },
@@ -2618,11 +2705,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 92,
+        "y": 100,
         "w": 24,
         "h": 1
       },
-      "id": 34,
+      "id": 35,
       "panels": []
     },
     {
@@ -2633,10 +2720,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 35,
+      "id": 36,
       "gridPos": {
         "x": 0,
-        "y": 93,
+        "y": 101,
         "w": 6,
         "h": 4
       },
@@ -2720,10 +2807,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 36,
+      "id": 37,
       "gridPos": {
         "x": 6,
-        "y": 93,
+        "y": 101,
         "w": 6,
         "h": 4
       },
@@ -2798,10 +2885,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 37,
+      "id": 38,
       "gridPos": {
         "x": 12,
-        "y": 93,
+        "y": 101,
         "w": 6,
         "h": 4
       },
@@ -2859,10 +2946,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 38,
+      "id": 39,
       "gridPos": {
         "x": 18,
-        "y": 93,
+        "y": 101,
         "w": 6,
         "h": 4
       },
@@ -2925,10 +3012,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 39,
+      "id": 40,
       "gridPos": {
         "x": 0,
-        "y": 97,
+        "y": 105,
         "w": 12,
         "h": 8
       },
@@ -3005,10 +3092,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 40,
+      "id": 41,
       "gridPos": {
         "x": 12,
-        "y": 97,
+        "y": 105,
         "w": 12,
         "h": 8
       },
@@ -3084,10 +3171,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 41,
+      "id": 42,
       "gridPos": {
         "x": 0,
-        "y": 105,
+        "y": 113,
         "w": 12,
         "h": 8
       },
@@ -3164,10 +3251,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 42,
+      "id": 43,
       "gridPos": {
         "x": 12,
-        "y": 105,
+        "y": 113,
         "w": 12,
         "h": 8
       },
@@ -3244,10 +3331,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 43,
+      "id": 44,
       "gridPos": {
         "x": 0,
-        "y": 113,
+        "y": 121,
         "w": 12,
         "h": 8
       },
@@ -3357,10 +3444,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 44,
+      "id": 45,
       "gridPos": {
         "x": 12,
-        "y": 113,
+        "y": 121,
         "w": 12,
         "h": 8
       },
@@ -3455,11 +3542,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 121,
+        "y": 129,
         "w": 24,
         "h": 1
       },
-      "id": 45,
+      "id": 46,
       "panels": []
     },
     {
@@ -3470,10 +3557,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 46,
+      "id": 47,
       "gridPos": {
         "x": 0,
-        "y": 122,
+        "y": 130,
         "w": 12,
         "h": 8
       },
@@ -3572,10 +3659,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 47,
+      "id": 48,
       "gridPos": {
         "x": 12,
-        "y": 122,
+        "y": 130,
         "w": 12,
         "h": 8
       },
@@ -3650,10 +3737,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 48,
+      "id": 49,
       "gridPos": {
         "x": 0,
-        "y": 130,
+        "y": 138,
         "w": 12,
         "h": 8
       },
@@ -3730,10 +3817,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 49,
+      "id": 50,
       "gridPos": {
         "x": 12,
-        "y": 130,
+        "y": 138,
         "w": 12,
         "h": 8
       },
@@ -3810,10 +3897,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 50,
+      "id": 51,
       "gridPos": {
         "x": 0,
-        "y": 138,
+        "y": 146,
         "w": 12,
         "h": 8
       },
@@ -3888,10 +3975,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 51,
+      "id": 52,
       "gridPos": {
         "x": 12,
-        "y": 138,
+        "y": 146,
         "w": 12,
         "h": 8
       },
@@ -3968,10 +4055,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 52,
+      "id": 53,
       "gridPos": {
         "x": 0,
-        "y": 146,
+        "y": 154,
         "w": 12,
         "h": 8
       },
@@ -4048,10 +4135,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 53,
+      "id": 54,
       "gridPos": {
         "x": 12,
-        "y": 146,
+        "y": 154,
         "w": 12,
         "h": 8
       },
@@ -4126,10 +4213,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 54,
+      "id": 55,
       "gridPos": {
         "x": 0,
-        "y": 154,
+        "y": 162,
         "w": 12,
         "h": 8
       },
@@ -4204,10 +4291,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 55,
+      "id": 56,
       "gridPos": {
         "x": 12,
-        "y": 154,
+        "y": 162,
         "w": 12,
         "h": 8
       },
@@ -4282,10 +4369,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 56,
+      "id": 57,
       "gridPos": {
         "x": 0,
-        "y": 162,
+        "y": 170,
         "w": 12,
         "h": 8
       },
@@ -4365,10 +4452,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 57,
+      "id": 58,
       "gridPos": {
         "x": 12,
-        "y": 162,
+        "y": 170,
         "w": 12,
         "h": 8
       },
@@ -4443,10 +4530,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 58,
+      "id": 59,
       "gridPos": {
         "x": 0,
-        "y": 170,
+        "y": 178,
         "w": 12,
         "h": 8
       },
@@ -4545,10 +4632,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 59,
+      "id": 60,
       "gridPos": {
         "x": 12,
-        "y": 170,
+        "y": 178,
         "w": 12,
         "h": 8
       },
@@ -4623,11 +4710,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 178,
+        "y": 186,
         "w": 24,
         "h": 1
       },
-      "id": 60,
+      "id": 61,
       "panels": []
     },
     {
@@ -4638,10 +4725,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 61,
+      "id": 62,
       "gridPos": {
         "x": 0,
-        "y": 179,
+        "y": 187,
         "w": 8,
         "h": 8
       },
@@ -4718,10 +4805,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 62,
+      "id": 63,
       "gridPos": {
         "x": 8,
-        "y": 179,
+        "y": 187,
         "w": 8,
         "h": 8
       },
@@ -4798,10 +4885,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 63,
+      "id": 64,
       "gridPos": {
         "x": 16,
-        "y": 179,
+        "y": 187,
         "w": 8,
         "h": 8
       },
