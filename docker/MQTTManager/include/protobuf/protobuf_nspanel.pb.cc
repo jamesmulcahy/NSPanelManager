@@ -726,9 +726,10 @@ inline constexpr NSPanelStatusReport::Impl_::Impl_(
         heap_used_pct_{0},
         temperature_{0},
         humidity_{0},
+        pressure_{0},
         has_humidity_{false},
         has_pressure_{false},
-        pressure_{0},
+        has_temperature_{false},
         display_mode_{static_cast< ::NSPanelStatusReport_NSPanelDisplayMode >(0)},
         metrics_port_{0},
         _cached_size_{0} {}
@@ -1047,6 +1048,7 @@ const ::uint32_t
         PROTOBUF_FIELD_OFFSET(::NSPanelStatusReport, _impl_.lvgl_theme_),
         PROTOBUF_FIELD_OFFSET(::NSPanelStatusReport, _impl_.lvgl_background_),
         PROTOBUF_FIELD_OFFSET(::NSPanelStatusReport, _impl_.metrics_port_),
+        PROTOBUF_FIELD_OFFSET(::NSPanelStatusReport, _impl_.has_temperature_),
         ~0u,  // no _has_bits_
         PROTOBUF_FIELD_OFFSET(::NSPanelRoomEntitiesPage_EntitySlot, _internal_metadata_),
         ~0u,  // no _extensions_
@@ -1335,26 +1337,26 @@ static const ::_pbi::MigrationSchema
         {31, -1, -1, sizeof(::NSPanelConfig)},
         {83, -1, -1, sizeof(::NSPanelWarning)},
         {93, -1, -1, sizeof(::NSPanelStatusReport)},
-        {120, -1, -1, sizeof(::NSPanelRoomEntitiesPage_EntitySlot)},
-        {137, -1, -1, sizeof(::NSPanelRoomEntitiesPage)},
-        {149, -1, -1, sizeof(::NSPanelRoomStatus)},
-        {172, -1, -1, sizeof(::NSPanelWeatherUpdate_ForecastItem)},
-        {185, -1, -1, sizeof(::NSPanelWeatherUpdate)},
-        {201, -1, -1, sizeof(::NSPanelCalendarUpdate_Event)},
-        {214, -1, -1, sizeof(::NSPanelCalendarUpdate)},
-        {225, -1, -1, sizeof(::NSPanelEnergyUpdate)},
-        {243, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOn)},
-        {258, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOff)},
-        {268, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LightCommand)},
-        {285, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage)},
-        {295, -1, -1, sizeof(::NSPanelMQTTManagerCommand_SaveSceneCommand)},
-        {305, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ButtonPressed)},
-        {314, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatTemperatureCommand)},
-        {324, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatCommand)},
-        {335, -1, -1, sizeof(::NSPanelMQTTManagerCommand_MediaPlayerCommand)},
-        {353, -1, -1, sizeof(::NSPanelMQTTManagerCommand_CoverCommand)},
-        {367, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LvglLook)},
-        {377, -1, -1, sizeof(::NSPanelMQTTManagerCommand)},
+        {121, -1, -1, sizeof(::NSPanelRoomEntitiesPage_EntitySlot)},
+        {138, -1, -1, sizeof(::NSPanelRoomEntitiesPage)},
+        {150, -1, -1, sizeof(::NSPanelRoomStatus)},
+        {173, -1, -1, sizeof(::NSPanelWeatherUpdate_ForecastItem)},
+        {186, -1, -1, sizeof(::NSPanelWeatherUpdate)},
+        {202, -1, -1, sizeof(::NSPanelCalendarUpdate_Event)},
+        {215, -1, -1, sizeof(::NSPanelCalendarUpdate)},
+        {226, -1, -1, sizeof(::NSPanelEnergyUpdate)},
+        {244, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOn)},
+        {259, -1, -1, sizeof(::NSPanelMQTTManagerCommand_FirstPageTurnLightOff)},
+        {269, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LightCommand)},
+        {286, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage)},
+        {296, -1, -1, sizeof(::NSPanelMQTTManagerCommand_SaveSceneCommand)},
+        {306, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ButtonPressed)},
+        {315, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatTemperatureCommand)},
+        {325, -1, -1, sizeof(::NSPanelMQTTManagerCommand_ThermostatCommand)},
+        {336, -1, -1, sizeof(::NSPanelMQTTManagerCommand_MediaPlayerCommand)},
+        {354, -1, -1, sizeof(::NSPanelMQTTManagerCommand_CoverCommand)},
+        {368, -1, -1, sizeof(::NSPanelMQTTManagerCommand_LvglLook)},
+        {378, -1, -1, sizeof(::NSPanelMQTTManagerCommand)},
 };
 static const ::_pb::Message* const file_default_instances[] = {
     &::_NSPanelConfig_RoomInfo_default_instance_._instance,
@@ -1447,7 +1449,7 @@ const char descriptor_table_protodef_protobuf_5fnspanel_2eproto[] ABSL_ATTRIBUTE
     "EENSAVER_CARD_CALENDAR\020\001\022\033\n\027SCREENSAVER_"
     "CARD_ENERGY\020\002\"C\n\016NSPanelWarning\022#\n\005level"
     "\030\001 \001(\0162\024.NSPanelWarningLevel\022\014\n\004text\030\002 \001"
-    "(\t\"\354\005\n\023NSPanelStatusReport\0221\n\rnspanel_st"
+    "(\t\"\205\006\n\023NSPanelStatusReport\0221\n\rnspanel_st"
     "ate\030\001 \001(\0162\032.NSPanelStatusReport.state\022\027\n"
     "\017update_progress\030\002 \001(\005\022\014\n\004rssi\030\003 \001(\005\022\025\n\r"
     "heap_used_pct\030\004 \001(\005\022\023\n\013mac_address\030\005 \001(\t"
@@ -1459,141 +1461,141 @@ const char descriptor_table_protodef_protobuf_5fnspanel_2eproto[] ABSL_ATTRIBUTE
     "\001(\010\022\020\n\010pressure\030\017 \001(\002\022=\n\014display_mode\030\020 "
     "\001(\0162\'.NSPanelStatusReport.NSPanelDisplay"
     "Mode\022\022\n\nlvgl_theme\030\021 \001(\t\022\027\n\017lvgl_backgro"
-    "und\030\022 \001(\t\022\024\n\014metrics_port\030\023 \001(\005\"o\n\005state"
-    "\022\n\n\006ONLINE\020\000\022\013\n\007OFFLINE\020\001\022\020\n\014UPDATING_TF"
-    "T\020\002\022\025\n\021UPDATING_FIRMWARE\020\003\022\025\n\021UPDATING_L"
-    "ITTLEFS\020\004\022\r\n\tREBOOTING\020\005\"\177\n\022NSPanelDispl"
-    "ayMode\022\030\n\024DISPLAY_MODE_UNKNOWN\020\000\022\030\n\024DISP"
-    "LAY_MODE_NEXTION\020\001\022\025\n\021DISPLAY_MODE_LVGL\020"
-    "\002\022\036\n\032DISPLAY_MODE_TERMINAL_IDLE\020\003\"\275\004\n\027NS"
-    "PanelRoomEntitiesPage\022\n\n\002id\030\001 \001(\005\022\021\n\tpag"
-    "e_type\030\002 \001(\005\022\023\n\013header_text\030\003 \001(\t\0225\n\010ent"
-    "ities\030\004 \003(\0132#.NSPanelRoomEntitiesPage.En"
-    "titySlot\032\266\003\n\nEntitySlot\022\032\n\022room_view_pos"
-    "ition\030\001 \001(\005\022\014\n\004name\030\002 \001(\t\022\014\n\004icon\030\003 \001(\t\022"
-    "\013\n\003pco\030\004 \001(\005\022\014\n\004pco2\030\005 \001(\005\022\026\n\016can_save_s"
-    "cene\030\006 \001(\010\022\030\n\020mqtt_state_topic\030\007 \001(\t\022<\n\004"
-    "type\030\010 \001(\0162..NSPanelRoomEntitiesPage.Ent"
-    "itySlot.EntityType\022\n\n\002id\030\t \001(\005\"\330\001\n\nEntit"
-    "yType\022\033\n\027ENTITY_TYPE_UNSPECIFIED\020\000\022\025\n\021EN"
-    "TITY_TYPE_LIGHT\020\001\022\026\n\022ENTITY_TYPE_SWITCH\020"
-    "\002\022\026\n\022ENTITY_TYPE_BUTTON\020\003\022\032\n\026ENTITY_TYPE"
-    "_THERMOSTAT\020\004\022\025\n\021ENTITY_TYPE_SCENE\020\005\022\034\n\030"
-    "ENTITY_TYPE_MEDIA_PLAYER\020\006\022\025\n\021ENTITY_TYP"
-    "E_COVER\020\007\"\344\003\n\021NSPanelRoomStatus\022\n\n\002id\030\001 "
-    "\001(\005\022\014\n\004name\030\002 \001(\t\022\031\n\021average_dim_level\030\003"
-    " \001(\005\022 \n\030ceiling_lights_dim_level\030\004 \001(\005\022\036"
-    "\n\026table_lights_dim_level\030\005 \001(\005\022!\n\031averag"
-    "e_color_temperature\030\006 \001(\005\022.\n&ceiling_lig"
-    "hts_color_temperature_value\030\007 \001(\005\022,\n$tab"
-    "le_lights_color_temperature_value\030\010 \001(\005\022"
-    "\032\n\022num_ceiling_lights\030\t \001(\005\022\030\n\020num_table"
-    "_lights\030\n \001(\005\022\035\n\025num_ceiling_lights_on\030\013"
-    " \001(\005\022\033\n\023num_table_lights_on\030\014 \001(\005\022\027\n\017ent"
-    "ity_page_ids\030\r \003(\005\022$\n\034num_color_temperat"
-    "ure_lights\030\016 \001(\005\022&\n\036color_temperature_li"
-    "ghts_known\030\017 \001(\010\"\277\003\n\024NSPanelWeatherUpdat"
-    "e\022:\n\016forecast_items\030\001 \003(\0132\".NSPanelWeath"
-    "erUpdate.ForecastItem\022\034\n\024current_weather"
-    "_icon\030\002 \001(\t\022\"\n\032current_temperature_strin"
-    "g\030\003 \001(\t\022\"\n\032current_maxmin_temperature\030\004 "
-    "\001(\t\022\033\n\023current_wind_string\030\005 \001(\t\022\026\n\016sunr"
-    "ise_string\030\006 \001(\t\022\025\n\rsunset_string\030\007 \001(\t\022"
-    "$\n\034current_precipitation_string\030\010 \001(\t\032\222\001"
-    "\n\014ForecastItem\022\024\n\014weather_icon\030\001 \001(\t\022\034\n\024"
-    "precipitation_string\030\002 \001(\t\022!\n\031temperatur"
-    "e_maxmin_string\030\003 \001(\t\022\023\n\013wind_string\030\004 \001"
-    "(\t\022\026\n\016display_string\030\005 \001(\t\"\320\001\n\025NSPanelCa"
-    "lendarUpdate\022,\n\006events\030\001 \003(\0132\034.NSPanelCa"
-    "lendarUpdate.Event\022\027\n\017lookahead_hours\030\002 "
-    "\001(\005\022\024\n\014generated_at\030\003 \001(\003\032Z\n\005Event\022\017\n\007su"
-    "mmary\030\001 \001(\t\022\r\n\005start\030\002 \001(\003\022\013\n\003end\030\003 \001(\003\022"
-    "\017\n\007all_day\030\004 \001(\010\022\023\n\013when_string\030\005 \001(\t\"\204\003"
-    "\n\023NSPanelEnergyUpdate\0220\n\005power\030\001 \001(\0162!.N"
-    "SPanelEnergyUpdate.Availability\022\023\n\013power"
-    "_watts\030\002 \001(\005\022/\n\004cost\030\003 \001(\0162!.NSPanelEner"
-    "gyUpdate.Availability\022\024\n\014cost_per_day\030\004 "
-    "\001(\001\022\020\n\010currency\030\005 \001(\t\022\027\n\017currency_symbol"
-    "\030\006 \001(\t\0221\n\006lights\030\007 \001(\0162!.NSPanelEnergyUp"
-    "date.Availability\022\021\n\tlights_on\030\010 \001(\005\022\024\n\014"
-    "lights_alert\030\t \001(\010\022\024\n\014generated_at\030\n \001(\003"
-    "\"B\n\014Availability\022\022\n\016NOT_CONFIGURED\020\000\022\017\n\013"
-    "UNAVAILABLE\020\001\022\r\n\tAVAILABLE\020\002\"\306\024\n\031NSPanel"
-    "MQTTManagerCommand\022M\n\022first_page_turn_on"
-    "\030\001 \001(\0132/.NSPanelMQTTManagerCommand.First"
-    "PageTurnLightOnH\000\022O\n\023first_page_turn_off"
-    "\030\002 \001(\01320.NSPanelMQTTManagerCommand.First"
-    "PageTurnLightOffH\000\022@\n\rlight_command\030\003 \001("
-    "\0132\'.NSPanelMQTTManagerCommand.LightComma"
-    "ndH\000\022c\n toggle_entity_from_entities_page"
-    "\030\004 \001(\01327.NSPanelMQTTManagerCommand.Toggl"
-    "eEntityFromEntitiesPageH\000\022I\n\022save_scene_"
-    "command\030\005 \001(\0132+.NSPanelMQTTManagerComman"
-    "d.SaveSceneCommandH\000\022B\n\016button_pressed\030\006"
-    " \001(\0132(.NSPanelMQTTManagerCommand.ButtonP"
-    "ressedH\000\022a\n\036thermostat_temperature_comma"
-    "nd\030\007 \001(\01327.NSPanelMQTTManagerCommand.The"
-    "rmostatTemperatureCommandH\000\022J\n\022thermosta"
-    "t_command\030\010 \001(\0132,.NSPanelMQTTManagerComm"
-    "and.ThermostatCommandH\000\022M\n\024media_player_"
-    "command\030\t \001(\0132-.NSPanelMQTTManagerComman"
-    "d.MediaPlayerCommandH\000\022@\n\rcover_command\030"
-    "\n \001(\0132\'.NSPanelMQTTManagerCommand.CoverC"
-    "ommandH\000\0228\n\tlvgl_look\030\013 \001(\0132#.NSPanelMQT"
-    "TManagerCommand.LvglLookH\000\022\022\n\nnspanel_id"
-    "\030d \001(\005\032\372\001\n\024FirstPageTurnLightOn\022E\n\raffec"
-    "t_lights\030\001 \001(\0162..NSPanelMQTTManagerComma"
-    "nd.AffectLightsOptions\022\037\n\027brightness_sli"
-    "der_value\030\002 \001(\005\022\033\n\023kelvin_slider_value\030\003"
-    " \001(\005\022\025\n\rselected_room\030\004 \001(\005\022\016\n\006global\030\005 "
-    "\001(\010\022\034\n\024has_brightness_value\030\006 \001(\010\022\030\n\020has"
-    "_kelvin_value\030\007 \001(\010\032n\n\025FirstPageTurnLigh"
-    "tOff\022E\n\raffect_lights\030\001 \001(\0162..NSPanelMQT"
-    "TManagerCommand.AffectLightsOptions\022\016\n\006g"
-    "lobal\030\002 \001(\010\032\321\001\n\014LightCommand\022\021\n\tlight_id"
-    "s\030\001 \003(\005\022\026\n\016has_brightness\030\002 \001(\010\022\022\n\nbrigh"
-    "tness\030\003 \001(\005\022\035\n\025has_color_temperature\030\004 \001"
-    "(\010\022\031\n\021color_temperature\030\005 \001(\005\022\017\n\007has_hue"
-    "\030\006 \001(\010\022\013\n\003hue\030\007 \001(\005\022\026\n\016has_saturation\030\010 "
-    "\001(\010\022\022\n\nsaturation\030\t \001(\005\032K\n\034ToggleEntityF"
-    "romEntitiesPage\022\026\n\016entity_page_id\030\001 \001(\005\022"
-    "\023\n\013entity_slot\030\002 \001(\005\032\?\n\020SaveSceneCommand"
+    "und\030\022 \001(\t\022\024\n\014metrics_port\030\023 \001(\005\022\027\n\017has_t"
+    "emperature\030\024 \001(\010\"o\n\005state\022\n\n\006ONLINE\020\000\022\013\n"
+    "\007OFFLINE\020\001\022\020\n\014UPDATING_TFT\020\002\022\025\n\021UPDATING"
+    "_FIRMWARE\020\003\022\025\n\021UPDATING_LITTLEFS\020\004\022\r\n\tRE"
+    "BOOTING\020\005\"\177\n\022NSPanelDisplayMode\022\030\n\024DISPL"
+    "AY_MODE_UNKNOWN\020\000\022\030\n\024DISPLAY_MODE_NEXTIO"
+    "N\020\001\022\025\n\021DISPLAY_MODE_LVGL\020\002\022\036\n\032DISPLAY_MO"
+    "DE_TERMINAL_IDLE\020\003\"\275\004\n\027NSPanelRoomEntiti"
+    "esPage\022\n\n\002id\030\001 \001(\005\022\021\n\tpage_type\030\002 \001(\005\022\023\n"
+    "\013header_text\030\003 \001(\t\0225\n\010entities\030\004 \003(\0132#.N"
+    "SPanelRoomEntitiesPage.EntitySlot\032\266\003\n\nEn"
+    "titySlot\022\032\n\022room_view_position\030\001 \001(\005\022\014\n\004"
+    "name\030\002 \001(\t\022\014\n\004icon\030\003 \001(\t\022\013\n\003pco\030\004 \001(\005\022\014\n"
+    "\004pco2\030\005 \001(\005\022\026\n\016can_save_scene\030\006 \001(\010\022\030\n\020m"
+    "qtt_state_topic\030\007 \001(\t\022<\n\004type\030\010 \001(\0162..NS"
+    "PanelRoomEntitiesPage.EntitySlot.EntityT"
+    "ype\022\n\n\002id\030\t \001(\005\"\330\001\n\nEntityType\022\033\n\027ENTITY"
+    "_TYPE_UNSPECIFIED\020\000\022\025\n\021ENTITY_TYPE_LIGHT"
+    "\020\001\022\026\n\022ENTITY_TYPE_SWITCH\020\002\022\026\n\022ENTITY_TYP"
+    "E_BUTTON\020\003\022\032\n\026ENTITY_TYPE_THERMOSTAT\020\004\022\025"
+    "\n\021ENTITY_TYPE_SCENE\020\005\022\034\n\030ENTITY_TYPE_MED"
+    "IA_PLAYER\020\006\022\025\n\021ENTITY_TYPE_COVER\020\007\"\344\003\n\021N"
+    "SPanelRoomStatus\022\n\n\002id\030\001 \001(\005\022\014\n\004name\030\002 \001"
+    "(\t\022\031\n\021average_dim_level\030\003 \001(\005\022 \n\030ceiling"
+    "_lights_dim_level\030\004 \001(\005\022\036\n\026table_lights_"
+    "dim_level\030\005 \001(\005\022!\n\031average_color_tempera"
+    "ture\030\006 \001(\005\022.\n&ceiling_lights_color_tempe"
+    "rature_value\030\007 \001(\005\022,\n$table_lights_color"
+    "_temperature_value\030\010 \001(\005\022\032\n\022num_ceiling_"
+    "lights\030\t \001(\005\022\030\n\020num_table_lights\030\n \001(\005\022\035"
+    "\n\025num_ceiling_lights_on\030\013 \001(\005\022\033\n\023num_tab"
+    "le_lights_on\030\014 \001(\005\022\027\n\017entity_page_ids\030\r "
+    "\003(\005\022$\n\034num_color_temperature_lights\030\016 \001("
+    "\005\022&\n\036color_temperature_lights_known\030\017 \001("
+    "\010\"\277\003\n\024NSPanelWeatherUpdate\022:\n\016forecast_i"
+    "tems\030\001 \003(\0132\".NSPanelWeatherUpdate.Foreca"
+    "stItem\022\034\n\024current_weather_icon\030\002 \001(\t\022\"\n\032"
+    "current_temperature_string\030\003 \001(\t\022\"\n\032curr"
+    "ent_maxmin_temperature\030\004 \001(\t\022\033\n\023current_"
+    "wind_string\030\005 \001(\t\022\026\n\016sunrise_string\030\006 \001("
+    "\t\022\025\n\rsunset_string\030\007 \001(\t\022$\n\034current_prec"
+    "ipitation_string\030\010 \001(\t\032\222\001\n\014ForecastItem\022"
+    "\024\n\014weather_icon\030\001 \001(\t\022\034\n\024precipitation_s"
+    "tring\030\002 \001(\t\022!\n\031temperature_maxmin_string"
+    "\030\003 \001(\t\022\023\n\013wind_string\030\004 \001(\t\022\026\n\016display_s"
+    "tring\030\005 \001(\t\"\320\001\n\025NSPanelCalendarUpdate\022,\n"
+    "\006events\030\001 \003(\0132\034.NSPanelCalendarUpdate.Ev"
+    "ent\022\027\n\017lookahead_hours\030\002 \001(\005\022\024\n\014generate"
+    "d_at\030\003 \001(\003\032Z\n\005Event\022\017\n\007summary\030\001 \001(\t\022\r\n\005"
+    "start\030\002 \001(\003\022\013\n\003end\030\003 \001(\003\022\017\n\007all_day\030\004 \001("
+    "\010\022\023\n\013when_string\030\005 \001(\t\"\204\003\n\023NSPanelEnergy"
+    "Update\0220\n\005power\030\001 \001(\0162!.NSPanelEnergyUpd"
+    "ate.Availability\022\023\n\013power_watts\030\002 \001(\005\022/\n"
+    "\004cost\030\003 \001(\0162!.NSPanelEnergyUpdate.Availa"
+    "bility\022\024\n\014cost_per_day\030\004 \001(\001\022\020\n\010currency"
+    "\030\005 \001(\t\022\027\n\017currency_symbol\030\006 \001(\t\0221\n\006light"
+    "s\030\007 \001(\0162!.NSPanelEnergyUpdate.Availabili"
+    "ty\022\021\n\tlights_on\030\010 \001(\005\022\024\n\014lights_alert\030\t "
+    "\001(\010\022\024\n\014generated_at\030\n \001(\003\"B\n\014Availabilit"
+    "y\022\022\n\016NOT_CONFIGURED\020\000\022\017\n\013UNAVAILABLE\020\001\022\r"
+    "\n\tAVAILABLE\020\002\"\306\024\n\031NSPanelMQTTManagerComm"
+    "and\022M\n\022first_page_turn_on\030\001 \001(\0132/.NSPane"
+    "lMQTTManagerCommand.FirstPageTurnLightOn"
+    "H\000\022O\n\023first_page_turn_off\030\002 \001(\01320.NSPane"
+    "lMQTTManagerCommand.FirstPageTurnLightOf"
+    "fH\000\022@\n\rlight_command\030\003 \001(\0132\'.NSPanelMQTT"
+    "ManagerCommand.LightCommandH\000\022c\n toggle_"
+    "entity_from_entities_page\030\004 \001(\01327.NSPane"
+    "lMQTTManagerCommand.ToggleEntityFromEnti"
+    "tiesPageH\000\022I\n\022save_scene_command\030\005 \001(\0132+"
+    ".NSPanelMQTTManagerCommand.SaveSceneComm"
+    "andH\000\022B\n\016button_pressed\030\006 \001(\0132(.NSPanelM"
+    "QTTManagerCommand.ButtonPressedH\000\022a\n\036the"
+    "rmostat_temperature_command\030\007 \001(\01327.NSPa"
+    "nelMQTTManagerCommand.ThermostatTemperat"
+    "ureCommandH\000\022J\n\022thermostat_command\030\010 \001(\013"
+    "2,.NSPanelMQTTManagerCommand.ThermostatC"
+    "ommandH\000\022M\n\024media_player_command\030\t \001(\0132-"
+    ".NSPanelMQTTManagerCommand.MediaPlayerCo"
+    "mmandH\000\022@\n\rcover_command\030\n \001(\0132\'.NSPanel"
+    "MQTTManagerCommand.CoverCommandH\000\0228\n\tlvg"
+    "l_look\030\013 \001(\0132#.NSPanelMQTTManagerCommand"
+    ".LvglLookH\000\022\022\n\nnspanel_id\030d \001(\005\032\372\001\n\024Firs"
+    "tPageTurnLightOn\022E\n\raffect_lights\030\001 \001(\0162"
+    "..NSPanelMQTTManagerCommand.AffectLights"
+    "Options\022\037\n\027brightness_slider_value\030\002 \001(\005"
+    "\022\033\n\023kelvin_slider_value\030\003 \001(\005\022\025\n\rselecte"
+    "d_room\030\004 \001(\005\022\016\n\006global\030\005 \001(\010\022\034\n\024has_brig"
+    "htness_value\030\006 \001(\010\022\030\n\020has_kelvin_value\030\007"
+    " \001(\010\032n\n\025FirstPageTurnLightOff\022E\n\raffect_"
+    "lights\030\001 \001(\0162..NSPanelMQTTManagerCommand"
+    ".AffectLightsOptions\022\016\n\006global\030\002 \001(\010\032\321\001\n"
+    "\014LightCommand\022\021\n\tlight_ids\030\001 \003(\005\022\026\n\016has_"
+    "brightness\030\002 \001(\010\022\022\n\nbrightness\030\003 \001(\005\022\035\n\025"
+    "has_color_temperature\030\004 \001(\010\022\031\n\021color_tem"
+    "perature\030\005 \001(\005\022\017\n\007has_hue\030\006 \001(\010\022\013\n\003hue\030\007"
+    " \001(\005\022\026\n\016has_saturation\030\010 \001(\010\022\022\n\nsaturati"
+    "on\030\t \001(\005\032K\n\034ToggleEntityFromEntitiesPage"
     "\022\026\n\016entity_page_id\030\001 \001(\005\022\023\n\013entity_slot\030"
-    "\002 \001(\005\032\"\n\rButtonPressed\022\021\n\tbutton_id\030\002 \001("
-    "\005\032J\n\034ThermostatTemperatureCommand\022\025\n\rthe"
-    "rmostat_id\030\001 \001(\005\022\023\n\013temperature\030\002 \001(\002\032M\n"
-    "\021ThermostatCommand\022\025\n\rthermostat_id\030\001 \001("
-    "\005\022\016\n\006option\030\002 \001(\t\022\021\n\tnew_value\030\003 \001(\t\032\224\003\n"
-    "\022MediaPlayerCommand\022\027\n\017media_player_id\030\001"
-    " \001(\005\022U\n\017playback_action\030\002 \001(\0162<.NSPanelM"
-    "QTTManagerCommand.MediaPlayerCommand.Pla"
-    "ybackAction\022\022\n\nhas_volume\030\003 \001(\010\022\016\n\006volum"
-    "e\030\004 \001(\005\022\031\n\021has_source_volume\030\005 \001(\010\022\025\n\rso"
-    "urce_volume\030\006 \001(\005\022\021\n\thas_muted\030\007 \001(\010\022\r\n\005"
-    "muted\030\010 \001(\010\022\034\n\024select_player_source\030\t \001("
-    "\t\022#\n\033select_source_player_source\030\n \001(\t\"S"
-    "\n\016PlaybackAction\022\010\n\004NONE\020\000\022\010\n\004PLAY\020\001\022\t\n\005"
-    "PAUSE\020\002\022\016\n\nNEXT_TRACK\020\003\022\022\n\016PREVIOUS_TRAC"
-    "K\020\004\032\233\002\n\014CoverCommand\022\020\n\010cover_id\030\001 \001(\005\022>"
-    "\n\006action\030\002 \001(\0162..NSPanelMQTTManagerComma"
-    "nd.CoverCommand.Action\022\024\n\014has_position\030\003"
-    " \001(\010\022\020\n\010position\030\004 \001(\005\022\031\n\021has_tilt_posit"
-    "ion\030\005 \001(\010\022\025\n\rtilt_position\030\006 \001(\005\"_\n\006Acti"
-    "on\022\010\n\004NONE\020\000\022\010\n\004OPEN\020\001\022\t\n\005CLOSE\020\002\022\010\n\004STO"
-    "P\020\003\022\r\n\tOPEN_TILT\020\004\022\016\n\nCLOSE_TILT\020\005\022\r\n\tST"
-    "OP_TILT\020\006\032-\n\010LvglLook\022\r\n\005theme\030\001 \001(\t\022\022\n\n"
-    "background\030\002 \001(\t\"D\n\023AffectLightsOptions\022"
-    "\007\n\003ALL\020\000\022\020\n\014TABLE_LIGHTS\020\001\022\022\n\016CEILING_LI"
-    "GHTS\020\002B\r\n\013CommandData*[\n\023NSPanelWarningL"
-    "evel\022\014\n\010CRITICAL\020\000\022\t\n\005ERROR\020\001\022\013\n\007WARNING"
-    "\020\002\022\010\n\004INFO\020\003\022\t\n\005DEBUG\020\004\022\t\n\005TRACE\020\005b\006prot"
-    "o3"
+    "\002 \001(\005\032\?\n\020SaveSceneCommand\022\026\n\016entity_page"
+    "_id\030\001 \001(\005\022\023\n\013entity_slot\030\002 \001(\005\032\"\n\rButton"
+    "Pressed\022\021\n\tbutton_id\030\002 \001(\005\032J\n\034Thermostat"
+    "TemperatureCommand\022\025\n\rthermostat_id\030\001 \001("
+    "\005\022\023\n\013temperature\030\002 \001(\002\032M\n\021ThermostatComm"
+    "and\022\025\n\rthermostat_id\030\001 \001(\005\022\016\n\006option\030\002 \001"
+    "(\t\022\021\n\tnew_value\030\003 \001(\t\032\224\003\n\022MediaPlayerCom"
+    "mand\022\027\n\017media_player_id\030\001 \001(\005\022U\n\017playbac"
+    "k_action\030\002 \001(\0162<.NSPanelMQTTManagerComma"
+    "nd.MediaPlayerCommand.PlaybackAction\022\022\n\n"
+    "has_volume\030\003 \001(\010\022\016\n\006volume\030\004 \001(\005\022\031\n\021has_"
+    "source_volume\030\005 \001(\010\022\025\n\rsource_volume\030\006 \001"
+    "(\005\022\021\n\thas_muted\030\007 \001(\010\022\r\n\005muted\030\010 \001(\010\022\034\n\024"
+    "select_player_source\030\t \001(\t\022#\n\033select_sou"
+    "rce_player_source\030\n \001(\t\"S\n\016PlaybackActio"
+    "n\022\010\n\004NONE\020\000\022\010\n\004PLAY\020\001\022\t\n\005PAUSE\020\002\022\016\n\nNEXT"
+    "_TRACK\020\003\022\022\n\016PREVIOUS_TRACK\020\004\032\233\002\n\014CoverCo"
+    "mmand\022\020\n\010cover_id\030\001 \001(\005\022>\n\006action\030\002 \001(\0162"
+    "..NSPanelMQTTManagerCommand.CoverCommand"
+    ".Action\022\024\n\014has_position\030\003 \001(\010\022\020\n\010positio"
+    "n\030\004 \001(\005\022\031\n\021has_tilt_position\030\005 \001(\010\022\025\n\rti"
+    "lt_position\030\006 \001(\005\"_\n\006Action\022\010\n\004NONE\020\000\022\010\n"
+    "\004OPEN\020\001\022\t\n\005CLOSE\020\002\022\010\n\004STOP\020\003\022\r\n\tOPEN_TIL"
+    "T\020\004\022\016\n\nCLOSE_TILT\020\005\022\r\n\tSTOP_TILT\020\006\032-\n\010Lv"
+    "glLook\022\r\n\005theme\030\001 \001(\t\022\022\n\nbackground\030\002 \001("
+    "\t\"D\n\023AffectLightsOptions\022\007\n\003ALL\020\000\022\020\n\014TAB"
+    "LE_LIGHTS\020\001\022\022\n\016CEILING_LIGHTS\020\002B\r\n\013Comma"
+    "ndData*[\n\023NSPanelWarningLevel\022\014\n\010CRITICA"
+    "L\020\000\022\t\n\005ERROR\020\001\022\013\n\007WARNING\020\002\022\010\n\004INFO\020\003\022\t\n"
+    "\005DEBUG\020\004\022\t\n\005TRACE\020\005b\006proto3"
 };
 static ::absl::once_flag descriptor_table_protobuf_5fnspanel_2eproto_once;
 PROTOBUF_CONSTINIT const ::_pbi::DescriptorTable descriptor_table_protobuf_5fnspanel_2eproto = {
     false,
     false,
-    8042,
+    8067,
     descriptor_table_protodef_protobuf_5fnspanel_2eproto,
     "protobuf_nspanel.proto",
     &descriptor_table_protobuf_5fnspanel_2eproto_once,
@@ -4324,15 +4326,15 @@ const ::google::protobuf::internal::ClassData* NSPanelStatusReport::GetClassData
   return _class_data_.base();
 }
 PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<5, 19, 1, 125, 2> NSPanelStatusReport::_table_ = {
+const ::_pbi::TcParseTable<5, 20, 1, 125, 2> NSPanelStatusReport::_table_ = {
   {
     0,  // no _has_bits_
     0, // no _extensions_
-    19, 248,  // max_field_number, fast_idx_mask
+    20, 248,  // max_field_number, fast_idx_mask
     offsetof(decltype(_table_), field_lookup_table),
-    4294443008,  // skipmap
+    4293918720,  // skipmap
     offsetof(decltype(_table_), field_entries),
-    19,  // num_field_entries
+    20,  // num_field_entries
     1,  // num_aux_entries
     offsetof(decltype(_table_), aux_entries),
     _class_data_.base(),
@@ -4400,7 +4402,9 @@ const ::_pbi::TcParseTable<5, 19, 1, 125, 2> NSPanelStatusReport::_table_ = {
     // int32 metrics_port = 19;
     {::_pbi::TcParser::FastV32S2,
      {408, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelStatusReport, _impl_.metrics_port_)}},
-    {::_pbi::TcParser::MiniParse, {}},
+    // bool has_temperature = 20;
+    {::_pbi::TcParser::FastV8S2,
+     {416, 63, 0, PROTOBUF_FIELD_OFFSET(NSPanelStatusReport, _impl_.has_temperature_)}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
     {::_pbi::TcParser::MiniParse, {}},
@@ -4472,6 +4476,9 @@ const ::_pbi::TcParseTable<5, 19, 1, 125, 2> NSPanelStatusReport::_table_ = {
     // int32 metrics_port = 19;
     {PROTOBUF_FIELD_OFFSET(NSPanelStatusReport, _impl_.metrics_port_), 0, 0,
     (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
+    // bool has_temperature = 20;
+    {PROTOBUF_FIELD_OFFSET(NSPanelStatusReport, _impl_.has_temperature_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kBool)},
   }}, {{
     {::_pbi::TcParser::GetTable<::NSPanelWarning>()},
   }}, {{
@@ -4667,6 +4674,13 @@ PROTOBUF_NOINLINE void NSPanelStatusReport::Clear() {
                 19, this_._internal_metrics_port(), target);
           }
 
+          // bool has_temperature = 20;
+          if (this_._internal_has_temperature() != 0) {
+            target = stream->EnsureSpace(target);
+            target = ::_pbi::WireFormatLite::WriteBoolToArray(
+                20, this_._internal_has_temperature(), target);
+          }
+
           if (PROTOBUF_PREDICT_FALSE(this_._internal_metadata_.have_unknown_fields())) {
             target =
                 ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
@@ -4764,6 +4778,10 @@ PROTOBUF_NOINLINE void NSPanelStatusReport::Clear() {
             if (::absl::bit_cast<::uint32_t>(this_._internal_humidity()) != 0) {
               total_size += 5;
             }
+            // float pressure = 15;
+            if (::absl::bit_cast<::uint32_t>(this_._internal_pressure()) != 0) {
+              total_size += 5;
+            }
             // bool has_humidity = 12;
             if (this_._internal_has_humidity() != 0) {
               total_size += 2;
@@ -4772,9 +4790,9 @@ PROTOBUF_NOINLINE void NSPanelStatusReport::Clear() {
             if (this_._internal_has_pressure() != 0) {
               total_size += 2;
             }
-            // float pressure = 15;
-            if (::absl::bit_cast<::uint32_t>(this_._internal_pressure()) != 0) {
-              total_size += 5;
+            // bool has_temperature = 20;
+            if (this_._internal_has_temperature() != 0) {
+              total_size += 3;
             }
             // .NSPanelStatusReport.NSPanelDisplayMode display_mode = 16;
             if (this_._internal_display_mode() != 0) {
@@ -4840,14 +4858,17 @@ void NSPanelStatusReport::MergeImpl(::google::protobuf::MessageLite& to_msg, con
   if (::absl::bit_cast<::uint32_t>(from._internal_humidity()) != 0) {
     _this->_impl_.humidity_ = from._impl_.humidity_;
   }
+  if (::absl::bit_cast<::uint32_t>(from._internal_pressure()) != 0) {
+    _this->_impl_.pressure_ = from._impl_.pressure_;
+  }
   if (from._internal_has_humidity() != 0) {
     _this->_impl_.has_humidity_ = from._impl_.has_humidity_;
   }
   if (from._internal_has_pressure() != 0) {
     _this->_impl_.has_pressure_ = from._impl_.has_pressure_;
   }
-  if (::absl::bit_cast<::uint32_t>(from._internal_pressure()) != 0) {
-    _this->_impl_.pressure_ = from._impl_.pressure_;
+  if (from._internal_has_temperature() != 0) {
+    _this->_impl_.has_temperature_ = from._impl_.has_temperature_;
   }
   if (from._internal_display_mode() != 0) {
     _this->_impl_.display_mode_ = from._impl_.display_mode_;
