@@ -71,3 +71,10 @@ export default defineConfig([
   },
 ])
 ```
+
+## Build output is not committed
+
+`dist/` and `templates/scripts.html` are generated. The release image builds them in the `react-builder` stage of
+`docker/Dockerfile`. For local development, and for the dev container (which mounts `web/` from the host), run
+`npm ci && npm run build` here, or `npm run build -- --watch` to rebuild on change. `docker/web/run_tests.sh` writes an
+empty stand-in `scripts.html` if there is no build.

@@ -16,3 +16,8 @@ HMI_files/tft_automation/**/*.bmp
 HMI_files/tft_automation/**/*.HMI
 HMI_files/tft_automation/**/*.xcf
 HMI_files/tft_automation/gimp_scripts/
+
+# React build output and dependencies come from the react-builder stage, not the build context.
+web/nspanelmanager/web/react-components/node_modules/
+web/nspanelmanager/web/react-components/dist/
+web/nspanelmanager/web/react-components/templates/scripts.html

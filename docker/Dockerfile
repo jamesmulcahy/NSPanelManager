@@ -14,6 +14,20 @@ ADD https://github.com/NSPManager/NSPanelManager-Web-UI.git#${WEB_UI_REF} .
 RUN npm install
 RUN npm run build
 
+# Builds the React components into dist/ and templates/scripts.html, which are not committed.
+# Only the package files are copied before npm ci, so editing the source reuses the dependency layer.
+# Node 22 matches the CI workflows (Vite 8 needs ^22.12). The output is the same for any build
+# platform, so this stage runs on the build host even for cross-platform images.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS react-builder
+# rtttl.test.ts imports ../../../tests/rtttl_vectors.json and tsc -b type-checks it, so the build needs
+# that file at the same relative place: /ui/tests next to /ui/react-components.
+WORKDIR /ui/react-components
+COPY web/nspanelmanager/web/tests/rtttl_vectors.json /ui/tests/rtttl_vectors.json
+COPY web/nspanelmanager/web/react-components/package.json web/nspanelmanager/web/react-components/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
+COPY web/nspanelmanager/web/react-components/ ./
+RUN npm run build
+
 # Builds MQTTManager for the release image. The devel target does not use this stage, so
 # docker build --target devel skips it.
 FROM --platform=$BUILDPLATFORM python:3.12.5-bookworm AS build
@@ -67,6 +81,8 @@ CMD ["/bin/bash", "./runserver_devel.sh"]
 # Home Assistant builder in release.yml, build.
 FROM runtime-base AS release
 COPY web/ /usr/src/app/
+COPY --from=react-builder /ui/react-components/dist/ /usr/src/app/nspanelmanager/web/react-components/dist/
+COPY --from=react-builder /ui/react-components/templates/ /usr/src/app/nspanelmanager/web/react-components/templates/
 COPY nginx/sites-enabled/ /etc/nginx/sites-enabled/
 COPY nginx/sites-templates/ /etc/nginx/sites-templates/
 COPY "HMI_files/" /usr/src/app/nspanelmanager/HMI_files/
