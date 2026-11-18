@@ -18,7 +18,7 @@ class CompressorRecipe(ConanFile):
         self.requires("date/3.0.5")  # Header-only, for parsing Home Assistant timestamps
         # self.requires("inja/3.4.0")
         self.requires("boost/1.84.0")
-        self.requires("protobuf/5.27.0")
+        self.requires("protobuf/5.29.6")
         self.requires("sqlite_orm/1.9.1")
         self.requires("stb/cci.20240531")  # Header-only image decoding/resizing for the Nextion image server
         self.requires("prometheus-cpp/1.3.0")  # Metrics registry + text serializer for /prometheus/metrics
