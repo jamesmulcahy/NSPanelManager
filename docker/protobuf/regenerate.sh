@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 
-# Ubuntu 24.04's protobuf-c-compiler is 1.4.1; install_protobuf.sh installs protoc 27.0.
+# Ubuntu 24.04's protobuf-c-compiler is 1.4.1; install_protobuf.sh installs protoc 29.6.
 docker run --rm \
     -v "$REPO_ROOT":/repo \
     -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
