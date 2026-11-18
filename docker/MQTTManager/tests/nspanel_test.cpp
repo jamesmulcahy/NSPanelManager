@@ -1556,7 +1556,7 @@ TEST_F(NSPanelTest, status_report_without_a_temperature_publishes_and_records_no
   EXPECT_FALSE(panel->get_metrics_snapshot().temperature.has_value());
 }
 
-TEST_F(NSPanelTest, status_report_with_a_temperature_publishes_it_and_keeps_it_when_the_next_has_none) {
+TEST_F(NSPanelTest, status_report_with_a_temperature_publishes_it_and_drops_it_when_the_next_has_none) {
   load_panel();
   nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature");
 
@@ -1570,9 +1570,13 @@ TEST_F(NSPanelTest, status_report_with_a_temperature_publishes_it_and_keeps_it_w
   nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature");
   panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(std::nullopt, false));
 
+  // A panel whose sensor has failed (or that just rebooted) has no temperature: nothing published, and no metric.
   EXPECT_TRUE(nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature").empty());
+  EXPECT_FALSE(panel->get_metrics_snapshot().temperature.has_value());
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(70.1, true));
   ASSERT_TRUE(panel->get_metrics_snapshot().temperature.has_value());
-  EXPECT_FLOAT_EQ(*panel->get_metrics_snapshot().temperature, 69.8f);
+  EXPECT_FLOAT_EQ(*panel->get_metrics_snapshot().temperature, 70.1f);
 }
 
 TEST_F(NSPanelTest, status_report_from_firmware_without_the_flag_counts_a_non_zero_temperature_as_present) {

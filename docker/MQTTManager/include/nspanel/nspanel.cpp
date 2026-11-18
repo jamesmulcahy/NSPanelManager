@@ -723,12 +723,12 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         this->_rssi = report.rssi();
         this->_heap_used_pct = report.heap_used_pct();
         // has_temperature is false while the panel has no valid reading (just booted, failing sensor). Firmware that
-        // predates the flag never sets it, so a non-zero temperature from it counts as present. Without a reading the
-        // last value stays, and nothing is published for it.
+        // predates the flag never sets it, so a non-zero temperature from it counts as present. Without a reading
+        // nothing is published, and the metric drops out rather than repeating a value the panel no longer measures.
         const bool report_has_temperature = report.has_temperature() || report.temperature() != 0;
+        this->_has_temperature = report_has_temperature;
         if (report_has_temperature) {
           this->_temperature = report.temperature();
-          this->_has_temperature = true;
         }
         this->_current_firmware_md5_checksum = report.md5_firmware();
         this->_current_littlefs_md5_checksum = report.md5_littlefs();
@@ -830,8 +830,10 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
           this->_heap_used_pct = data["heap_used_pct"];
           if (data["temperature"].is_number_float()) {
             this->_temperature = data["temperature"];
+            this->_has_temperature = true;
           } else if (data["temperature"].is_string()) {
             this->_temperature = atof(std::string(data["temperature"]).c_str());
+            this->_has_temperature = true;
           } else {
             SPDLOG_ERROR("Incorrect format of temperature data. Expected float.");
           }
