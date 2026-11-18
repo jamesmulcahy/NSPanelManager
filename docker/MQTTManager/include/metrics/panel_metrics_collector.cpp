@@ -157,7 +157,9 @@ std::vector<prometheus::MetricFamily> PanelMetricsCollector::Collect() const {
     if (panel.status_report_received && panel.state != MQTT_MANAGER_NSPANEL_STATE::OFFLINE) {
       add_gauge(rssi, labels, panel.rssi);
       add_gauge(heap_used, labels, panel.heap_used_pct / 100.0);
-      add_gauge(temperature, labels, fahrenheit ? (panel.temperature - 32.0) * 5.0 / 9.0 : panel.temperature);
+      if (panel.temperature) {
+        add_gauge(temperature, labels, fahrenheit ? (*panel.temperature - 32.0) * 5.0 / 9.0 : *panel.temperature);
+      }
       if (panel.humidity) {
         add_gauge(humidity, labels, *panel.humidity);
       }
