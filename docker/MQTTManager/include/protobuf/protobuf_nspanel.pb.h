@@ -6136,9 +6136,10 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     kHeapUsedPctFieldNumber = 4,
     kTemperatureFieldNumber = 6,
     kHumidityFieldNumber = 13,
+    kPressureFieldNumber = 15,
     kHasHumidityFieldNumber = 12,
     kHasPressureFieldNumber = 14,
-    kPressureFieldNumber = 15,
+    kHasTemperatureFieldNumber = 20,
     kDisplayModeFieldNumber = 16,
     kMetricsPortFieldNumber = 19,
   };
@@ -6331,6 +6332,16 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   void _internal_set_humidity(float value);
 
   public:
+  // float pressure = 15;
+  void clear_pressure() ;
+  float pressure() const;
+  void set_pressure(float value);
+
+  private:
+  float _internal_pressure() const;
+  void _internal_set_pressure(float value);
+
+  public:
   // bool has_humidity = 12;
   void clear_has_humidity() ;
   bool has_humidity() const;
@@ -6351,14 +6362,14 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   void _internal_set_has_pressure(bool value);
 
   public:
-  // float pressure = 15;
-  void clear_pressure() ;
-  float pressure() const;
-  void set_pressure(float value);
+  // bool has_temperature = 20;
+  void clear_has_temperature() ;
+  bool has_temperature() const;
+  void set_has_temperature(bool value);
 
   private:
-  float _internal_pressure() const;
-  void _internal_set_pressure(float value);
+  bool _internal_has_temperature() const;
+  void _internal_set_has_temperature(bool value);
 
   public:
   // .NSPanelStatusReport.NSPanelDisplayMode display_mode = 16;
@@ -6386,7 +6397,7 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 19, 1,
+      5, 20, 1,
       125, 2>
       _table_;
 
@@ -6418,9 +6429,10 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     ::int32_t heap_used_pct_;
     float temperature_;
     float humidity_;
+    float pressure_;
     bool has_humidity_;
     bool has_pressure_;
-    float pressure_;
+    bool has_temperature_;
     int display_mode_;
     ::int32_t metrics_port_;
     ::google::protobuf::internal::CachedSize _cached_size_;
@@ -10540,6 +10552,28 @@ inline ::int32_t NSPanelStatusReport::_internal_metrics_port() const {
 inline void NSPanelStatusReport::_internal_set_metrics_port(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.metrics_port_ = value;
+}
+
+// bool has_temperature = 20;
+inline void NSPanelStatusReport::clear_has_temperature() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.has_temperature_ = false;
+}
+inline bool NSPanelStatusReport::has_temperature() const {
+  // @@protoc_insertion_point(field_get:NSPanelStatusReport.has_temperature)
+  return _internal_has_temperature();
+}
+inline void NSPanelStatusReport::set_has_temperature(bool value) {
+  _internal_set_has_temperature(value);
+  // @@protoc_insertion_point(field_set:NSPanelStatusReport.has_temperature)
+}
+inline bool NSPanelStatusReport::_internal_has_temperature() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.has_temperature_;
+}
+inline void NSPanelStatusReport::_internal_set_has_temperature(bool value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.has_temperature_ = value;
 }
 
 // -------------------------------------------------------------------

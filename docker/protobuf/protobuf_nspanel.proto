@@ -178,6 +178,11 @@ message NSPanelStatusReport {
   // TCP port of the panel's Prometheus /metrics endpoint, 0 if it has none. Also sent in
   // register_request, but repeated here so a restarted manager relearns it from the next report.
   int32 metrics_port = 19;
+
+  // True when `temperature` holds a real reading. A panel that has no valid reading yet (just booted, or the
+  // sensor is failing) leaves it false and `temperature` at 0. Firmware that predates this field never sets it:
+  // read a non-zero `temperature` from such a panel as present.
+  bool has_temperature = 20;
 }
 
 // Container of data shown on the "Entities page".
