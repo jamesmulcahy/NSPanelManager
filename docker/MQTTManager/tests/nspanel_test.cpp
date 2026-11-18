@@ -1537,6 +1537,10 @@ namespace {
 std::string temperature_report(std::optional<float> temperature, bool has_temperature) {
   NSPanelStatusReport report;
   report.set_nspanel_state(NSPanelStatusReport_state_ONLINE);
+  // As a real report does. Without a non-default field the report serializes to an empty payload, which
+  // mqtt_callback drops before parsing it.
+  report.set_mac_address(PANEL_MAC);
+  report.set_rssi(-61);
   if (temperature) {
     report.set_temperature(*temperature);
   }
