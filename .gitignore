@@ -31,8 +31,10 @@ docker/MQTTManager/env.sh
 docker/MQTTManager/Testing/*
 docker/MQTTManager/compile_commands.json
 
-# Include built react files for WebUI
-!docker/web/nspanelmanager/web/react-components/dist/*
+# The React build output is generated: the Docker image builds it, and CI checks that it builds.
+# For local dev run `npm run build` (or `npm run build -- --watch`) in react-components.
+docker/web/nspanelmanager/web/react-components/dist/
+docker/web/nspanelmanager/web/react-components/templates/scripts.html
 
 # User/computer specific files that is user depandant
 firmware/NSPanelManagerFirmware/src/CMakeLists.txt
