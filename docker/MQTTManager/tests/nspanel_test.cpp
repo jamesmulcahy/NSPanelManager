@@ -1532,6 +1532,65 @@ TEST_F(NSPanelTest, panel_with_an_embedded_web_ui_has_no_littlefs_update_from_it
   EXPECT_FALSE(panel->has_littlefs_update());
 }
 
+namespace {
+
+std::string temperature_report(std::optional<float> temperature, bool has_temperature) {
+  NSPanelStatusReport report;
+  report.set_nspanel_state(NSPanelStatusReport_state_ONLINE);
+  // As a real report does. Without a non-default field the report serializes to an empty payload, which
+  // mqtt_callback drops before parsing it.
+  report.set_mac_address(PANEL_MAC);
+  report.set_rssi(-61);
+  if (temperature) {
+    report.set_temperature(*temperature);
+  }
+  report.set_has_temperature(has_temperature);
+  return report.SerializeAsString();
+}
+
+} // namespace
+
+TEST_F(NSPanelTest, status_report_without_a_temperature_publishes_and_records_nothing) {
+  load_panel();
+  nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature"); // Drop what loading published.
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(std::nullopt, false));
+
+  EXPECT_TRUE(nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature").empty());
+  EXPECT_FALSE(panel->get_metrics_snapshot().temperature.has_value());
+}
+
+TEST_F(NSPanelTest, status_report_with_a_temperature_publishes_it_and_drops_it_when_the_next_has_none) {
+  load_panel();
+  nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature");
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(0.0, true));
+  auto published = nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature");
+  ASSERT_EQ(published.size(), 1u);
+  EXPECT_EQ(published[0].payload, "0.0");
+  ASSERT_TRUE(panel->get_metrics_snapshot().temperature.has_value());
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(69.8, true));
+  nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature");
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(std::nullopt, false));
+
+  // A panel whose sensor has failed (or that just rebooted) has no temperature: nothing published, and no metric.
+  EXPECT_TRUE(nspm_test::mqtt_published_to("nspanel/" + PANEL_MAC + "/temperature").empty());
+  EXPECT_FALSE(panel->get_metrics_snapshot().temperature.has_value());
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(70.1, true));
+  ASSERT_TRUE(panel->get_metrics_snapshot().temperature.has_value());
+  EXPECT_FLOAT_EQ(*panel->get_metrics_snapshot().temperature, 70.1f);
+}
+
+TEST_F(NSPanelTest, status_report_from_firmware_without_the_flag_counts_a_non_zero_temperature_as_present) {
+  load_panel();
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(71.5, false));
+  ASSERT_TRUE(panel->get_metrics_snapshot().temperature.has_value());
+  EXPECT_FLOAT_EQ(*panel->get_metrics_snapshot().temperature, 71.5f);
+}
+
 TEST_F(NSPanelTest, metrics_snapshot_has_the_latest_status_report) {
   load_panel();
   NSPanelMetricsSnapshot before = panel->get_metrics_snapshot();
@@ -1545,7 +1604,8 @@ TEST_F(NSPanelTest, metrics_snapshot_has_the_latest_status_report) {
   EXPECT_EQ(snapshot.ip_address, "10.8.0.79");
   EXPECT_EQ(snapshot.rssi, -61);
   EXPECT_EQ(snapshot.heap_used_pct, 42);
-  EXPECT_FLOAT_EQ(snapshot.temperature, 71.5);
+  ASSERT_TRUE(snapshot.temperature.has_value());
+  EXPECT_FLOAT_EQ(*snapshot.temperature, 71.5);
   ASSERT_TRUE(snapshot.humidity.has_value());
   EXPECT_FLOAT_EQ(*snapshot.humidity, 40);
   EXPECT_FALSE(snapshot.pressure.has_value());

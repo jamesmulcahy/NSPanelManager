@@ -53,7 +53,7 @@ struct NSPanelMetricsSnapshot {
   bool registered;   // Has registered to the manager (has an NSPM id).
   int16_t rssi;
   uint8_t heap_used_pct;
-  float temperature;
+  std::optional<float> temperature; // Unset until the panel reports a valid reading.
   std::optional<float> humidity; // Only for panels whose status reports carry it.
   std::optional<float> pressure; // Pa. Only for panels whose status reports carry it.
   uint8_t update_progress;       // Percent.
@@ -245,6 +245,7 @@ private:
   std::string _ip_address;
   int16_t _rssi;
   float _temperature;
+  bool _has_temperature = false;
   float _humidity;
   float _pressure;
   uint8_t _heap_used_pct;

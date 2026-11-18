@@ -187,6 +187,7 @@ void NSPanel::reload_config(const char *reason) {
       this->_heap_used_pct = 0;
       this->_nspanel_warnings.clear();
       this->_temperature = 0;
+      this->_has_temperature = false;
       this->_humidity = 0;
       this->_pressure = 0;
       this->_update_progress = 0;
@@ -721,7 +722,14 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         this->_ip_address = report.ip_address();
         this->_rssi = report.rssi();
         this->_heap_used_pct = report.heap_used_pct();
-        this->_temperature = report.temperature();
+        // has_temperature is false while the panel has no valid reading (just booted, failing sensor). Firmware that
+        // predates the flag never sets it, so a non-zero temperature from it counts as present. Without a reading
+        // nothing is published, and the metric drops out rather than repeating a value the panel no longer measures.
+        const bool report_has_temperature = report.has_temperature() || report.temperature() != 0;
+        this->_has_temperature = report_has_temperature;
+        if (report_has_temperature) {
+          this->_temperature = report.temperature();
+        }
         this->_current_firmware_md5_checksum = report.md5_firmware();
         this->_current_littlefs_md5_checksum = report.md5_littlefs();
         this->_current_tft_md5_checksum = report.md5_tft_gui();
@@ -737,7 +745,9 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
           SPDLOG_DEBUG("Ignoring metrics_port {} in status report from NSPanel {}::{}.", report.metrics_port(), this->_id, this->_name);
         }
 
-        MQTT_Manager::publish(this->_mqtt_temperature_topic, fmt::format("{:.1f}", this->_temperature));
+        if (report_has_temperature) {
+          MQTT_Manager::publish(this->_mqtt_temperature_topic, fmt::format("{:.1f}", this->_temperature));
+        }
         if (report.has_humidity()) {
           this->_humidity = report.humidity();
           this->_has_humidity = true;
@@ -820,8 +830,10 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
           this->_heap_used_pct = data["heap_used_pct"];
           if (data["temperature"].is_number_float()) {
             this->_temperature = data["temperature"];
+            this->_has_temperature = true;
           } else if (data["temperature"].is_string()) {
             this->_temperature = atof(std::string(data["temperature"]).c_str());
+            this->_has_temperature = true;
           } else {
             SPDLOG_ERROR("Incorrect format of temperature data. Expected float.");
           }
@@ -1551,7 +1563,7 @@ NSPanelMetricsSnapshot NSPanel::get_metrics_snapshot() {
       .registered = this->_has_registered_to_manager,
       .rssi = this->_rssi,
       .heap_used_pct = this->_heap_used_pct,
-      .temperature = this->_temperature,
+      .temperature = this->_has_temperature ? std::optional<float>(this->_temperature) : std::nullopt,
       .humidity = this->_has_humidity ? std::optional<float>(this->_humidity) : std::nullopt,
       .pressure = this->_has_pressure ? std::optional<float>(this->_pressure) : std::nullopt,
       .update_progress = this->_update_progress,
