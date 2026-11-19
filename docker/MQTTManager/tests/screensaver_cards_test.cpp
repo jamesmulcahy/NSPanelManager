@@ -65,10 +65,49 @@ TEST(ScreensaverCards, apply_to_config_fills_both_fields) {
   NSPanelConfig config;
   config.add_screensaver_cards()->set_seconds(99); // Replaced, not appended to
 
-  screensaver_cards::apply_to_config(config, "calendar:15", "20");
+  screensaver_cards::apply_to_config(config, "calendar:15", "20", "");
 
   ASSERT_EQ(config.screensaver_cards_size(), 1);
   EXPECT_EQ(config.screensaver_cards(0).type(), NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR);
   EXPECT_EQ(config.screensaver_cards(0).seconds(), 15);
   EXPECT_EQ(config.screensaver_base_card_seconds(), 20);
+}
+
+TEST(ScreensaverCards, now_playing_with_seconds) {
+  auto cards = parse_cards("calendar:10, Now_Playing:25");
+
+  ASSERT_EQ(cards.size(), 2u);
+  EXPECT_EQ(cards[1].type, NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_NOW_PLAYING);
+  EXPECT_EQ(cards[1].seconds, 25);
+  EXPECT_EQ(parse_cards("now_playing")[0].seconds, 10);
+}
+
+TEST(ScreensaverCards, now_playing_card_carries_the_media_player_topic) {
+  NSPanelConfig config;
+
+  screensaver_cards::apply_to_config(config, "calendar:15,now_playing:12", "20", "nspanel/mqttmanager_x/entities/media_players/7/state");
+
+  ASSERT_EQ(config.screensaver_cards_size(), 2);
+  EXPECT_EQ(config.screensaver_cards(1).type(), NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_NOW_PLAYING);
+  EXPECT_EQ(config.screensaver_cards(1).seconds(), 12);
+  EXPECT_EQ(config.screensaver_media_player_topic(), "nspanel/mqttmanager_x/entities/media_players/7/state");
+}
+
+TEST(ScreensaverCards, now_playing_card_is_dropped_when_there_is_no_media_player) {
+  NSPanelConfig config;
+  config.set_screensaver_media_player_topic("stale"); // Cleared, not kept
+
+  screensaver_cards::apply_to_config(config, "now_playing:12,calendar:15", "20", "");
+
+  ASSERT_EQ(config.screensaver_cards_size(), 1);
+  EXPECT_EQ(config.screensaver_cards(0).type(), NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR);
+  EXPECT_EQ(config.screensaver_media_player_topic(), "");
+}
+
+TEST(ScreensaverCards, the_media_player_topic_is_left_empty_without_the_card) {
+  NSPanelConfig config;
+
+  screensaver_cards::apply_to_config(config, "calendar:15", "20", "nspanel/mqttmanager_x/entities/media_players/7/state");
+
+  EXPECT_EQ(config.screensaver_media_player_topic(), "");
 }

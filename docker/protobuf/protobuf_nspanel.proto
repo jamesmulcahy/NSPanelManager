@@ -113,6 +113,8 @@ message NSPanelConfig {
     SCREENSAVER_CARD_UNSPECIFIED = 0;
     SCREENSAVER_CARD_CALENDAR = 1; // Upcoming events, from NSPanelCalendarUpdate on nspanel/mqttmanager_<address>/status/calendar
     SCREENSAVER_CARD_ENERGY = 2;   // Power draw as cost per day and lights on, from NSPanelEnergyUpdate on nspanel/mqttmanager_<address>/status/energy
+    SCREENSAVER_CARD_NOW_PLAYING = 3; // The room's first media player, from its NSPanelEntityState on
+                                      // screensaver_media_player_topic; shown only while it plays unmuted
   }
   message ScreensaverCard {
     NSPanelScreensaverCardType type = 1;
@@ -120,6 +122,9 @@ message NSPanelConfig {
   }
   repeated ScreensaverCard screensaver_cards = 51;
   int32 screensaver_base_card_seconds = 52; // How long the weather shows in WEATHER_* modes. 0: the panel's default (10 s)
+  // State topic of the media player the now-playing card follows: the first media player in the panel's room.
+  // Empty when the card isn't configured or the room has no media player (the panel then skips the card).
+  string screensaver_media_player_topic = 53;
 }
 
 enum NSPanelWarningLevel {

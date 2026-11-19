@@ -466,6 +466,57 @@ TEST_F(NSPanelTest, open_media_player_button_opens_the_first_media_player_in_the
   EXPECT_EQ(config->button2_entity_page_topic(), (*player)->get_mqtt_state_topic());
 }
 
+TEST_F(NSPanelTest, first_media_player_is_the_first_by_entity_page_then_slot) {
+  OnExit unload{[] { load_media_players_and_rooms(); }}; // Runs after the rows are removed.
+  auto room = EntityManager::get_room(panel_rooms().room_id);
+  ASSERT_TRUE(room);
+  EXPECT_FALSE((*room)->first_media_player());
+
+  ScopedEntity second("media_player", "Kitchen speaker", django_media_player_data("media_player.kitchen"), panel_rooms().room_id, panel_rooms().entities_page_id, 2);
+  ScopedEntity first("media_player", "Hall speaker", django_media_player_data("media_player.hall"), panel_rooms().room_id, panel_rooms().entities_page_id, 1);
+  load_media_players_and_rooms();
+  room = EntityManager::get_room(panel_rooms().room_id);
+  ASSERT_TRUE(room);
+
+  auto player = (*room)->first_media_player();
+  ASSERT_TRUE(player);
+  EXPECT_EQ(player->get_id(), first.id);
+}
+
+TEST_F(NSPanelTest, now_playing_card_follows_the_first_media_player_in_the_panels_room) {
+  OnExit unload{[] { load_media_players_and_rooms(); }};
+  ScopedEntity second("media_player", "Kitchen speaker", django_media_player_data("media_player.kitchen"), panel_rooms().room_id, panel_rooms().entities_page_id, 2);
+  ScopedEntity first("media_player", "Hall speaker", django_media_player_data("media_player.hall"), panel_rooms().room_id, panel_rooms().entities_page_id, 1);
+  load_media_players_and_rooms();
+  set_panel_setting("screensaver_cards", "calendar:10,now_playing:15");
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  auto player = EntityManager::get_entity_by_id<MediaPlayerEntity>(MQTT_MANAGER_ENTITY_TYPE::MEDIA_PLAYER, first.id);
+  ASSERT_TRUE(player);
+  ASSERT_EQ(config->screensaver_cards_size(), 2);
+  EXPECT_EQ(config->screensaver_cards(1).type(), NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_NOW_PLAYING);
+  EXPECT_EQ(config->screensaver_cards(1).seconds(), 15);
+  EXPECT_EQ(config->screensaver_media_player_topic(), (*player)->get_mqtt_state_topic());
+}
+
+TEST_F(NSPanelTest, now_playing_card_is_dropped_when_the_panels_room_has_no_media_player) {
+  set_panel_setting("screensaver_cards", "now_playing:15,calendar:10");
+  ScopedErrorLog log(spdlog::level::warn);
+
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  ASSERT_EQ(config->screensaver_cards_size(), 1);
+  EXPECT_EQ(config->screensaver_cards(0).type(), NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR);
+  EXPECT_EQ(config->screensaver_media_player_topic(), "");
+  auto errors = log.errors();
+  EXPECT_TRUE(std::any_of(errors.begin(), errors.end(), [](auto &error) { return error.find("has no media player") != std::string::npos; }));
+}
+
 TEST_F(NSPanelTest, open_media_player_button_ignores_media_players_in_other_rooms) {
   database_manager::RoomEntitiesPage page;
   page.room_id = panel_rooms().other_room_id;

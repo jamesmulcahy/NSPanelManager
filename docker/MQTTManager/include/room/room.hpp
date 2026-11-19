@@ -17,6 +17,8 @@
 #include <thread>
 #include <vector>
 
+class MediaPlayerEntity;
+
 class Room {
 public:
   /**
@@ -70,6 +72,12 @@ public:
     }
     return entities;
   }
+
+  /**
+   * The room's first media player: entity page order, then slot order. nullptr when the room has none.
+   * The button modes that open a media player and the screensaver's now-playing card both follow it.
+   */
+  std::shared_ptr<MediaPlayerEntity> first_media_player();
 
   /**
    * Get the total number of entity pages in this room.

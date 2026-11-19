@@ -2,6 +2,7 @@
 #include "entity/entity.hpp"
 #include "home_assistant_manager/home_assistant_manager.hpp"
 #include "light/light.hpp"
+#include "media_player/media_player.hpp"
 #include "mqtt_manager/mqtt_manager.hpp"
 #include "mqtt_manager_config/mqtt_manager_config.hpp"
 #include "openhab_manager/openhab_manager.hpp"
@@ -245,6 +246,11 @@ std::vector<std::shared_ptr<MqttManagerEntity>> Room::get_all_entities() {
     entities.insert(entities.end(), page_entities.begin(), page_entities.end());
   }
   return entities;
+}
+
+std::shared_ptr<MediaPlayerEntity> Room::first_media_player() {
+  auto media_players = this->get_all_entities_by_type<MediaPlayerEntity>(MQTT_MANAGER_ENTITY_TYPE::MEDIA_PLAYER);
+  return media_players.empty() ? nullptr : media_players.front();
 }
 
 uint16_t Room::get_number_of_entity_pages() {
