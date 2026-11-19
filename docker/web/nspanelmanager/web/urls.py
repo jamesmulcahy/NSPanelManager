@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import api, htmx, rest, views
+from .rest_v2 import firmware as rest_v2_firmware
 from .rest_v2 import global_settings as rest_v2_settings
 from .rest_v2 import home_assistant_sync as rest_v2_ha_sync
 from .rest_v2 import nspanel_settings as rest_v2_nspanel_settings
@@ -80,6 +81,8 @@ urlpatterns = [
     # Settings URLs
     path("rest/settings", rest.settings, name="rest_settings"),
     path("rest/v2/settings", rest_v2_settings.SettingsView.as_view(), name="rest_v2_settings"),
+    path("rest/v2/firmware", rest_v2_firmware.FirmwareView.as_view(), name="rest_v2_firmware"),
+    path("rest/v2/firmware/stage", rest_v2_firmware.FirmwareStageView.as_view(), name="rest_v2_firmware_stage"),
     path("rest/v2/rooms", rest_v2_rooms.RoomListView.as_view(), name="rest_v2_rooms"),
     path("rest/v2/rooms/<int:pk>", rest_v2_rooms.RoomDetailView.as_view(), name="rest_v2_rooms_detail"),
     path("rest/v2/home_assistant/areas", rest_v2_ha_sync.AreasView.as_view(), name="rest_v2_ha_areas"),

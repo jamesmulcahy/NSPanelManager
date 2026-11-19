@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/rest/v2/firmware": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["firmware_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rest/v2/firmware/stage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["firmware_stage_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rest/v2/home_assistant/areas": {
         parameters: {
             query?: never;
@@ -194,6 +226,30 @@ export interface components {
     schemas: {
         /** @enum {unknown} */
         BlankEnum: "";
+        /**
+         * @description * `sonoff` - sonoff
+         *     * `custom` - custom
+         * @enum {string}
+         */
+        BoardEnum: "sonoff" | "custom";
+        BoardImage: {
+            md5: string;
+            size: number;
+        };
+        BoardImages: {
+            sonoff: components["schemas"]["BoardImage"];
+            custom: components["schemas"]["BoardImage"];
+        };
+        /**
+         * @description * `bad_release` - bad_release
+         *     * `not_found` - not_found
+         *     * `verification_failed` - verification_failed
+         *     * `rate_limited` - rate_limited
+         *     * `unreachable` - unreachable
+         *     * `download_failed` - download_failed
+         * @enum {string}
+         */
+        CodeEnum: "bad_release" | "not_found" | "verification_failed" | "rate_limited" | "unreachable" | "download_failed";
         CreatedRoom: {
             room_id: number;
             area_id: string;
@@ -262,6 +318,32 @@ export interface components {
          * @enum {string}
          */
         EntityTypeEnum: "light" | "cover" | "media_player" | "thermostat";
+        Error: {
+            error: components["schemas"]["ErrorDetail"];
+        };
+        ErrorDetail: {
+            code: components["schemas"]["CodeEnum"];
+            message: string;
+            /**
+             * @description The board a verification failure is about.
+             *
+             *     * `sonoff` - sonoff
+             *     * `custom` - custom
+             */
+            board?: components["schemas"]["BoardEnum"];
+        };
+        FirmwareStatus: {
+            repo: string;
+            /** @description The release asked about: "latest", or a tag. */
+            release: string;
+            /** @description What the release is. null when GitHub could not be asked; see error. */
+            resolved: components["schemas"]["ResolvedRelease"] | null;
+            staged: components["schemas"]["Staged"];
+            up_to_date: components["schemas"]["UpToDate"] | null;
+            /** @description The newest 20 releases, newest first. Only with ?releases=1. */
+            releases?: components["schemas"]["ReleaseListItem"][];
+            error: components["schemas"]["ErrorDetail"] | null;
+        };
         HomeAssistantArea: {
             area_id: string;
             name: string;
@@ -607,6 +689,19 @@ export interface components {
          * @enum {string}
          */
         ReasonEnum: "already_imported";
+        ReleaseListItem: {
+            tag: string;
+            commit: string | null;
+            built_at: string | null;
+        };
+        ResolvedRelease: {
+            tag: string;
+            commit: string;
+            built_at: string;
+            run_url: string;
+            html_url: string;
+            boards: components["schemas"]["BoardImages"];
+        };
         /** @description A room, for reading and (with partial=True) for PATCH. */
         Room: {
             readonly id: number;
@@ -866,11 +961,60 @@ export interface components {
             reason: components["schemas"]["ReasonEnum"];
         };
         /**
+         * @description * `upload` - Upload
+         *     * `github` - Github
+         *     * `bundled` - Bundled
+         * @enum {string}
+         */
+        SourceEnum: "upload" | "github" | "bundled";
+        StageChanges: {
+            sonoff: components["schemas"]["StagedChange"];
+            custom: components["schemas"]["StagedChange"];
+        };
+        StageRequestRequest: {
+            /** @description "latest" or a release tag. The firmware_github_release setting when omitted. */
+            release?: string;
+        };
+        StageResult: {
+            tag: string;
+            commit: string;
+            boards: components["schemas"]["StageChanges"];
+        };
+        Staged: {
+            sonoff: components["schemas"]["StagedBoard"];
+            custom: components["schemas"]["StagedBoard"];
+        };
+        StagedBoard: {
+            /** @description md5 of the staged file; null if there is none. */
+            md5: string | null;
+            /**
+             * @description Where the staged file came from, if the manager recorded it.
+             *
+             *     * `upload` - Upload
+             *     * `github` - Github
+             *     * `bundled` - Bundled
+             */
+            source: (components["schemas"]["SourceEnum"] | components["schemas"]["NullEnum"]) | null;
+            tag: string | null;
+            commit: string | null;
+            /** Format: date-time */
+            staged_at: string | null;
+        };
+        StagedChange: {
+            before_md5: string | null;
+            after_md5: string;
+            changed: boolean;
+        };
+        /**
          * @description * `color_temp` - color_temp
          *     * `restore` - restore
          * @enum {string}
          */
         TurnOnBehaviorEnum: "color_temp" | "restore";
+        UpToDate: {
+            sonoff: boolean;
+            custom: boolean;
+        };
         /** @description A 400 for a malformed body: {"detail": message}, or messages by field (one object per list item). */
         ValidationError: {
             detail?: string;
@@ -899,6 +1043,101 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    firmware_retrieve: {
+        parameters: {
+            query?: {
+                /** @description Resolve this tag ("latest" too) instead of the firmware_github_release setting. */
+                release?: string;
+                /** @description Pass 1 to also list the newest 20 releases. */
+                releases?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FirmwareStatus"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    firmware_stage_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StageRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StageResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     list_home_assistant_areas: {
         parameters: {
             query?: never;

@@ -24,6 +24,7 @@ from . import display_mode
 from .apps import send_mqttmanager_reload_command, start_mqtt_manager
 from .models import (
     Entity,
+    FirmwareUpload,
     Message,
     NSPanel,
     RelayGroup,
@@ -439,6 +440,13 @@ def save_new_firmware(request):
 
         uploaded_file = request.FILES["firmware"]
         fs.save(f"firmware/{request.POST['model']}/firmware.bin", uploaded_file)
+        if request.POST["model"] in ("sonoff", "custom"):
+            # Remembered so that a panel still running this file can be named after the file is replaced.
+            FirmwareUpload.objects.create(
+                md5=get_file_md5sum(f"firmware/{request.POST['model']}/firmware.bin"),
+                model=request.POST["model"],
+                source=FirmwareUpload.Source.UPLOAD,
+            )
         send_mqttmanager_reload_command()
     return redirect("/")
 
