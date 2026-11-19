@@ -150,12 +150,10 @@ ix::HttpResponsePtr NextionImageServer::_handle_album_art_request(uint32_t media
     // Held while converting so that panels requesting the same image at the same time share one conversion.
     std::lock_guard<std::mutex> lock_guard(NextionImageServer::_converted_images_mutex);
     ConvertedImageKey key = {.media_player_id = media_player_id, .width = size[0], .height = size[1], .format = format};
-    auto cached = NextionImageServer::_converted_images.find(key);
-    bool cache_hit = cached != NextionImageServer::_converted_images.end() && cached->second.source == album_art;
+    image = NextionImageServer::_find_cached_image(key, album_art);
+    bool cache_hit = image != nullptr;
     LatencyMetrics::image_request(cache_hit, format == ImageFormat::PNG ? "png" : "rgb565");
-    if (cache_hit) {
-      image = cached->second.image;
-    } else {
+    if (!cache_hit) {
       auto convert_start = LatencyMetrics::clock::now();
       std::optional<ConvertedImage> converted = NextionImageServer::_convert_image(*album_art, size[0], size[1], format);
       LatencyMetrics::image_converted(LatencyMetrics::seconds_since(convert_start));
@@ -163,11 +161,7 @@ ix::HttpResponsePtr NextionImageServer::_handle_album_art_request(uint32_t media
         return NextionImageServer::_text_response(502, "Bad Gateway", "Failed to convert album art.");
       }
       image = std::make_shared<const ConvertedImage>(std::move(*converted));
-      // Entries for album art that has since changed are only replaced when the same size is requested again, start over rather than grow without bound.
-      if (cached == NextionImageServer::_converted_images.end() && NextionImageServer::_converted_images.size() >= NextionImageServer::max_converted_images) {
-        NextionImageServer::_converted_images.clear();
-      }
-      NextionImageServer::_converted_images[key] = {.source = album_art, .image = image};
+      NextionImageServer::_store_cached_image(key, album_art, image);
     }
   }
 
@@ -176,6 +170,26 @@ ix::HttpResponsePtr NextionImageServer::_handle_album_art_request(uint32_t media
   headers["X-Image-Width"] = std::to_string(image->width);
   headers["X-Image-Height"] = std::to_string(image->height);
   return std::make_shared<ix::HttpResponse>(200, "OK", ix::HttpErrorCode::Ok, headers, image->data);
+}
+
+std::shared_ptr<const NextionImageServer::ConvertedImage> NextionImageServer::_find_cached_image(const ConvertedImageKey &key, const std::shared_ptr<const std::string> &source) {
+  auto cached = _converted_images.find(key);
+  if (cached == _converted_images.end() || cached->second.source != source) {
+    return nullptr;
+  }
+  cached->second.last_used = ++_use_counter;
+  return cached->second.image;
+}
+
+void NextionImageServer::_store_cached_image(const ConvertedImageKey &key, std::shared_ptr<const std::string> source, std::shared_ptr<const ConvertedImage> image) {
+  // Entries for album art that has since changed are only replaced when the same size is requested again, so evict
+  // the least recently used entry when full rather than grow without bound.
+  if (_converted_images.find(key) == _converted_images.end() && _converted_images.size() >= max_converted_images) {
+    auto least_recently_used = std::min_element(_converted_images.begin(), _converted_images.end(),
+                                                [](const auto &a, const auto &b) { return a.second.last_used < b.second.last_used; });
+    _converted_images.erase(least_recently_used);
+  }
+  _converted_images[key] = {.source = std::move(source), .image = std::move(image), .last_used = ++_use_counter};
 }
 
 std::optional<NextionImageServer::ConvertedImage> NextionImageServer::_convert_image(const std::string &image_data, uint16_t width, uint16_t height, ImageFormat format) {
@@ -199,6 +213,10 @@ std::optional<NextionImageServer::ConvertedImage> NextionImageServer::_convert_i
   int64_t crop_x = (source_width - crop_width) / 2;
   int64_t crop_y = (source_height - crop_height) / 2;
   const stbi_uc *crop_start = source.get() + (crop_y * source_width + crop_x) * 3;
+
+  if (crop_width < width || crop_height < height) {
+    SPDLOG_DEBUG("Image source {}x{} is smaller than the requested {}x{}, it will be stretched.", crop_width, crop_height, width, height);
+  }
 
   std::vector<stbi_uc> pixels(static_cast<size_t>(width) * height * 3);
   if (stbir_resize_uint8_srgb(crop_start, crop_width, crop_height, source_width * 3, pixels.data(), width, height, width * 3, STBIR_RGB) == nullptr) {
