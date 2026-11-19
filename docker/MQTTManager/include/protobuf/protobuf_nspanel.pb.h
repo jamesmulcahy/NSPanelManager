@@ -281,6 +281,7 @@ enum NSPanelConfig_NSPanelScreensaverCardType : int {
   NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_UNSPECIFIED = 0,
   NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR = 1,
   NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_ENERGY = 2,
+  NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_NOW_PLAYING = 3,
   NSPanelConfig_NSPanelScreensaverCardType_NSPanelConfig_NSPanelScreensaverCardType_INT_MIN_SENTINEL_DO_NOT_USE_ =
       std::numeric_limits<::int32_t>::min(),
   NSPanelConfig_NSPanelScreensaverCardType_NSPanelConfig_NSPanelScreensaverCardType_INT_MAX_SENTINEL_DO_NOT_USE_ =
@@ -290,8 +291,8 @@ enum NSPanelConfig_NSPanelScreensaverCardType : int {
 bool NSPanelConfig_NSPanelScreensaverCardType_IsValid(int value);
 extern const uint32_t NSPanelConfig_NSPanelScreensaverCardType_internal_data_[];
 constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MIN = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(0);
-constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MAX = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(2);
-constexpr int NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_ARRAYSIZE = 2 + 1;
+constexpr NSPanelConfig_NSPanelScreensaverCardType NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_MAX = static_cast<NSPanelConfig_NSPanelScreensaverCardType>(3);
+constexpr int NSPanelConfig_NSPanelScreensaverCardType_NSPanelScreensaverCardType_ARRAYSIZE = 3 + 1;
 const ::google::protobuf::EnumDescriptor*
 NSPanelConfig_NSPanelScreensaverCardType_descriptor();
 template <typename T>
@@ -304,7 +305,7 @@ const std::string& NSPanelConfig_NSPanelScreensaverCardType_Name(T value) {
 template <>
 inline const std::string& NSPanelConfig_NSPanelScreensaverCardType_Name(NSPanelConfig_NSPanelScreensaverCardType value) {
   return ::google::protobuf::internal::NameOfDenseEnum<NSPanelConfig_NSPanelScreensaverCardType_descriptor,
-                                                 0, 2>(
+                                                 0, 3>(
       static_cast<int>(value));
 }
 inline bool NSPanelConfig_NSPanelScreensaverCardType_Parse(absl::string_view name, NSPanelConfig_NSPanelScreensaverCardType* value) {
@@ -7405,6 +7406,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
   static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_UNSPECIFIED = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_UNSPECIFIED;
   static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_CALENDAR = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR;
   static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_ENERGY = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_ENERGY;
+  static constexpr NSPanelScreensaverCardType SCREENSAVER_CARD_NOW_PLAYING = NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_NOW_PLAYING;
   static inline bool NSPanelScreensaverCardType_IsValid(int value) {
     return NSPanelConfig_NSPanelScreensaverCardType_IsValid(value);
   }
@@ -7437,6 +7439,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
     kButton2EntityPageTopicFieldNumber = 48,
     kLvglThemeFieldNumber = 49,
     kLvglBackgroundFieldNumber = 50,
+    kScreensaverMediaPlayerTopicFieldNumber = 53,
     kDefaultRoomFieldNumber = 2,
     kDefaultPageFieldNumber = 3,
     kScreensaverActivationTimeoutFieldNumber = 4,
@@ -7684,6 +7687,22 @@ class NSPanelConfig final : public ::google::protobuf::Message
   inline PROTOBUF_ALWAYS_INLINE void _internal_set_lvgl_background(
       const std::string& value);
   std::string* _internal_mutable_lvgl_background();
+
+  public:
+  // string screensaver_media_player_topic = 53;
+  void clear_screensaver_media_player_topic() ;
+  const std::string& screensaver_media_player_topic() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_screensaver_media_player_topic(Arg_&& arg, Args_... args);
+  std::string* mutable_screensaver_media_player_topic();
+  PROTOBUF_NODISCARD std::string* release_screensaver_media_player_topic();
+  void set_allocated_screensaver_media_player_topic(std::string* value);
+
+  private:
+  const std::string& _internal_screensaver_media_player_topic() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_screensaver_media_player_topic(
+      const std::string& value);
+  std::string* _internal_mutable_screensaver_media_player_topic();
 
   public:
   // int32 default_room = 2;
@@ -8001,8 +8020,8 @@ class NSPanelConfig final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 44, 3,
-      185, 9>
+      5, 45, 3,
+      215, 9>
       _table_;
 
   friend class ::google::protobuf::MessageLite;
@@ -8035,6 +8054,7 @@ class NSPanelConfig final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr button2_entity_page_topic_;
     ::google::protobuf::internal::ArenaStringPtr lvgl_theme_;
     ::google::protobuf::internal::ArenaStringPtr lvgl_background_;
+    ::google::protobuf::internal::ArenaStringPtr screensaver_media_player_topic_;
     ::int32_t default_room_;
     int default_page_;
     ::int32_t screensaver_activation_timeout_;
@@ -9847,6 +9867,54 @@ inline ::int32_t NSPanelConfig::_internal_screensaver_base_card_seconds() const 
 inline void NSPanelConfig::_internal_set_screensaver_base_card_seconds(::int32_t value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.screensaver_base_card_seconds_ = value;
+}
+
+// string screensaver_media_player_topic = 53;
+inline void NSPanelConfig::clear_screensaver_media_player_topic() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.screensaver_media_player_topic_.ClearToEmpty();
+}
+inline const std::string& NSPanelConfig::screensaver_media_player_topic() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelConfig.screensaver_media_player_topic)
+  return _internal_screensaver_media_player_topic();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void NSPanelConfig::set_screensaver_media_player_topic(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.screensaver_media_player_topic_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:NSPanelConfig.screensaver_media_player_topic)
+}
+inline std::string* NSPanelConfig::mutable_screensaver_media_player_topic() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_screensaver_media_player_topic();
+  // @@protoc_insertion_point(field_mutable:NSPanelConfig.screensaver_media_player_topic)
+  return _s;
+}
+inline const std::string& NSPanelConfig::_internal_screensaver_media_player_topic() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.screensaver_media_player_topic_.Get();
+}
+inline void NSPanelConfig::_internal_set_screensaver_media_player_topic(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.screensaver_media_player_topic_.Set(value, GetArena());
+}
+inline std::string* NSPanelConfig::_internal_mutable_screensaver_media_player_topic() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.screensaver_media_player_topic_.Mutable( GetArena());
+}
+inline std::string* NSPanelConfig::release_screensaver_media_player_topic() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelConfig.screensaver_media_player_topic)
+  return _impl_.screensaver_media_player_topic_.Release();
+}
+inline void NSPanelConfig::set_allocated_screensaver_media_player_topic(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.screensaver_media_player_topic_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.screensaver_media_player_topic_.IsDefault()) {
+    _impl_.screensaver_media_player_topic_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:NSPanelConfig.screensaver_media_player_topic)
 }
 
 // -------------------------------------------------------------------
