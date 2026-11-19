@@ -353,7 +353,7 @@ bool HomeAssistantMediaPlayer::_download_album_art(const std::string &source, st
   SPDLOG_DEBUG("Downloading album art for media player {}::{}.", this->_id, this->_name);
   auto download_start = LatencyMetrics::clock::now();
   // WebHelper treats an empty header list as an error, so only pass the list when there is something in it.
-  bool success = WebHelper::perform_get_request(&url, &image_data, headers.empty() ? nullptr : &headers);
+  bool success = WebHelper::perform_get_request(&url, &image_data, headers.empty() ? nullptr : &headers, HomeAssistantMediaPlayer::album_art_download_timeout_seconds);
   double seconds = LatencyMetrics::seconds_since(download_start);
   LatencyMetrics::album_art_downloaded(external ? "external" : "home_assistant", success ? "success" : "failed", seconds);
   SPDLOG_DEBUG("Album art download for media player {}::{} took {} ms.", this->_id, this->_name, std::lround(seconds * 1000));

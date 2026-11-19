@@ -80,6 +80,10 @@ private:
   nlohmann::json _source_volume_settings;
   nlohmann::json _last_player_attributes = nlohmann::json::object();
 
+  // Home Assistant's media player proxy fetches the art from the player, which now and then takes several seconds.
+  // Panels wait 12 s for the manager's answer (LvglArt), so this must stay below that.
+  static constexpr long album_art_download_timeout_seconds = 10;
+
   // Media player feature flags from Home Assistant (MediaPlayerEntityFeature).
   static constexpr uint32_t feature_pause = 1;
   static constexpr uint32_t feature_volume_set = 4;

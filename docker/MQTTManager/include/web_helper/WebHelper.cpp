@@ -8,7 +8,7 @@ size_t WebHelper::write_callback(void *contents, size_t size, size_t nmemb, void
   return size * nmemb;
 }
 
-bool WebHelper::perform_get_request(std::string *url, std::string *response_data, std::list<const char *> *headers) {
+bool WebHelper::perform_get_request(std::string *url, std::string *response_data, std::list<const char *> *headers, long timeout_seconds) {
   try {
     SPDLOG_TRACE("Performing CURL HTTP GET request to '{}'.", url->c_str());
 
@@ -26,7 +26,7 @@ bool WebHelper::perform_get_request(std::string *url, std::string *response_data
 
     curl_easy_setopt(curl, CURLOPT_URL, url->c_str());
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5); // Wait max 5 seconds for an answer
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout_seconds);
     curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, curl_error_buffer);
     curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, 10000000); // Set max buffer
     // During cross-compilation the default path for CA certificates is not set and therefore any

@@ -12,7 +12,8 @@ public:
    * @param post_data: Pointer to a std::stding of POST-data to send in the request. Setting this to nullptr will make the function perform an HTTP GET request. Setting this to anything else will perform an HTTP POST request with the given data.
    * returns: true if success else false.
    */
-  static bool perform_get_request(std::string *url, std::string *response_data, std::list<const char *> *headers);
+  // timeout_seconds limits the whole request, from connecting to the last byte of the response.
+  static bool perform_get_request(std::string *url, std::string *response_data, std::list<const char *> *headers, long timeout_seconds = 5);
   static bool perform_post_request(std::string *url, std::string *response_data, std::list<const char *> *headers, std::string *post_data);
 
 private:
