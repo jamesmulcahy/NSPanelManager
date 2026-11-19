@@ -174,3 +174,21 @@ class TftUpload(models.Model):
     kind = models.CharField(max_length=16, choices=Kind.choices)
     target = models.CharField(max_length=64)  # The upload's tft_file_type, ex. "us4" or "terminal_us"
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+
+class FirmwareUpload(models.Model):
+    """A firmware image the manager has staged, kept so that a panel's md5 can be named after the file has been replaced."""
+
+    class Source(models.TextChoices):
+        UPLOAD = "upload"  # Uploaded by hand
+        GITHUB = "github"  # Staged from a GitHub release
+        BUNDLED = "bundled"  # Shipped in the manager image
+
+    md5 = models.CharField(max_length=32, db_index=True)
+    model = models.CharField(max_length=16)  # "sonoff" or "custom"
+    source = models.CharField(max_length=16, choices=Source.choices)
+    repo = models.CharField(max_length=200, blank=True, default="")
+    tag = models.CharField(max_length=100, blank=True, default="")
+    commit = models.CharField(max_length=40, blank=True, default="")
+    run_url = models.CharField(max_length=500, blank=True, default="")
+    staged_at = models.DateTimeField(auto_now_add=True)

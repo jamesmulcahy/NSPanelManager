@@ -14,18 +14,12 @@ from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
+from web.github_firmware import APP_SLOT_BYTES, CHIP_IDS, LITTLEFS_PARTITION_BYTES
+
 from .harness import NSPMTestCase
 
 FIRMWARE_DIR = Path(settings.BASE_DIR) / "firmware"
 PROVENANCE = FIRMWARE_DIR / "PROVENANCE.md"
-
-# firmware_espidf/partitions.csv in the firmware repo: the ota_0/ota_1 app slots and the
-# spiffs partition that holds LittleFS.
-APP_SLOT_BYTES = 0x1B0000
-LITTLEFS_PARTITION_BYTES = 0x8F000
-
-# esp_image_header_t.chip_id: the original Sonoff board is an ESP32, the custom PCB an ESP32-S3.
-CHIP_IDS = {"sonoff": 0x0000, "custom": 0x0009}
 
 
 def recorded_md5s():

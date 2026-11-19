@@ -1,6 +1,8 @@
 import hashlib
+import logging
 import os
 import signal
+import time
 
 import environ
 import psutil
@@ -22,8 +24,10 @@ from web.settings_helper import (
 
 from . import display_mode
 from .apps import send_mqttmanager_reload_command, start_mqtt_manager
+from .github_firmware import FirmwareError, StageLock
 from .models import (
     Entity,
+    FirmwareUpload,
     Message,
     NSPanel,
     RelayGroup,
@@ -34,6 +38,8 @@ from .models import (
     Settings,
     TftUpload,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_file_md5sum(filename):
@@ -434,11 +440,23 @@ def save_new_firmware(request):
             return redirect("/")
 
         fs = FileSystemStorage()
-        # Delete old firmware file:
-        fs.delete(f"firmware/{request.POST['model']}/firmware.bin")
-
         uploaded_file = request.FILES["firmware"]
-        fs.save(f"firmware/{request.POST['model']}/firmware.bin", uploaded_file)
+        try:
+            # Not while a stage from GitHub is replacing the same files.
+            with StageLock(time.monotonic() + 10):
+                # Delete old firmware file:
+                fs.delete(f"firmware/{request.POST['model']}/firmware.bin")
+                fs.save(f"firmware/{request.POST['model']}/firmware.bin", uploaded_file)
+                if request.POST["model"] in ("sonoff", "custom"):
+                    # Remembered so that a panel still running this file can be named after the file is replaced.
+                    FirmwareUpload.objects.create(
+                        md5=get_file_md5sum(f"firmware/{request.POST['model']}/firmware.bin"),
+                        model=request.POST["model"],
+                        source=FirmwareUpload.Source.UPLOAD,
+                    )
+        except FirmwareError:
+            logger.warning("Firmware upload dropped: a stage from GitHub held the firmware lock for 10 s")
+            return redirect("/")
         send_mqttmanager_reload_command()
     return redirect("/")
 
