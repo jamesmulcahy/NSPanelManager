@@ -14,6 +14,7 @@ import tempfile
 from unittest import mock
 
 import requests
+from django.db import DatabaseError
 from django.test import override_settings
 
 from web import github_firmware
@@ -74,11 +75,13 @@ class FakeGitHub:
     def __init__(self):
         self.routes = {}
         self.requested = []
+        self.headers_seen = []
 
     def __call__(self, url, **kwargs):
         assert kwargs.get("allow_redirects") is False, "redirects must be followed by hand"
         assert "Authorization" not in kwargs.get("headers", {}), "no token is ever sent"
         self.requested.append(url)
+        self.headers_seen.append(kwargs.get("headers", {}))
         if url not in self.routes:
             raise AssertionError(f"Unexpected request to {url}")
         route = self.routes[url]
@@ -132,13 +135,25 @@ class FirmwareGithubTestCase(NSPMTestCase):
         self.addCleanup(github_firmware.clear_cache)
 
         self.github = FakeGitHub()
-        self._patch("requests.get", side_effect=self.github)
+        self.patch_session_get(self.github)
 
         self.old = {"sonoff": make_image("sonoff", 0xA1), "custom": make_image("custom", 0xA2)}
         for model, data in self.old.items():
             os.makedirs(os.path.join(self.media, "firmware", model))
             with open(self.path(model), "wb") as f:
                 f.write(data)
+
+    def patch_session_get(self, fake):
+        """Route every request the module makes to fake(url, **kwargs). The module uses a Session with
+        trust_env off, so the patched method also checks that."""
+
+        def get(session, url, **kwargs):
+            assert session.trust_env is False, "requests must not read .netrc or proxy variables"
+            return fake(url, **kwargs)
+
+        patcher = mock.patch.object(requests.Session, "get", autospec=True, side_effect=get)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def path(self, model):
         return os.path.join(self.media, "firmware", model, "firmware.bin")
@@ -411,7 +426,16 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
         self.assertUntouched()
 
     def test_lookalike_hosts_are_rejected(self):
-        for host in ("objects.githubusercontent.com.evil.example", "evilgithub.com", "github.com@evil.example", "github.com:8443"):
+        hosts = (
+            "objects.githubusercontent.com.evil.example",
+            "evilgithub.com",
+            "github.com@evil.example",
+            "github.com:8443",
+            "github.com.",
+            "github.com\\@evil.example",
+            "evil.example\\@github.com",
+        )
+        for host in hosts:
             with self.subTest(host=host):
                 self.github.add_release()
                 url = f"https://{host}/x"
@@ -449,11 +473,113 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
         self.assertUntouched()
 
     def test_slow_download_times_out(self):
-        self.github.add_release()
-        clock = iter(range(0, 10_000, 30))
-        with mock.patch("web.github_firmware.time.monotonic", side_effect=lambda: next(clock)):
+        images = self.github.add_release()
+        clock = [1000.0]
+        image_url = f"https://release-assets.githubusercontent.com/{TAG}/firmware-original_sonoff.bin"
+
+        class Slow(FakeResponse):
+            def iter_content(self, chunk_size=1):
+                for start in range(0, len(self.body), 1000):
+                    clock[0] += 10  # Each chunk takes 10 s: the 15 s deadline passes during the download
+                    yield self.body[start : start + 1000]
+
+        self.github.routes[image_url] = lambda: Slow(200, images["sonoff"])
+        with mock.patch("web.github_firmware.time.monotonic", side_effect=lambda: clock[0]):
             response = self.stage()
-        self.assertEqual(response.status_code, 502)
+        self.assertEqual((response.status_code, self.error_of(response)["code"]), (502, "download_failed"))
+        self.assertIn("timed out", self.error_of(response)["message"])
+        self.assertIn(image_url, self.github.requested)
+        self.assertUntouched()
+
+    def test_one_deadline_covers_the_api_and_build_json(self):
+        self.github.add_release()
+        clock = [1000.0]
+        latest = f"https://api.github.com/repos/{REPO}/releases/latest"
+        real = self.github.routes[latest]
+
+        def slow_api():
+            clock[0] += 14  # The API call used almost all of the 15 s
+            return real
+
+        class Slow(FakeResponse):
+            def iter_content(self, chunk_size=1):
+                clock[0] += 5
+                yield self.body
+
+        build_url = f"https://release-assets.githubusercontent.com/{TAG}/build.json"
+        body = self.github.routes[build_url]().body
+        self.github.routes[latest] = slow_api
+        self.github.routes[build_url] = lambda: Slow(200, body)
+        with mock.patch("web.github_firmware.time.monotonic", side_effect=lambda: clock[0]):
+            response = self.stage()
+        self.assertEqual((response.status_code, self.error_of(response)["code"]), (502, "unreachable"))
+        self.assertFalse([u for u in self.github.requested if u.endswith(".bin")])
+        self.assertUntouched()
+
+    def test_stale_temp_files_are_swept_before_staging(self):
+        self.github.add_release()
+        for model in self.old:
+            for name in (".firmware-abc.tmp", ".firmware-def.bak"):
+                with open(os.path.join(os.path.dirname(self.path(model)), name), "wb") as f:
+                    f.write(b"x")
+        self.assertEqual(self.stage().status_code, 200)
+        for model in self.old:
+            self.assertEqual(os.listdir(os.path.dirname(self.path(model))), ["firmware.bin"])
+
+    def test_the_cross_process_lock_is_taken_and_released(self):
+        import fcntl
+
+        images = self.github.add_release()
+        lock_path = os.path.join(self.media, "firmware", ".stage.lock")
+        held = []
+        image_url = f"https://release-assets.githubusercontent.com/{TAG}/firmware-custom_pcb.bin"
+
+        def while_downloading():
+            # Another process (here: another open file) can not get the lock while a stage is running.
+            fd = os.open(lock_path, os.O_RDWR)
+            try:
+                with self.assertRaises(BlockingIOError):
+                    fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                held.append(True)
+            finally:
+                os.close(fd)
+            return FakeResponse(200, images["custom"])
+
+        self.github.routes[image_url] = while_downloading
+        with mock.patch("web.github_firmware.fcntl.flock", wraps=fcntl.flock) as flock:
+            self.assertEqual(self.stage().status_code, 200)
+        self.assertEqual(held, [True])
+        operations = [c.args[1] for c in flock.call_args_list]
+        self.assertEqual((operations[0], operations[-1]), (fcntl.LOCK_EX, fcntl.LOCK_UN))
+        # And it is free again afterwards.
+        fd = os.open(lock_path, os.O_RDWR)
+        self.addCleanup(os.close, fd)
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    def test_a_reload_that_fails_does_not_undo_the_staging(self):
+        import psutil
+
+        for error in (ProcessLookupError("no such process"), psutil.NoSuchProcess(1), RuntimeError("boom")):
+            with self.subTest(error=type(error).__name__):
+                github_firmware.clear_cache()
+                for model, data in self.old.items():
+                    with open(self.path(model), "wb") as f:
+                        f.write(data)
+                self.github.add_release()
+                with mock.patch("web.github_firmware.send_mqttmanager_reload_command", side_effect=error) as reload:
+                    response = self.stage()
+                self.assertEqual(response.status_code, 200, response.content)
+                self.assertTrue(response.json()["boards"]["sonoff"]["changed"])
+                self.assertNotEqual(self.staged("sonoff"), self.old["sonoff"])
+                reload.assert_called_once()
+
+    def test_a_database_failure_puts_the_files_back(self):
+        self.github.add_release()
+        fake_model = mock.Mock(Source=FirmwareUpload.Source)
+        fake_model.objects.create.side_effect = DatabaseError("db is gone")
+        with mock.patch("web.github_firmware.FirmwareUpload", fake_model):
+            response = self.stage()
+        self.assertEqual(response.status_code, 500)
         self.assertUntouched()
 
     def test_failed_second_replace_puts_the_first_file_back(self):
@@ -473,21 +599,56 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
         self.assertUntouched()
         del images
 
+    def test_a_rolled_back_file_keeps_its_mode(self):
+        self.github.add_release()
+        os.chmod(self.path("sonoff"), 0o640)
+        real_replace = os.replace
+        calls = []
+
+        def flaky(src, dst):
+            calls.append(dst)
+            if len(calls) == 2:
+                raise OSError("disk full")
+            return real_replace(src, dst)
+
+        with mock.patch("web.github_firmware.os.replace", side_effect=flaky):
+            self.assertEqual(self.stage().status_code, 502)
+        self.assertEqual(os.stat(self.path("sonoff")).st_mode & 0o777, 0o640)
+        self.assertEqual(self.staged("sonoff"), self.old["sonoff"])
+
+    def test_the_module_ignores_netrc_and_proxy_variables(self):
+        self.assertFalse(github_firmware._session().trust_env)
+
     def test_no_token_or_identifying_headers(self):
         self.github.add_release()
-        seen = []
-        real = self.github.__call__
-
-        def spy(url, **kwargs):
-            seen.append(kwargs["headers"])
-            return real(url, **kwargs)
-
-        self._patch("requests.get", side_effect=spy)
         self.stage()
-        self.assertTrue(seen)
-        for headers in seen:
+        self.assertTrue(self.github.headers_seen)
+        for headers in self.github.headers_seen:
             self.assertEqual(set(headers), {"User-Agent", "Accept"})
             self.assertEqual(headers["User-Agent"], "nspanel-manager")
+
+
+class JsonBodyTests(FirmwareGithubTestCase):
+    def test_a_transport_error_reading_the_release_json_is_unreachable(self):
+        self.github.add_release()
+        url = f"https://api.github.com/repos/{REPO}/releases/latest"
+        self.github.routes[url] = lambda: FakeResponse(200, b"x" * 5000, fail_after=1000)
+        response = self.stage()
+        self.assertEqual((response.status_code, self.error_of(response)["code"]), (502, "unreachable"))
+        self.assertUntouched()
+
+    def test_a_transport_error_reading_build_json_is_unreachable(self):
+        self.github.add_release()
+        url = f"https://release-assets.githubusercontent.com/{TAG}/build.json"
+        self.github.routes[url] = lambda: FakeResponse(200, b"x" * 5000, fail_after=1000)
+        self.assertEqual(self.error_of(self.stage())["code"], "unreachable")
+
+    def test_an_oversized_or_unparseable_body_is_bad_release(self):
+        url = f"https://api.github.com/repos/{REPO}/releases/latest"
+        self.github.routes[url] = lambda: FakeResponse(200, b" " * (3 * 1024 * 1024))
+        self.assertEqual((self.stage().status_code), 400)
+        self.github.routes[url] = lambda: FakeResponse(200, b"<html>")
+        self.assertEqual(self.error_of(self.stage())["code"], "bad_release")
 
 
 class StatusTests(FirmwareGithubTestCase):

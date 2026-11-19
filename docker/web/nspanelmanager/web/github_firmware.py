@@ -10,6 +10,8 @@ downloaded and have passed every check in verify_image(). Nothing here uses a to
 requests to GitHub, over HTTPS, and a redirect is followed only to a known GitHub host.
 """
 
+import fcntl
+import glob
 import hashlib
 import json
 import logging
@@ -49,8 +51,12 @@ API_HOST = "api.github.com"
 DOWNLOAD_HOSTS = frozenset({"github.com", "objects.githubusercontent.com", "release-assets.githubusercontent.com"})
 
 API_CACHE_SECONDS = 300
-DOWNLOAD_TIMEOUT_SECONDS = 60
-REQUEST_TIMEOUT = (10, 15)  # Connect, read. The total is bounded separately by DOWNLOAD_TIMEOUT_SECONDS.
+# uwsgi kills a request after 20 s (--harakiri in run_uwsgi.sh), and a kill skips every cleanup below. So a
+# whole request, API calls and both downloads, shares one deadline well inside that. Harakiri stays the final
+# backstop: a blocked syscall cannot be interrupted by the deadline checks between chunks.
+OVERALL_DEADLINE_SECONDS = 15
+REQUEST_TIMEOUT = (10, 15)  # Connect, read: each is further limited to the time left on the deadline.
+CHUNK_BYTES = 8192
 MAX_REDIRECTS = 5
 MAX_JSON_BYTES = 2 * 1024 * 1024
 MAX_BUILD_JSON_BYTES = 64 * 1024
@@ -62,8 +68,8 @@ _HEX64 = re.compile(r"[0-9a-f]{64}")
 _COMMIT = re.compile(r"[0-9a-f]{40}")
 _BUILD_TAG = re.compile(r"build-([0-9a-f]{8})")
 
-# One stage at a time within this process.
-_stage_lock = threading.Lock()
+LOCK_NAME = ".stage.lock"
+STALE_PATTERN = ".firmware-*"
 
 _cache = {}
 _cache_lock = threading.Lock()
@@ -104,6 +110,13 @@ class ResolvedRelease:
 # ------------------------------------------------------------------ HTTP
 
 
+def _session():
+    """A session that ignores the environment: no .netrc credentials and no HTTP(S)_PROXY."""
+    session = requests.Session()
+    session.trust_env = False
+    return session
+
+
 def _check_url(url, allowed_hosts):
     parts = urlsplit(url)
     host = (parts.hostname or "").lower()
@@ -122,25 +135,24 @@ def _rate_limited(response):
     return headers.get("x-ratelimit-remaining") == "0" or "retry-after" in headers or response.status_code == 429
 
 
-def _open(url, allowed_hosts, failure_code, accept, deadline=None):
+def _open(url, allowed_hosts, failure_code, accept, deadline):
     """GET url with a streamed body, following redirects by hand so that every hop's host is checked.
 
     The returned response is open: the caller reads it and closes it. Raises FirmwareError otherwise.
     """
     headers = {"User-Agent": USER_AGENT, "Accept": accept}
+    session = _session()
     for _hop in range(MAX_REDIRECTS + 1):
         try:
             _check_url(url, allowed_hosts)
         except ValueError as error:
             raise FirmwareError(failure_code, str(error)) from None
-        timeout = REQUEST_TIMEOUT
-        if deadline is not None:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise FirmwareError(failure_code, "Timed out")
-            timeout = (min(REQUEST_TIMEOUT[0], remaining), min(REQUEST_TIMEOUT[1], remaining))
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise FirmwareError(failure_code, "Timed out")
+        timeout = (min(REQUEST_TIMEOUT[0], remaining), min(REQUEST_TIMEOUT[1], remaining))
         try:
-            response = requests.get(url, headers=headers, stream=True, allow_redirects=False, timeout=timeout)
+            response = session.get(url, headers=headers, stream=True, allow_redirects=False, timeout=timeout)
         except requests.RequestException as error:
             raise FirmwareError(failure_code, f"Could not reach GitHub: {type(error).__name__}") from None
 
@@ -164,19 +176,20 @@ def _open(url, allowed_hosts, failure_code, accept, deadline=None):
     raise FirmwareError(failure_code, "Too many redirects")
 
 
-def _read_limited(response, limit, failure_code, deadline):
-    """The whole body, which must not exceed limit bytes."""
+def _read_limited(response, limit, too_big_code, transport_code, deadline):
+    """The whole body, which must not exceed limit bytes. A body that is too big is too_big_code; a transport
+    error or running out of time is transport_code."""
     chunks, total = [], 0
     try:
-        for chunk in response.iter_content(chunk_size=65536):
+        for chunk in response.iter_content(chunk_size=CHUNK_BYTES):
             total += len(chunk)
             if total > limit:
-                raise FirmwareError(failure_code, "The response from GitHub is larger than expected")
+                raise FirmwareError(too_big_code, "The response from GitHub is larger than expected")
             if time.monotonic() > deadline:
-                raise FirmwareError(failure_code, "Timed out")
+                raise FirmwareError(transport_code, "Timed out")
             chunks.append(chunk)
     except requests.RequestException as error:
-        raise FirmwareError(failure_code, f"Could not read from GitHub: {type(error).__name__}") from None
+        raise FirmwareError(transport_code, f"Could not read from GitHub: {type(error).__name__}") from None
     finally:
         response.close()
     return b"".join(chunks)
@@ -202,19 +215,22 @@ def clear_cache():
         _cache.clear()
 
 
-def _api_json(path):
-    deadline = time.monotonic() + DOWNLOAD_TIMEOUT_SECONDS
+def _api_json(path, deadline):
     response = _open(f"https://{API_HOST}{path}", {API_HOST}, "unreachable", "application/vnd.github+json", deadline)
-    body = _read_limited(response, MAX_JSON_BYTES, "bad_release", deadline)
+    body = _read_limited(response, MAX_JSON_BYTES, "bad_release", "unreachable", deadline)
     try:
         return json.loads(body)
     except ValueError:
         raise FirmwareError("bad_release", "GitHub's answer was not valid JSON") from None
 
 
-def _download_small(url):
-    deadline = time.monotonic() + DOWNLOAD_TIMEOUT_SECONDS
-    return _read_limited(_open(url, DOWNLOAD_HOSTS, "unreachable", "application/octet-stream", deadline), MAX_BUILD_JSON_BYTES, "bad_release", deadline)
+def _download_small(url, deadline):
+    response = _open(url, DOWNLOAD_HOSTS, "unreachable", "application/octet-stream", deadline)
+    return _read_limited(response, MAX_BUILD_JSON_BYTES, "bad_release", "unreachable", deadline)
+
+
+def new_deadline():
+    return time.monotonic() + OVERALL_DEADLINE_SECONDS
 
 
 # ------------------------------------------------------------------ Releases
@@ -226,13 +242,13 @@ def _release_path(repo, release):
     return f"/repos/{repo}/releases/tags/{release}"
 
 
-def resolve_release(repo, release, fresh=False):
+def resolve_release(repo, release, fresh=False, deadline=None):
     """The release (a tag, or "latest") with its build.json read and checked. Cached for 5 minutes unless fresh."""
-    return _cached(("release", repo, release), lambda: _resolve_release(repo, release), fresh)
+    return _cached(("release", repo, release), lambda: _resolve_release(repo, release, deadline or new_deadline()), fresh)
 
 
-def _resolve_release(repo, release):
-    data = _api_json(_release_path(repo, release))
+def _resolve_release(repo, release, deadline):
+    data = _api_json(_release_path(repo, release), deadline)
     if not isinstance(data, dict) or not isinstance(data.get("tag_name"), str) or data.get("draft"):
         raise FirmwareError("bad_release", "GitHub's release record is not usable")
     assets = {}
@@ -244,7 +260,7 @@ def _resolve_release(repo, release):
     if build_asset is None:
         raise FirmwareError("not_found", "The release has no build.json")
     try:
-        build = json.loads(_download_small(build_asset["browser_download_url"]))
+        build = json.loads(_download_small(build_asset["browser_download_url"], deadline))
     except ValueError:
         raise FirmwareError("bad_release", "build.json is not valid JSON") from None
     return _parse_build(repo, data, build, assets)
@@ -297,13 +313,13 @@ def _parse_build(repo, release_data, build, assets):
     )
 
 
-def list_releases(repo, fresh=False):
+def list_releases(repo, fresh=False, deadline=None):
     """The newest 20 releases (drafts left out), newest first, as [{"tag", "commit", "built_at"}]."""
-    return _cached(("releases", repo), lambda: _list_releases(repo), fresh)
+    return _cached(("releases", repo), lambda: _list_releases(repo, deadline or new_deadline()), fresh)
 
 
-def _list_releases(repo):
-    data = _api_json(f"/repos/{repo}/releases?per_page={RELEASE_LIST_SIZE}")
+def _list_releases(repo, deadline):
+    data = _api_json(f"/repos/{repo}/releases?per_page={RELEASE_LIST_SIZE}", deadline)
     if not isinstance(data, list):
         raise FirmwareError("bad_release", "GitHub's release list is not usable")
     releases = []
@@ -356,17 +372,16 @@ def verify_image(model, path, info):
         fail("md5 does not match build.json")
 
 
-def _download_image(info, target_dir):
+def _download_image(info, target_dir, deadline):
     """Download an image into a new temp file in target_dir, which is returned. The download is capped at the
-    app slot size plus one byte and at 60 s in all."""
-    deadline = time.monotonic() + DOWNLOAD_TIMEOUT_SECONDS
+    app slot size plus one byte, and at the request's deadline."""
     response = _open(info.url, DOWNLOAD_HOSTS, "download_failed", "application/octet-stream", deadline)
     fd, temp_path = tempfile.mkstemp(dir=target_dir, prefix=".firmware-", suffix=".tmp")
     try:
         with os.fdopen(fd, "wb") as out:
             total = 0
             try:
-                for chunk in response.iter_content(chunk_size=65536):
+                for chunk in response.iter_content(chunk_size=CHUNK_BYTES):
                     total += len(chunk)
                     if total > APP_SLOT_BYTES + 1:
                         break
@@ -414,21 +429,54 @@ def file_md5(path):
         return None
 
 
-def stage_release(release_data):
-    """Stage both boards of a ResolvedRelease, all or nothing.
+def _sweep_stale(directory):
+    """Delete temp and backup files an earlier stage left behind (it was killed before it could clean up)."""
+    for path in glob.glob(os.path.join(glob.escape(directory), STALE_PATTERN)):
+        _remove(path)
+
+
+class _StageLock:
+    """An exclusive lock across every worker process, on firmware/.stage.lock. It blocks until it gets the lock,
+    and the kernel drops it if the holder dies, so a killed request cannot leave it held."""
+
+    def __enter__(self):
+        path = FileSystemStorage().path(f"firmware/{LOCK_NAME}")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        self._fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o644)
+        try:
+            fcntl.flock(self._fd, fcntl.LOCK_EX)
+        except BaseException:
+            os.close(self._fd)
+            raise
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            fcntl.flock(self._fd, fcntl.LOCK_UN)
+        finally:
+            os.close(self._fd)
+
+
+def stage_release(repo, release):
+    """Resolve release (fresh, never from the cache) and stage both of its boards, all or nothing.
 
     Both images are downloaded and verified before the staged files are touched. Then every changed file is
-    replaced (put back if one replace fails), and only after that does the caller tell MQTTManager to reload.
-    Returns {"tag", "commit", "boards": {model: {"before_md5", "after_md5", "changed"}}, "changed": bool}.
+    replaced (put back if anything fails, including the database write), and only after that is MQTTManager
+    told to reload. One deadline covers the lot. Returns
+    {"tag", "commit", "boards": {model: {"before_md5", "after_md5", "changed"}}, "changed": bool}.
     """
-    with _stage_lock:
+    with _StageLock():
+        deadline = new_deadline()
         targets = {model: firmware_path(model) for model in BOARDS}
+        for target in targets.values():
+            _sweep_stale(os.path.dirname(target))
+        release_data = resolve_release(repo, release, fresh=True, deadline=deadline)
         temps, backups = {}, []
         try:
             for model, info in release_data.images.items():
                 directory = os.path.dirname(targets[model])
                 os.makedirs(directory, exist_ok=True)
-                temps[model] = _download_image(info, directory)
+                temps[model] = _download_image(info, directory, deadline)
                 verify_image(model, temps[model], info)
 
             before = {model: file_md5(targets[model]) for model in BOARDS}
@@ -436,6 +484,15 @@ def stage_release(release_data):
             replaced = []
             try:
                 with transaction.atomic():
+                    for model in changed:
+                        backup = None
+                        if os.path.exists(targets[model]):
+                            backup_fd, backup = tempfile.mkstemp(dir=os.path.dirname(targets[model]), prefix=".firmware-", suffix=".bak")
+                            os.close(backup_fd)
+                            backups.append(backup)
+                            shutil.copy2(targets[model], backup)  # Keeps the mode, for a rollback
+                        os.replace(temps[model], targets[model])
+                        replaced.append((model, backup))
                     for model in changed:
                         FirmwareUpload.objects.create(
                             md5=release_data.images[model].md5,
@@ -446,15 +503,6 @@ def stage_release(release_data):
                             commit=release_data.commit,
                             run_url=release_data.run_url,
                         )
-                    for model in changed:
-                        backup = None
-                        if os.path.exists(targets[model]):
-                            backup_fd, backup = tempfile.mkstemp(dir=os.path.dirname(targets[model]), prefix=".firmware-", suffix=".bak")
-                            os.close(backup_fd)
-                            backups.append(backup)
-                            shutil.copyfile(targets[model], backup)
-                        os.replace(temps[model], targets[model])
-                        replaced.append((model, backup))
             except BaseException:
                 for model, backup in reversed(replaced):
                     try:
@@ -465,15 +513,6 @@ def stage_release(release_data):
                     except OSError:
                         logger.exception("Could not put back the previous %s firmware", model)
                 raise
-            if changed:
-                send_mqttmanager_reload_command()
-                logger.info("Staged firmware %s (%s) for %s", release_data.tag, release_data.commit, ", ".join(changed))
-            return {
-                "tag": release_data.tag,
-                "commit": release_data.commit,
-                "boards": {model: {"before_md5": before[model], "after_md5": release_data.images[model].md5, "changed": model in changed} for model in BOARDS},
-                "changed": bool(changed),
-            }
         except FirmwareError:
             raise
         except OSError as error:
@@ -481,3 +520,18 @@ def stage_release(release_data):
         finally:
             for path in [*temps.values(), *backups]:
                 _remove(path)
+
+    # The files are staged for good. A reload that fails is logged, not an error: the manager picks the change up
+    # on its next reload, and the caller must not think nothing was staged.
+    if changed:
+        logger.info("Staged firmware %s (%s) for %s", release_data.tag, release_data.commit, ", ".join(changed))
+        try:
+            send_mqttmanager_reload_command()
+        except Exception:
+            logger.exception("Staged the firmware, but could not tell MQTTManager to reload")
+    return {
+        "tag": release_data.tag,
+        "commit": release_data.commit,
+        "boards": {model: {"before_md5": before[model], "after_md5": release_data.images[model].md5, "changed": model in changed} for model in BOARDS},
+        "changed": bool(changed),
+    }

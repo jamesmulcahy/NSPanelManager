@@ -165,8 +165,9 @@ class FirmwareView(APIView):
             return _error_response(_bad_release())
 
         body = {"repo": repo, "release": release, "resolved": None, "staged": _staged(), "up_to_date": None, "error": None}
+        deadline = github_firmware.new_deadline()  # Resolving and listing share it: uwsgi kills a request after 20 s
         try:
-            resolved = github_firmware.resolve_release(repo, release)
+            resolved = github_firmware.resolve_release(repo, release, deadline=deadline)
         except github_firmware.FirmwareError as error:
             body["error"] = _error(error)
         else:
@@ -182,7 +183,7 @@ class FirmwareView(APIView):
 
         if request.query_params.get("releases") == "1":
             try:
-                body["releases"] = github_firmware.list_releases(repo)
+                body["releases"] = github_firmware.list_releases(repo, deadline=deadline)
             except github_firmware.FirmwareError as error:
                 body["releases"] = []
                 body["error"] = body["error"] or _error(error)
@@ -203,9 +204,7 @@ class FirmwareStageView(APIView):
         if not isinstance(release, str) or not _GITHUB_TAG.fullmatch(release):
             return _error_response(_bad_release())
         try:
-            # Never from the cache: "latest" may have moved in the last few minutes.
-            resolved = github_firmware.resolve_release(repo, release, fresh=True)
-            result = github_firmware.stage_release(resolved)
+            result = github_firmware.stage_release(repo, release)
         except github_firmware.FirmwareError as error:
             logger.warning("Staging firmware from %s %s failed: %s", repo, release, error.message)
             return _error_response(error)
