@@ -594,6 +594,15 @@ describe("screensaver cards", () => {
     expect(patches()[0].body).toEqual({ screensaver_cards: "calendar:10" });
   });
 
+  it("turns the now playing card on with 10 seconds, after the cards already there", async () => {
+    const user = await renderPage({ screensaver_cards: "calendar:15" });
+
+    await user.click(screen.getByRole("checkbox", { name: "Show now playing card" }));
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ screensaver_cards: "calendar:15,now_playing:10" });
+  });
+
   it("changes the time, and keeps card types it has no row for", async () => {
     const user = await renderPage({ screensaver_cards: "news:7,calendar:15" });
 

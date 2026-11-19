@@ -3,6 +3,7 @@ from logging import NullHandler
 
 import django.utils
 from django.db import models
+from django.db.models import F
 from requests.models import default_hooks
 
 
@@ -47,6 +48,23 @@ class Room(models.Model):
 
     def __str__(self) -> str:
         return "room_obj: " + str(self.id) + "::" + self.friendly_name
+
+    def first_media_player(self):
+        """The room's first media player: entity page order, then slot order; None when it has none.
+
+        Mirrors Room::first_media_player() in the MQTTManager, which the open-media-player buttons and the screensaver's
+        now-playing card follow. Scenes pages are not entity pages there, and only slots within the page size count.
+        """
+        return (
+            Entity.objects.filter(
+                room=self,
+                entity_type=Entity.EntityType.MEDIA_PLAYER,
+                entities_page__is_scenes_page=False,
+                room_view_position__lt=F("entities_page__page_type"),
+            )
+            .order_by("entities_page__display_order", "entities_page_id", "room_view_position")
+            .first()
+        )
 
 
 class IgnoredHomeAssistantArea(models.Model):

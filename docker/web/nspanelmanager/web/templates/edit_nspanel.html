@@ -69,13 +69,21 @@
     $("#lvgl_screenshot").attr("src", "http://" + lvgl_panel_ip + "/screenshot?format=png&t=" + Date.now());
   }
 
+  // The "Follows" line is shown while the cards in effect (this panel's own, or the global ones) include now_playing.
+  function update_now_playing_follows() {
+    var cards = $("#screensaver_cards_mode").val() == "custom" ? $("#screensaver_cards").val() : "{{ screensaver_cards_global|default:""|escapejs }}";
+    $("#screensaver_now_playing_follows").toggleClass("hidden", cards.indexOf("now_playing") < 0);
+  }
+
   const display_mode_names = {nextion: "Nextion pages", lvgl: "LVGL", terminal_idle: "terminal TFT with LVGL off"};
   $(document).ready(function () {
     $("#screensaver_cards_mode").on("change", function () {
       var custom = $(this).val() == "custom";
       $("#screensaver_cards_custom").toggleClass("hidden", !custom);
       $("#screensaver_cards_global_hint").toggleClass("hidden", custom);
+      update_now_playing_follows();
     });
+    $("#screensaver_cards").on("input", update_now_playing_follows);
     $("#display_mode").on("change", update_display_fields);
     $("#panel_type").on("change", update_display_fields);
     $("#lvgl_screenshot").on("load", function () {
@@ -944,10 +952,13 @@
             <option value="custom" {% if settings.screensaver_cards_mode == "custom" %}selected{% endif %}>Custom for this panel</option>
           </select>
           <div id="screensaver_cards_custom" class="mt-2 {% if settings.screensaver_cards_mode == 'global' %}hidden{% endif %}">
-            <input class="input w-full" type="text" id="screensaver_cards" name="screensaver_cards" value="{{ settings.screensaver_cards }}" placeholder="calendar:10">
-            <p class="mt-1 text-sm opacity-60">Cards shown after the weather, as type:seconds, comma-separated. Leave empty for no cards on this panel.</p>
+            <input class="input w-full" type="text" id="screensaver_cards" name="screensaver_cards" value="{{ settings.screensaver_cards }}" placeholder="calendar:10,now_playing:10">
+            <p class="mt-1 text-sm opacity-60">Cards shown after the weather, as type:seconds, comma-separated: calendar, energy and now_playing. Leave empty for no cards on this panel.</p>
           </div>
           <p id="screensaver_cards_global_hint" class="mt-1 text-sm opacity-60 {% if settings.screensaver_cards_mode != 'global' %}hidden{% endif %}">Global: {{ screensaver_cards_global|default:"no cards" }}</p>
+          <p id="screensaver_now_playing_follows" class="mt-1 text-sm opacity-60 {% if not now_playing_in_use %}hidden{% endif %}">
+            Now playing card: {% if now_playing_player %}Follows: {{ now_playing_player.friendly_name }}{% else %}This room has no media player{% endif %}
+          </p>
           <p id="screensaver_cards_nextion_note" class="mt-1 text-sm text-warning hidden">Screensaver cards show on LVGL panels only.</p>
         </div>
 
