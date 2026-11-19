@@ -30,7 +30,9 @@ concurrency:
 jobs:
   build:
     name: Build ${{ matrix.arch }}
-    runs-on: ubuntu-latest
+    # aarch64 runs on a native arm64 runner: on x86 the runtime stage's apt-get and pip run under
+    # QEMU, which made it take about three times as long as amd64.
+    runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     # Building the Conan dependencies from source takes about an hour when the cache is cold.
     timeout-minutes: 150
     strategy:
@@ -54,8 +56,9 @@ jobs:
           esac
 
       # MQTTManager is cross-compiled on the runner's platform, but the final stage runs the
-      # target platform's apt-get and pip, which needs emulation.
+      # target platform's apt-get and pip, which needs emulation unless the runner is native.
       - uses: docker/setup-qemu-action@v3
+        if: matrix.arch != 'aarch64'
 
       - uses: docker/setup-buildx-action@v3
         id: buildx
@@ -65,8 +68,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: conan-cache
-          key: docker-conan-${{ matrix.arch }}-${{ hashFiles('docker/MQTTManager/conanfile.py', 'docker/build_scripts/install_build_tools.sh') }}
-          restore-keys: docker-conan-${{ matrix.arch }}-
+          # runner.arch is in the key because the build-context packages differ between a native and a cross build.
+          key: docker-conan-${{ matrix.arch }}-${{ runner.arch }}-${{ hashFiles('docker/MQTTManager/conanfile.py', 'docker/build_scripts/install_build_tools.sh') }}
+          restore-keys: |
+            docker-conan-${{ matrix.arch }}-${{ runner.arch }}-
+            docker-conan-${{ matrix.arch }}-
 
       # Moves the cached directory into the Dockerfile's Conan cache mount before the build,
       # and back out afterwards so actions/cache can save it.

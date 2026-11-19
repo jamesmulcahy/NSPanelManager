@@ -80,7 +80,12 @@ elif [ "$TARGETPLATFORM" == "linux/arm64" ]; then
   deb_add_arch="arm64"
   conan_target_arch="armv8"
   strip_bin="/usr/bin/aarch64-linux-gnu-strip"
-  apt -y install binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+  # Debian has no gcc-aarch64-linux-gnu on arm64; the native gcc-12 already provides aarch64-linux-gnu-gcc-12.
+  if [ "$(dpkg --print-architecture)" == "arm64" ]; then
+    apt -y install binutils-aarch64-linux-gnu
+  else
+    apt -y install binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+  fi
   echo "" >>/root/.conan2/profiles/host
   echo "[buildenv]" >>/root/.conan2/profiles/host
   echo "CC=aarch64-linux-gnu-gcc-12" >>/root/.conan2/profiles/host
