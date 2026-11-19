@@ -32,7 +32,7 @@ public:
    */
   static void start();
 
-private:
+public:
   enum class ImageFormat {
     RGB565,
     PNG,
@@ -59,7 +59,30 @@ private:
     // The album art the image was converted from, the entry is outdated once the media player returns different album art.
     std::shared_ptr<const std::string> source;
     std::shared_ptr<const ConvertedImage> image;
+    // Value of _use_counter when the entry was last stored or hit, the entry with the lowest value is evicted first.
+    uint64_t last_used = 0;
   };
+
+  /**
+   * Look up a converted image in the cache. The entry only counts as a hit while it was converted from the given
+   * source, and a hit marks the entry as the most recently used. The caller must hold _converted_images_mutex.
+   * @return The converted image or nullptr on a cache miss.
+   */
+  static std::shared_ptr<const ConvertedImage> _find_cached_image(const ConvertedImageKey &key, const std::shared_ptr<const std::string> &source);
+
+  /**
+   * Store a converted image in the cache as the most recently used entry. When the cache is full and the key is new,
+   * the least recently used entry is evicted to make room. The caller must hold _converted_images_mutex.
+   */
+  static void _store_cached_image(const ConvertedImageKey &key, std::shared_ptr<const std::string> source, std::shared_ptr<const ConvertedImage> image);
+
+  // Converted images, so that panels requesting the same album art do not each decode and scale it again.
+  static inline std::mutex _converted_images_mutex;
+  static inline std::map<ConvertedImageKey, CachedConvertedImage> _converted_images;
+  static inline uint64_t _use_counter = 0;
+  static constexpr size_t max_converted_images = 32;
+
+private:
 
   /**
    * Handle an HTTP request to the server, responding with an error instead of letting an exception escape.
@@ -93,11 +116,6 @@ private:
   static ix::HttpResponsePtr _text_response(int status_code, const std::string &description, const std::string &body);
 
   static inline ix::HttpServer *_server;
-
-  // Converted images, so that panels requesting the same album art do not each decode and scale it again.
-  static inline std::mutex _converted_images_mutex;
-  static inline std::map<ConvertedImageKey, CachedConvertedImage> _converted_images;
-  static constexpr size_t max_converted_images = 32;
 
   // Largest image size that can be requested. The NSPanel display is 480x320, but format=png can also serve
   // larger displays such as a phone showing the web interface.

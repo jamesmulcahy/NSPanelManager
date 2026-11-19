@@ -150,6 +150,94 @@ ix::HttpResponsePtr NextionImageServer::_handle_album_art_request(uint32_t media
     // Held while converting so that panels requesting the same image at the same time share one conversion.
     std::lock_guard<std::mutex> lock_guard(NextionImageServer::_converted_images_mutex);
     ConvertedImageKey key = {.media_player_id = media_player_id, .width = size[0], .height = size[1], .format = format};
+    image = NextionImageServer::_find_cached_image(key, album_art);
+    bool cache_hit = image != nullptr;
+    LatencyMetrics::image_request(cache_hit, format == ImageFormat::PNG ? "png" : "rgb565");
+    if (!cache_hit) {
+      auto convert_start = LatencyMetrics::clock::now();
+      std::optional<ConvertedImage> converted = NextionImageServer::_convert_image(*album_art, size[0], size[1], format);
+      LatencyMetrics::image_converted(LatencyMetrics::seconds_since(convert_start));
+      if (!converted) {
+        return NextionImageServer::_text_response(502, "Bad Gateway", "Failed to convert album art.");
+      }
+      image = std::make_shared<const ConvertedImage>(std::move(*converted));
+      NextionImageServer::_store_cached_image(key, album_art, image);
+    }
+  }
+
+  ix::WebSocketHttpHeaders headers;
+    headers["Content-Type"] = "text/plain; version=0.0.4; charset=utf-8";
+    return std::make_shared<ix::HttpResponse>(200, "OK", ix::HttpErrorCode::Ok, headers, Metrics::serialize());
+  }
+  if (path.compare("/prometheus/targets") == 0) {
+    // nginx passes the Host the request arrived with, so the manager lists itself the way Prometheus reached it.
+    auto host = request->headers.find("Host");
+    ix::WebSocketHttpHeaders headers;
+    headers["Content-Type"] = "application/json";
+    return std::make_shared<ix::HttpResponse>(200, "OK", ix::HttpErrorCode::Ok, headers,
+                                              PrometheusTargets::build_json(host != request->headers.end() ? host->second : "", PrometheusTargets::current_panel_targets()));
+  }
+
+  static const std::regex album_art_path(R"(^/nextion-img/media_player/(\d+)/album_art$)");
+  std::smatch match;
+  if (std::regex_match(path, match, album_art_path)) {
+    uint32_t media_player_id = 0;
+    std::string id_string = match[1].str();
+    auto [ptr, ec] = std::from_chars(id_string.data(), id_string.data() + id_string.size(), media_player_id);
+    if (ec != std::errc()) {
+      return NextionImageServer::_text_response(404, "Not Found", "Unknown media player.");
+    }
+    return NextionImageServer::_handle_album_art_request(media_player_id, NextionImageServer::_parse_query(query));
+  }
+
+  return NextionImageServer::_text_response(404, "Not Found", "Not found.");
+}
+
+ix::HttpResponsePtr NextionImageServer::_handle_album_art_request(uint32_t media_player_id, const std::map<std::string, std::string> &query) {
+  // Read and validate the requested size and format.
+  uint16_t size[2] = {NextionImageServer::default_image_dimension, NextionImageServer::default_image_dimension};
+  const char *size_keys[2] = {"w", "h"};
+  for (int i = 0; i < 2; i++) {
+    auto it = query.find(size_keys[i]);
+    if (it == query.end()) {
+      continue;
+    }
+    uint32_t value = 0;
+    auto [ptr, ec] = std::from_chars(it->second.data(), it->second.data() + it->second.size(), value);
+    if (ec != std::errc() || ptr != it->second.data() + it->second.size() || value < 1 || value > NextionImageServer::max_image_dimension) {
+      return NextionImageServer::_text_response(400, "Bad Request", fmt::format("{} must be between 1 and {}.", size_keys[i], NextionImageServer::max_image_dimension));
+    }
+    size[i] = value;
+  }
+
+  ImageFormat format = ImageFormat::RGB565;
+  auto format_it = query.find("format");
+  if (format_it != query.end()) {
+    if (format_it->second.compare("rgb565") == 0) {
+      format = ImageFormat::RGB565;
+    } else if (format_it->second.compare("png") == 0) {
+      format = ImageFormat::PNG;
+    } else {
+      return NextionImageServer::_text_response(400, "Bad Request", "format must be rgb565 or png.");
+    }
+  }
+
+  auto media_player = EntityManager::get_entity_by_id<MediaPlayerEntity>(MQTT_MANAGER_ENTITY_TYPE::MEDIA_PLAYER, media_player_id);
+  if (!media_player) {
+    return NextionImageServer::_text_response(404, "Not Found", "Unknown media player.");
+  }
+
+  std::shared_ptr<const std::string> album_art = (*media_player)->get_album_art();
+  if (!album_art) {
+    // Either the media player has no album art right now or it could not be downloaded, the log tells which.
+    return NextionImageServer::_text_response(404, "Not Found", "No album art available.");
+  }
+
+  std::shared_ptr<const ConvertedImage> image;
+  {
+    // Held while converting so that panels requesting the same image at the same time share one conversion.
+    std::lock_guard<std::mutex> lock_guard(NextionImageServer::_converted_images_mutex);
+    ConvertedImageKey key = {.media_player_id = media_player_id, .width = size[0], .height = size[1], .format = format};
     auto cached = NextionImageServer::_converted_images.find(key);
     bool cache_hit = cached != NextionImageServer::_converted_images.end() && cached->second.source == album_art;
     LatencyMetrics::image_request(cache_hit, format == ImageFormat::PNG ? "png" : "rgb565");
@@ -178,6 +266,26 @@ ix::HttpResponsePtr NextionImageServer::_handle_album_art_request(uint32_t media
   return std::make_shared<ix::HttpResponse>(200, "OK", ix::HttpErrorCode::Ok, headers, image->data);
 }
 
+std::shared_ptr<const NextionImageServer::ConvertedImage> NextionImageServer::_find_cached_image(const ConvertedImageKey &key, const std::shared_ptr<const std::string> &source) {
+  auto cached = _converted_images.find(key);
+  if (cached == _converted_images.end() || cached->second.source != source) {
+    return nullptr;
+  }
+  cached->second.last_used = ++_use_counter;
+  return cached->second.image;
+}
+
+void NextionImageServer::_store_cached_image(const ConvertedImageKey &key, std::shared_ptr<const std::string> source, std::shared_ptr<const ConvertedImage> image) {
+  // Entries for album art that has since changed are only replaced when the same size is requested again, so evict
+  // the least recently used entry when full rather than grow without bound.
+  if (_converted_images.find(key) == _converted_images.end() && _converted_images.size() >= max_converted_images) {
+    auto least_recently_used = std::min_element(_converted_images.begin(), _converted_images.end(),
+                                                [](const auto &a, const auto &b) { return a.second.last_used < b.second.last_used; });
+    _converted_images.erase(least_recently_used);
+  }
+  _converted_images[key] = {.source = std::move(source), .image = std::move(image), .last_used = ++_use_counter};
+}
+
 std::optional<NextionImageServer::ConvertedImage> NextionImageServer::_convert_image(const std::string &image_data, uint16_t width, uint16_t height, ImageFormat format) {
   int source_width, source_height, source_channels;
   std::unique_ptr<stbi_uc, decltype(&stbi_image_free)> source(
@@ -199,6 +307,10 @@ std::optional<NextionImageServer::ConvertedImage> NextionImageServer::_convert_i
   int64_t crop_x = (source_width - crop_width) / 2;
   int64_t crop_y = (source_height - crop_height) / 2;
   const stbi_uc *crop_start = source.get() + (crop_y * source_width + crop_x) * 3;
+
+  if (crop_width < width || crop_height < height) {
+    SPDLOG_DEBUG("Image source {}x{} is smaller than the requested {}x{}, it will be stretched.", crop_width, crop_height, width, height);
+  }
 
   std::vector<stbi_uc> pixels(static_cast<size_t>(width) * height * 3);
   if (stbir_resize_uint8_srgb(crop_start, crop_width, crop_height, source_width * 3, pixels.data(), width, height, width * 3, STBIR_RGB) == nullptr) {
