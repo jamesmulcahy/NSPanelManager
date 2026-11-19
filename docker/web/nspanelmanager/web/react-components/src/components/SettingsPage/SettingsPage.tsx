@@ -5,6 +5,7 @@ import { getIpByHostname, testHomeAssistant, testManager, testOpenhab } from "..
 import { Notify } from "../NSPanelToastContainer";
 import { BuzzerCard } from "./BuzzerCard";
 import { CalendarPicker } from "./CalendarPicker";
+import { FirmwareCard } from "./FirmwareCard";
 import { ENERGY_POWER_SOURCES, ENERGY_PRICE_SOURCES, LIGHTS_ON_SOURCES, LOG_LEVELS, NSPANEL_TYPES, options, SCREENSAVER_MODES, TURN_ON_BEHAVIORS } from "./choices";
 import { JoinButton, TestButton } from "../common/buttons";
 import { Alert, Card, Row } from "../common/layout";
@@ -241,6 +242,8 @@ function SettingsForm({ settings: loaded, logDownloadUrl }: { settings: Settings
         </Card>
 
         <EnergyCard homeAssistantConfigured={homeAssistantConfigured} />
+
+        <FirmwareCard />
 
         <Card title="MQTT">
           <Row>

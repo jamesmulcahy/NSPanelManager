@@ -43,12 +43,29 @@ function useInvalid<T extends FieldValues>(name: Path<T>) {
   return { "aria-invalid": invalid, "aria-describedby": invalid ? `${name}-error` : undefined };
 }
 
-export function TextInput<T extends FieldValues>({ name, label, hint, disabled, button, placeholder }: { name: Path<T>; label: string; hint?: string; disabled?: boolean; button?: ReactNode; placeholder?: string }) {
+export function TextInput<T extends FieldValues>({
+  name,
+  label,
+  hint,
+  disabled,
+  button,
+  placeholder,
+  validate,
+}: {
+  name: Path<T>;
+  label: string;
+  hint?: string;
+  disabled?: boolean;
+  button?: ReactNode;
+  placeholder?: string;
+  /** Returns true when the value is fine, or the error message. */
+  validate?: (value: string) => true | string;
+}) {
   const { register } = useFormContext<T>();
   return (
     <Field<T> name={name} label={label} hint={hint}>
       <div className="join w-full">
-        <input id={name} type="text" placeholder={placeholder} className={`${inputClass} join-item`} disabled={disabled} {...useInvalid<T>(name)} {...register(name)} />
+        <input id={name} type="text" placeholder={placeholder} className={`${inputClass} join-item`} disabled={disabled} {...useInvalid<T>(name)} {...register(name, validate ? { validate: (value) => validate(value ?? "") } : undefined)} />
         {button}
       </div>
     </Field>

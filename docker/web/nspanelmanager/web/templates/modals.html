@@ -1,3 +1,4 @@
+{% load static %}
 <!-- Save new firmware modal -->
 <dialog id="upload_firmware_modal" class="modal">
     <div class="modal-box">
@@ -53,6 +54,51 @@
         <button>close</button>
     </form>
 </dialog>
+
+<!-- Firmware from GitHub modal -->
+<dialog id="firmware_github_modal" class="modal" data-api-base="{{ ingress_path }}/rest/v2/firmware">
+    <div class="modal-box max-w-2xl">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        </form>
+
+        <h3 class="text-lg font-semibold mb-2">Firmware from GitHub</h3>
+        <p class="text-sm mb-2">Repository <span id="fwgh_repo" class="font-mono"></span>, release <span id="fwgh_release" class="font-mono"></span>. Change them under Settings, Firmware source.</p>
+
+        <div id="fwgh_error" role="alert" class="alert alert-error my-2 hidden"></div>
+
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr><th>Board</th><th>Staged</th><th>Available</th><th></th></tr>
+            </thead>
+            <tbody id="fwgh_table_body"></tbody>
+          </table>
+        </div>
+
+        <div class="mt-4">
+          <label for="fwgh_release_select" class="block mb-2 text-sm font-medium">Release to stage</label>
+          <select id="fwgh_release_select" class="select w-full bg-base-300 border-neutral">
+            <option value="">Latest</option>
+          </select>
+        </div>
+
+        <div id="fwgh_result" class="alert alert-success my-4 flex-col items-start hidden"></div>
+
+        <p class="text-sm opacity-80 mt-4">Staging replaces the firmware for both boards on the manager. It doesn't update any panel by itself: use each panel's update button to roll it out.</p>
+
+        <div class="flex items-center justify-end space-x-2 mt-4">
+            <span id="fwgh_spinner" class="loading loading-spinner loading-sm hidden"></span>
+            <button type="button" class="btn btn-neutral" onclick="firmware_github_modal.close();">Close</button>
+            <button type="button" id="fwgh_refresh_button" class="btn btn-neutral" onclick="firmwareGithub.load();">Refresh</button>
+            <button type="button" id="fwgh_stage_button" class="btn btn-info" onclick="firmwareGithub.stage();">Stage firmware</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+<script src="{{ ingress_path }}{% static 'firmware_github.js' %}"></script>
 
 <!-- Data file upload modal -->
 <dialog id="upload_data_file_modal" class="modal">
