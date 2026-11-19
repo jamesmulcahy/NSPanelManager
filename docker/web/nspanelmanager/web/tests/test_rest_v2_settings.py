@@ -20,7 +20,7 @@ from django.utils.crypto import get_random_string
 
 import web.rest_v2.schema
 from web.models import Settings
-from web.rest_v2.global_settings import BUZZER_SOUND_TIMER_FIRED_DEFAULT, DEFAULTS, SECRETS, SettingsSerializer, SettingsUpdateSerializer
+from web.rest_v2.global_settings import BUZZER_SOUND_TIMER_FIRED_DEFAULT, DEFAULTS, get_firmware_github_source, SECRETS, SettingsSerializer, SettingsUpdateSerializer
 from web.settings_helper import get_setting_with_default, set_setting_value
 
 from .harness import NSPMTestCase
@@ -102,6 +102,8 @@ LEGACY_ROWS = {
     "clock_us_style": "True",
     "use_fahrenheit": "True",
     "theme": "dark",
+    "firmware_github_repo": "jamesmulcahy/NSPanelManager-firmware",
+    "firmware_github_release": "latest",
     "buzzer_sound_touch": "",
     "buzzer_sound_scene_activated": "",
     "buzzer_sound_scene_saved": "",
@@ -314,6 +316,35 @@ class CompatibilityTests(RestV2TestCase):
         set_setting_value("buzzer_sound_timer_fired", "")
 
         self.assertEqual(self.get()["buzzer_sound_timer_fired"], "")
+
+    def test_missing_firmware_source_rows_report_the_defaults(self):
+        Settings.objects.filter(name__startswith="firmware_github_").delete()
+
+        data = self.get()
+
+        self.assertEqual((data["firmware_github_repo"], data["firmware_github_release"]), ("jamesmulcahy/NSPanelManager-firmware", "latest"))
+        self.assertEqual(get_firmware_github_source(), ("jamesmulcahy/NSPanelManager-firmware", "latest"))
+
+    def test_firmware_source_round_trips(self):
+        data = self.assertPatchOk({"firmware_github_repo": "someone/My_Fork.fw-1", "firmware_github_release": "build-545a9e4d"})
+
+        self.assertEqual((data["firmware_github_repo"], data["firmware_github_release"]), ("someone/My_Fork.fw-1", "build-545a9e4d"))
+        self.assertEqual(get_firmware_github_source(), ("someone/My_Fork.fw-1", "build-545a9e4d"))
+
+    def test_firmware_source_helper_ignores_blank_and_invalid_rows(self):
+        set_setting_value("firmware_github_repo", "")
+        set_setting_value("firmware_github_release", "not a tag")
+
+        self.assertEqual(get_firmware_github_source(), ("jamesmulcahy/NSPanelManager-firmware", "latest"))
+
+    def test_invalid_firmware_source_is_rejected(self):
+        for repo in ("", "noslash", "a/b/c", "a/", "/b", "a b/c", "a/b\n", "https://github.com/a/b"):
+            with self.subTest(repo=repo):
+                self.assertPatchRejected({"firmware_github_repo": repo}, "firmware_github_repo")
+        for release in ("", "v1 0", "a/b", "x" * 101, "latest\n"):
+            with self.subTest(release=release):
+                self.assertPatchRejected({"firmware_github_release": release}, "firmware_github_release")
+        self.assertPatchRejected({"firmware_github_repo": 5}, "firmware_github_repo")
 
     @needs_manager_source
     def test_defaults_match_the_manager(self):

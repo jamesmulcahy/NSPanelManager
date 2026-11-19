@@ -50,7 +50,14 @@ ADDON_MANAGED = ("home_assistant_address", "home_assistant_token")
 # What a GET reports for a key with no stored row yet (MQTTManager writes missing keys with the default of its
 # _setting_key_map at startup), so the UI and the panel agree before that has happened. Keep in sync with
 # the _setting_key_map entries; test_rest_v2_settings checks them. Only the keys whose default isn't blank.
-DEFAULTS = {"buzzer_sound_timer_fired": BUZZER_SOUND_TIMER_FIRED_DEFAULT}
+FIRMWARE_GITHUB_REPO_DEFAULT = "jamesmulcahy/NSPanelManager-firmware"
+FIRMWARE_GITHUB_RELEASE_DEFAULT = "latest"
+
+DEFAULTS = {
+    "buzzer_sound_timer_fired": BUZZER_SOUND_TIMER_FIRED_DEFAULT,
+    "firmware_github_repo": FIRMWARE_GITHUB_REPO_DEFAULT,
+    "firmware_github_release": FIRMWARE_GITHUB_RELEASE_DEFAULT,
+}
 
 ADDRESSES = ("home_assistant_address", "openhab_address")
 
@@ -173,6 +180,21 @@ def _coordinate(limit):
 _INTEGER = re.compile(r"-?[0-9]+")
 
 
+_GITHUB_REPO = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")
+_GITHUB_TAG = re.compile(r"[A-Za-z0-9_.-]{1,100}")
+
+
+def _validate_github_repo(value):
+    if not _GITHUB_REPO.fullmatch(value):
+        raise serializers.ValidationError("Must be a GitHub repository as owner/name.")
+
+
+def _validate_github_release(value):
+    # "latest" satisfies the tag pattern too.
+    if not _GITHUB_TAG.fullmatch(value):
+        raise serializers.ValidationError('Must be "latest" or a release tag of letters, digits, "_", "." and "-".')
+
+
 class SettingsUpdateSerializer(serializers.Serializer):
     """A PATCH /rest/v2/settings body. Send only the settings that change."""
 
@@ -240,6 +262,10 @@ class SettingsUpdateSerializer(serializers.Serializer):
     date_format = _text(allow_blank=False, help_text="strftime() format.")
     clock_us_style = StrictBooleanField()
     use_fahrenheit = StrictBooleanField()
+
+    # Firmware source (the "Firmware from GitHub" upload)
+    firmware_github_repo = _text(allow_blank=False, validators=[_validate_github_repo], help_text="GitHub repository, as owner/name, that firmware is fetched from.")
+    firmware_github_release = _text(allow_blank=False, validators=[_validate_github_release], help_text='"latest", or the tag of the release to fetch firmware from.')
 
     # Web interface
     theme = _text(allow_blank=False)
@@ -363,6 +389,25 @@ def read_settings():
     """Every setting this API knows, decoded. Secrets are included (callers must not return them)."""
     rows = _stored_rows()
     return {name: (rows.get(name) if name in SECRETS else _decode(name, rows.get(name, DEFAULTS.get(name)))) for name in _FIELDS}
+
+
+def get_firmware_github_source():
+    """The effective (repo, release) firmware is fetched from: the stored settings, or their defaults where a row is
+    missing, blank or no longer valid."""
+    rows = _stored_rows()
+
+    def effective(name, validate, default):
+        value = rows.get(name, "")
+        try:
+            validate(value)
+        except serializers.ValidationError:
+            return default
+        return value
+
+    return (
+        effective("firmware_github_repo", _validate_github_repo, FIRMWARE_GITHUB_REPO_DEFAULT),
+        effective("firmware_github_release", _validate_github_release, FIRMWARE_GITHUB_RELEASE_DEFAULT),
+    )
 
 
 def representation():

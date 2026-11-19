@@ -89,6 +89,8 @@ enum MQTT_MANAGER_SETTING {
   BUZZER_SOUND_SCENE_ACTIVATED,
   BUZZER_SOUND_SCENE_SAVED,
   BUZZER_SOUND_TIMER_FIRED,
+  FIRMWARE_GITHUB_REPO,
+  FIRMWARE_GITHUB_RELEASE,
   LAST, // Keep last as to be able to reference the last element in the list.
 };
 
@@ -284,6 +286,10 @@ private:
       // Unlike the other sounds this one is not empty: a timer without a sound would be useless. Keep in sync with
       // BUZZER_SOUND_TIMER_FIRED_DEFAULT in rest_v2/global_settings.py. Empty still means silent.
       {MQTT_MANAGER_SETTING::BUZZER_SOUND_TIMER_FIRED, {"buzzer_sound_timer_fired", "timer:d=8,o=6,b=200:c7,p,c7,p,c7,p,c7"}},
+      // Where the web interface fetches firmware from. MQTTManager does not read these; the keys are here so that it
+      // keeps the rows. Keep in sync with FIRMWARE_GITHUB_*_DEFAULT in rest_v2/global_settings.py.
+      {MQTT_MANAGER_SETTING::FIRMWARE_GITHUB_REPO, {"firmware_github_repo", "jamesmulcahy/NSPanelManager-firmware"}},
+      {MQTT_MANAGER_SETTING::FIRMWARE_GITHUB_RELEASE, {"firmware_github_release", "latest"}},
 #if defined(TEST_MODE) && TEST_MODE == 1
       {MQTT_MANAGER_SETTING::LAST, {"last", "last_value"}},
 #endif

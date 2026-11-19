@@ -1363,6 +1363,17 @@ components:
           type: boolean
         use_fahrenheit:
           type: boolean
+        firmware_github_repo:
+          type: string
+          minLength: 1
+          description: GitHub repository, as owner/name, that firmware is fetched
+            from.
+          maxLength: 255
+        firmware_github_release:
+          type: string
+          minLength: 1
+          description: '"latest", or the tag of the release to fetch firmware from.'
+          maxLength: 255
         theme:
           type: string
           minLength: 1
@@ -1847,6 +1858,12 @@ components:
         use_fahrenheit:
           type: boolean
           nullable: true
+        firmware_github_repo:
+          type: string
+          nullable: true
+        firmware_github_release:
+          type: string
+          nullable: true
         theme:
           type: string
           nullable: true
@@ -1911,6 +1928,8 @@ components:
       - energy_price_entity_id
       - energy_price_per_kwh
       - energy_price_source
+      - firmware_github_release
+      - firmware_github_repo
       - home_assistant_address
       - home_assistant_sync_exclude_labels
       - home_assistant_token_set
@@ -2178,6 +2197,14 @@ components:
           items:
             type: string
         use_fahrenheit:
+          type: array
+          items:
+            type: string
+        firmware_github_repo:
+          type: array
+          items:
+            type: string
+        firmware_github_release:
           type: array
           items:
             type: string
