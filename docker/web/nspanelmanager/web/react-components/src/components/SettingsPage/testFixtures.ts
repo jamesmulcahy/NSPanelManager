@@ -54,6 +54,8 @@ export function settingsFixture(overrides: Partial<Settings> = {}): Settings {
     date_format: "%a %d/%m %Y",
     clock_us_style: false,
     use_fahrenheit: false,
+    firmware_github_repo: "jamesmulcahy/NSPanelManager-firmware",
+    firmware_github_release: "latest",
     theme: "default",
     buzzer_sound_touch: "",
     buzzer_sound_scene_activated: "",

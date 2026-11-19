@@ -574,6 +574,10 @@ export interface components {
             date_format?: string;
             clock_us_style?: boolean;
             use_fahrenheit?: boolean;
+            /** @description GitHub repository, as owner/name, that firmware is fetched from. */
+            firmware_github_repo?: string;
+            /** @description "latest", or the tag of the release to fetch firmware from. */
+            firmware_github_release?: string;
             theme?: string;
             /** @description RTTTL played on a screen touch. Blank for no sound. */
             buzzer_sound_touch?: string;
@@ -761,6 +765,8 @@ export interface components {
             date_format: string | null;
             clock_us_style: boolean | null;
             use_fahrenheit: boolean | null;
+            firmware_github_repo: string | null;
+            firmware_github_release: string | null;
             theme: string | null;
             buzzer_sound_touch: string | null;
             buzzer_sound_scene_activated: string | null;
@@ -837,6 +843,8 @@ export interface components {
             date_format?: string[];
             clock_us_style?: string[];
             use_fahrenheit?: string[];
+            firmware_github_repo?: string[];
+            firmware_github_release?: string[];
             theme?: string[];
             buzzer_sound_touch?: string[];
             buzzer_sound_scene_activated?: string[];
