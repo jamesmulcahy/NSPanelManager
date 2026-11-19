@@ -339,6 +339,14 @@ void LatencyMetrics::image_converted(double seconds) {
   histogram.Observe(seconds);
 }
 
+void LatencyMetrics::album_art_downloaded(const char *source, const char *outcome, double seconds) {
+  static auto &family = prometheus::BuildHistogram()
+                            .Name("nspm_album_art_download_duration_seconds")
+                            .Help("Time to download album art from the media player's controller, by source and outcome.")
+                            .Register(Metrics::registry());
+  family.Add({{"source", source}, {"outcome", outcome}}, Metrics::latency_buckets()).Observe(seconds);
+}
+
 void LatencyMetrics::weather_fetch(const char *outcome) {
   static auto &fetches = prometheus::BuildCounter()
                              .Name("nspm_weather_fetches_total")
