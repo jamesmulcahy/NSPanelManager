@@ -19,10 +19,12 @@ RUN npm run build
 # Node 22 matches the CI workflows (Vite 8 needs ^22.12). The output is the same for any build
 # platform, so this stage runs on the build host even for cross-platform images.
 FROM --platform=$BUILDPLATFORM node:22-alpine AS react-builder
-# rtttl.test.ts imports ../../../tests/rtttl_vectors.json and tsc -b type-checks it, so the build needs
-# that file at the same relative place: /ui/tests next to /ui/react-components.
+# rtttl.test.ts imports ../../../tests/rtttl_vectors.json and firmwareGithubModal.test.ts imports
+# ../../../static/firmware_github.js, and tsc -b type-checks both, so the build needs those files at the
+# same relative places: /ui/tests and /ui/static next to /ui/react-components.
 WORKDIR /ui/react-components
 COPY web/nspanelmanager/web/tests/rtttl_vectors.json /ui/tests/rtttl_vectors.json
+COPY web/nspanelmanager/web/static/firmware_github.js /ui/static/firmware_github.js
 COPY web/nspanelmanager/web/react-components/package.json web/nspanelmanager/web/react-components/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 COPY web/nspanelmanager/web/react-components/ ./

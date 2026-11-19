@@ -140,6 +140,52 @@ describe("loading", () => {
   });
 });
 
+describe("firmware source", () => {
+  it("shows the stored repository and release", async () => {
+    await renderPage();
+
+    expect(screen.getByLabelText("GitHub repository")).toHaveValue("jamesmulcahy/NSPanelManager-firmware");
+    expect(screen.getByLabelText("Release")).toHaveValue("latest");
+  });
+
+  it("saves a changed repository and release", async () => {
+    const user = await renderPage();
+
+    await user.clear(screen.getByLabelText("GitHub repository"));
+    await user.type(screen.getByLabelText("GitHub repository"), "a/b");
+    await user.clear(screen.getByLabelText("Release"));
+    await user.type(screen.getByLabelText("Release"), "build-1");
+    await save(user);
+
+    expect(patches()[0].body).toEqual({ firmware_github_repo: "a/b", firmware_github_release: "build-1" });
+  });
+
+  it("rejects a malformed repository or release and saves nothing", async () => {
+    const user = await renderPage();
+
+    await user.clear(screen.getByLabelText("GitHub repository"));
+    await user.type(screen.getByLabelText("GitHub repository"), "not a repo");
+    await user.clear(screen.getByLabelText("Release"));
+    await user.click(saveButton());
+
+    expect(await screen.findByText(/Use the form owner\/repository/)).toBeInTheDocument();
+    expect(screen.getByText(/Use "latest" or a release tag/)).toBeInTheDocument();
+    expect(patches()).toHaveLength(0);
+  });
+
+  it("resets each field to its default", async () => {
+    const user = await renderPage({ firmware_github_repo: "someone/other", firmware_github_release: "build-1234abcd" });
+
+    await user.click(screen.getByRole("button", { name: "Reset repository" }));
+    await user.click(screen.getByRole("button", { name: "Reset release" }));
+
+    expect(screen.getByLabelText("GitHub repository")).toHaveValue("jamesmulcahy/NSPanelManager-firmware");
+    expect(screen.getByLabelText("Release")).toHaveValue("latest");
+    await save(user);
+    expect(patches()[0].body).toEqual({ firmware_github_repo: "jamesmulcahy/NSPanelManager-firmware", firmware_github_release: "latest" });
+  });
+});
+
 describe("saving", () => {
   it("sends only the changed settings, with the CSRF token", async () => {
     const user = await renderPage();
