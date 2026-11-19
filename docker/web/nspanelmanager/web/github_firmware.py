@@ -69,6 +69,7 @@ _COMMIT = re.compile(r"[0-9a-f]{40}")
 _BUILD_TAG = re.compile(r"build-([0-9a-f]{8})")
 
 LOCK_NAME = ".stage.lock"
+LOCK_POLL_SECONDS = 0.1
 STALE_PATTERN = ".firmware-*"
 
 _cache = {}
@@ -251,6 +252,9 @@ def _resolve_release(repo, release, deadline):
     data = _api_json(_release_path(repo, release), deadline)
     if not isinstance(data, dict) or not isinstance(data.get("tag_name"), str) or data.get("draft"):
         raise FirmwareError("bad_release", "GitHub's release record is not usable")
+    if data.get("prerelease"):
+        # The firmware CI's test builds (test-<sha>) are prereleases and must never be staged for the fleet.
+        raise FirmwareError("not_found", f"{data['tag_name']} is a prerelease")
     assets = {}
     for asset in data.get("assets") or []:
         if isinstance(asset, dict) and isinstance(asset.get("name"), str) and isinstance(asset.get("browser_download_url"), str):
@@ -324,7 +328,7 @@ def _list_releases(repo, deadline):
         raise FirmwareError("bad_release", "GitHub's release list is not usable")
     releases = []
     for item in data:
-        if not isinstance(item, dict) or item.get("draft") or not isinstance(item.get("tag_name"), str):
+        if not isinstance(item, dict) or item.get("draft") or item.get("prerelease") or not isinstance(item.get("tag_name"), str):
             continue
         # The commit is the release's target when that is a sha, else the sha in a build-<sha> tag's name.
         target = item.get("target_commitish")
@@ -375,9 +379,9 @@ def verify_image(model, path, info):
 def _download_image(info, target_dir, deadline):
     """Download an image into a new temp file in target_dir, which is returned. The download is capped at the
     app slot size plus one byte, and at the request's deadline."""
-    response = _open(info.url, DOWNLOAD_HOSTS, "download_failed", "application/octet-stream", deadline)
     fd, temp_path = tempfile.mkstemp(dir=target_dir, prefix=".firmware-", suffix=".tmp")
     try:
+        response = _open(info.url, DOWNLOAD_HOSTS, "download_failed", "application/octet-stream", deadline)
         with os.fdopen(fd, "wb") as out:
             total = 0
             try:
@@ -397,6 +401,10 @@ def _download_image(info, target_dir, deadline):
         os.chmod(temp_path, 0o644)
         return temp_path
     except BaseException:
+        try:
+            os.close(fd)
+        except OSError:
+            pass  # Already closed by the with block
         _remove(temp_path)
         raise
 
@@ -435,20 +443,30 @@ def _sweep_stale(directory):
         _remove(path)
 
 
-class _StageLock:
-    """An exclusive lock across every worker process, on firmware/.stage.lock. It blocks until it gets the lock,
-    and the kernel drops it if the holder dies, so a killed request cannot leave it held."""
+class StageLock:
+    """An exclusive lock across every worker process, on firmware/.stage.lock. The kernel drops it if the holder
+    dies, so a killed request cannot leave it held. Waiting for it is bounded by deadline (a monotonic time):
+    a request that waits must not outlive uwsgi's harakiri, so it gives up and touches nothing."""
+
+    def __init__(self, deadline):
+        self.deadline = deadline
 
     def __enter__(self):
         path = FileSystemStorage().path(f"firmware/{LOCK_NAME}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         self._fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o644)
         try:
-            fcntl.flock(self._fd, fcntl.LOCK_EX)
+            while True:
+                try:
+                    fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    return self
+                except BlockingIOError:
+                    if time.monotonic() >= self.deadline:
+                        raise FirmwareError("unreachable", "Another firmware stage is in progress; try again") from None
+                    time.sleep(LOCK_POLL_SECONDS)
         except BaseException:
             os.close(self._fd)
             raise
-        return self
 
     def __exit__(self, *exc):
         try:
@@ -465,8 +483,8 @@ def stage_release(repo, release):
     told to reload. One deadline covers the lot. Returns
     {"tag", "commit", "boards": {model: {"before_md5", "after_md5", "changed"}}, "changed": bool}.
     """
-    with _StageLock():
-        deadline = new_deadline()
+    deadline = new_deadline()  # From the start of the request, so waiting for the lock counts
+    with StageLock(deadline):
         targets = {model: firmware_path(model) for model in BOARDS}
         for target in targets.values():
             _sweep_stale(os.path.dirname(target))

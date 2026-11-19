@@ -550,7 +550,7 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
             self.assertEqual(self.stage().status_code, 200)
         self.assertEqual(held, [True])
         operations = [c.args[1] for c in flock.call_args_list]
-        self.assertEqual((operations[0], operations[-1]), (fcntl.LOCK_EX, fcntl.LOCK_UN))
+        self.assertEqual((operations[0], operations[-1]), (fcntl.LOCK_EX | fcntl.LOCK_NB, fcntl.LOCK_UN))
         # And it is free again afterwards.
         fd = os.open(lock_path, os.O_RDWR)
         self.addCleanup(os.close, fd)
@@ -616,6 +616,14 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
         self.assertEqual(os.stat(self.path("sonoff")).st_mode & 0o777, 0o640)
         self.assertEqual(self.staged("sonoff"), self.old["sonoff"])
 
+    def test_a_temp_file_failure_does_not_open_a_connection(self):
+        self.github.add_release()
+        with mock.patch("web.github_firmware.tempfile.mkstemp", side_effect=OSError("no space")):
+            response = self.stage()
+        self.assertEqual(response.status_code, 502)
+        self.assertFalse([u for u in self.github.requested if u.endswith(".bin")])
+        self.assertUntouched()
+
     def test_the_module_ignores_netrc_and_proxy_variables(self):
         self.assertFalse(github_firmware._session().trust_env)
 
@@ -626,6 +634,73 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
         for headers in self.github.headers_seen:
             self.assertEqual(set(headers), {"User-Agent", "Accept"})
             self.assertEqual(headers["User-Agent"], "nspanel-manager")
+
+
+class LockWaitTests(FirmwareGithubTestCase):
+    def hold_lock(self):
+        import fcntl
+
+        os.makedirs(os.path.join(self.media, "firmware"), exist_ok=True)
+        fd = os.open(os.path.join(self.media, "firmware", ".stage.lock"), os.O_RDWR | os.O_CREAT)
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        self.addCleanup(os.close, fd)
+
+    def run_with_fake_clock(self, call):
+        clock = [1000.0]
+
+        def sleep(seconds):
+            clock[0] += seconds * 50  # Time passes fast while waiting
+
+        with mock.patch("web.github_firmware.time.monotonic", side_effect=lambda: clock[0]), mock.patch("web.github_firmware.time.sleep", side_effect=sleep):
+            return call()
+
+    def test_waiting_for_the_lock_gives_up_at_the_deadline(self):
+        self.github.add_release()
+        self.hold_lock()
+        response = self.run_with_fake_clock(self.stage)
+        self.assertEqual((response.status_code, self.error_of(response)["code"]), (502, "unreachable"))
+        self.assertEqual(self.error_of(response)["message"], "Another firmware stage is in progress; try again")
+        self.assertEqual(self.github.requested, [])
+        self.assertUntouched()
+
+    def test_manual_upload_gives_up_waiting_and_changes_nothing(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        self.hold_lock()
+        data = make_image("custom", 7)
+        response = self.run_with_fake_clock(lambda: self.client.post("/save_new_firmware", {"model": "custom", "firmware": SimpleUploadedFile("firmware.bin", data)}))
+        self.assertEqual((response.status_code, response["Location"]), (302, "/"))
+        self.assertUntouched()
+
+
+class PrereleaseTests(FirmwareGithubTestCase):
+    def make_prerelease(self, url):
+        route = self.github.routes[url]
+        release = json.loads(route.body)
+        release["prerelease"] = True
+        self.github.routes[url] = FakeResponse(200, json.dumps(release).encode())
+
+    def test_a_prerelease_is_not_staged(self):
+        self.github.add_release(tag="test-abc12345", latest=False)
+        self.make_prerelease(f"https://api.github.com/repos/{REPO}/releases/tags/test-abc12345")
+        response = self.stage(release="test-abc12345")
+        self.assertEqual((response.status_code, self.error_of(response)["code"]), (404, "not_found"))
+        self.assertEqual(self.error_of(response)["message"], "test-abc12345 is a prerelease")
+        self.assertUntouched()
+
+    def test_a_prerelease_is_refused_on_get(self):
+        self.github.add_release(tag="test-abc12345", latest=False)
+        self.make_prerelease(f"https://api.github.com/repos/{REPO}/releases/tags/test-abc12345")
+        body = self.client.get(GET_URL, {"release": "test-abc12345"}).json()
+        self.assertEqual(body["error"]["code"], "not_found")
+        self.assertIsNone(body["resolved"])
+
+    def test_prereleases_are_left_out_of_the_list(self):
+        self.github.add_release()
+        releases = [{"tag_name": "test-abc12345", "prerelease": True}, {"tag_name": "build-00000001", "prerelease": False}]
+        self.github.routes[f"https://api.github.com/repos/{REPO}/releases?per_page=20"] = FakeResponse(200, json.dumps(releases).encode())
+        body = self.client.get(GET_URL, {"releases": "1"}).json()
+        self.assertEqual([r["tag"] for r in body["releases"]], ["build-00000001"])
 
 
 class JsonBodyTests(FirmwareGithubTestCase):
