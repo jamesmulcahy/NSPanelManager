@@ -14,6 +14,7 @@
 #include <date/date.h>
 #include <home_assistant_manager/home_assistant_manager.hpp>
 #include <list>
+#include <metrics/latency_metrics.hpp>
 #include <mqtt_manager_config/mqtt_manager_config.hpp>
 #include <mutex>
 #include <nlohmann/json.hpp>
@@ -325,7 +326,8 @@ bool HomeAssistantMediaPlayer::_download_album_art(const std::string &source, st
   std::string authorization_header;
   std::list<const char *> headers;
 
-  if (boost::algorithm::starts_with(source, "http://") || boost::algorithm::starts_with(source, "https://")) {
+  bool external = boost::algorithm::starts_with(source, "http://") || boost::algorithm::starts_with(source, "https://");
+  if (external) {
     // The integration serves the image from somewhere else. Do not send the Home Assistant token to it.
     url = source;
   } else {
@@ -349,8 +351,13 @@ bool HomeAssistantMediaPlayer::_download_album_art(const std::string &source, st
   }
 
   SPDLOG_DEBUG("Downloading album art for media player {}::{}.", this->_id, this->_name);
+  auto download_start = LatencyMetrics::clock::now();
   // WebHelper treats an empty header list as an error, so only pass the list when there is something in it.
-  return WebHelper::perform_get_request(&url, &image_data, headers.empty() ? nullptr : &headers);
+  bool success = WebHelper::perform_get_request(&url, &image_data, headers.empty() ? nullptr : &headers);
+  double seconds = LatencyMetrics::seconds_since(download_start);
+  LatencyMetrics::album_art_downloaded(external ? "external" : "home_assistant", success ? "success" : "failed", seconds);
+  SPDLOG_DEBUG("Album art download for media player {}::{} took {} ms.", this->_id, this->_name, std::lround(seconds * 1000));
+  return success;
 }
 
 void HomeAssistantMediaPlayer::set_muted(bool muted) {

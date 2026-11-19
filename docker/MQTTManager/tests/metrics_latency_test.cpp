@@ -78,6 +78,15 @@ TEST(LatencyMetricsTest, state_changes_are_counted_by_domain) {
   EXPECT_TRUE(exposition_contains("nspm_home_assistant_state_changes_total{domain=\"testdomain\"} 2"));
 }
 
+TEST(LatencyMetricsTest, album_art_downloads_are_timed_by_source_and_outcome) {
+  LatencyMetrics::album_art_downloaded("home_assistant", "success", 0.3);
+  LatencyMetrics::album_art_downloaded("home_assistant", "success", 4.0);
+  LatencyMetrics::album_art_downloaded("external", "failed", 5.0);
+  EXPECT_TRUE(exposition_contains("nspm_album_art_download_duration_seconds_count{outcome=\"success\",source=\"home_assistant\"} 2"));
+  EXPECT_TRUE(exposition_contains("nspm_album_art_download_duration_seconds_bucket{outcome=\"success\",source=\"home_assistant\",le=\"0.5\"} 1"));
+  EXPECT_TRUE(exposition_contains("nspm_album_art_download_duration_seconds_count{outcome=\"failed\",source=\"external\"} 1"));
+}
+
 TEST(LatencyMetricsTest, panel_log_levels_are_normalised) {
   EXPECT_STREQ(LatencyMetrics::panel_log_level("E"), "error");
   EXPECT_STREQ(LatencyMetrics::panel_log_level("WARNING"), "warning");

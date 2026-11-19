@@ -313,6 +313,8 @@ def fleet():
     P.append(ts(L, "Clock broadcasts (per hour)", [target(f"sum(increase(nspm_clock_broadcasts_total{{{MGR}}}[1h]))", "broadcasts")], bars=True,
                 desc="Wall-clock time the manager publishes to panels (about once a minute).", legend_calcs=("sum",)))
     P.append(ts(L, "Album art convert time", quantiles("nspm_image_convert_duration_seconds", "", MGR, ""), unit="s"))
+    P.append(ts(L, "Album art download time p95 by source", by_quantile("nspm_album_art_download_duration_seconds", "source", MGR), unit="s",
+                desc="Downloading album art from Home Assistant's media player proxy or the integration's own URL. Requests time out at 5 s."))
     P.append(ts(L, "Web UI WebSocket messages/s",
                 [target(f"sum by (direction) (rate(nspm_websocket_messages_total{{{MGR}}}[{RI}]))", "{{direction}}")], unit="reqps"))
 

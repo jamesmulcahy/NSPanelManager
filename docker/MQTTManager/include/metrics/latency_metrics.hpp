@@ -97,6 +97,10 @@ public:
 
   static void image_request(bool cache_hit, const char *format);
   static void image_converted(double seconds);
+  // Album art was downloaded from where the media player's controller serves it, taking `seconds`.
+  // source: home_assistant (a path on Home Assistant, normally its media player proxy) or external (an http(s) URL
+  // the integration gave). outcome: success or failed.
+  static void album_art_downloaded(const char *source, const char *outcome, double seconds);
 
   // --- Weather and clock ---
 
