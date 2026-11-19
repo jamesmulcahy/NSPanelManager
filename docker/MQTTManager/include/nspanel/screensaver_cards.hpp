@@ -37,7 +37,7 @@ inline int parse_seconds(const std::string &text) {
   return static_cast<int>(std::clamp(value, static_cast<long>(MIN_SECONDS), static_cast<long>(MAX_SECONDS)));
 }
 
-// "calendar:10,energy:15" -> cards, in order. Unknown card types are logged and skipped.
+// "calendar:10,energy:15,now_playing:10" -> cards, in order. Unknown card types are logged and skipped.
 inline std::vector<Card> parse_cards(const std::string &setting) {
   std::vector<Card> cards;
   std::vector<std::string> items;
@@ -61,6 +61,8 @@ inline std::vector<Card> parse_cards(const std::string &setting) {
       cards.push_back({NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_CALENDAR, parse_seconds(seconds)});
     } else if (name.compare("energy") == 0) {
       cards.push_back({NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_ENERGY, parse_seconds(seconds)});
+    } else if (name.compare("now_playing") == 0) {
+      cards.push_back({NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_NOW_PLAYING, parse_seconds(seconds)});
     } else {
       SPDLOG_WARN("Unknown screensaver card type '{}' in setting '{}'. Will skip it.", name, setting);
     }
@@ -68,10 +70,20 @@ inline std::vector<Card> parse_cards(const std::string &setting) {
   return cards;
 }
 
-// Fill the card fields of a panel config from the setting strings.
-inline void apply_to_config(NSPanelConfig &config, const std::string &cards_setting, const std::string &base_card_seconds_setting) {
+// Fill the card fields of a panel config from the setting strings. media_player_topic is the state topic of the
+// home room's first media player, or empty when it has none: the now-playing card is then dropped, so that the
+// panel never reserves room for a card it can't fill.
+inline void apply_to_config(NSPanelConfig &config, const std::string &cards_setting, const std::string &base_card_seconds_setting, const std::string &media_player_topic) {
   config.clear_screensaver_cards();
+  config.clear_screensaver_media_player_topic();
   for (const Card &card : parse_cards(cards_setting)) {
+    if (card.type == NSPanelConfig_NSPanelScreensaverCardType_SCREENSAVER_CARD_NOW_PLAYING) {
+      if (media_player_topic.empty()) {
+        SPDLOG_WARN("The screensaver now-playing card follows the home room's first media player, but the room has no media player. Will skip the card.");
+        continue;
+      }
+      config.set_screensaver_media_player_topic(media_player_topic);
+    }
     NSPanelConfig_ScreensaverCard *added = config.add_screensaver_cards();
     added->set_type(card.type);
     added->set_seconds(card.seconds);

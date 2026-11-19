@@ -351,10 +351,10 @@ void NSPanel::send_config(const char *reason) {
     config.set_button1_lower_temperature(this->_get_nspanel_temperature_limit_setting("button1_relay_lower_temperature"));
     config.set_button1_upper_temperature(this->_get_nspanel_temperature_limit_setting("button1_relay_upper_temperature"));
   } else if (b1_mode == ButtonMode::OPEN_MEDIA_PLAYER) {
-    auto media_players = (*default_room)->get_all_entities_by_type<MediaPlayerEntity>(MQTT_MANAGER_ENTITY_TYPE::MEDIA_PLAYER);
-    if (!media_players.empty()) {
+    auto media_player = (*default_room)->first_media_player();
+    if (media_player) {
       config.set_button1_mode(NSPanelConfig_NSPanelButtonMode_OPEN_ENTITY_PAGE);
-      config.set_button1_entity_page_topic(media_players.front()->get_mqtt_state_topic());
+      config.set_button1_entity_page_topic(media_player->get_mqtt_state_topic());
     } else {
       SPDLOG_WARN("Button 1 on NSPanel {}::{} opens the room's first media player, but room {} has no media player.", this->_id, this->_name, this->_settings.room_id);
       config.set_button1_mode(NSPanelConfig_NSPanelButtonMode_NOTIFY_MANAGER);
@@ -377,10 +377,10 @@ void NSPanel::send_config(const char *reason) {
     config.set_button2_lower_temperature(this->_get_nspanel_temperature_limit_setting("button2_relay_lower_temperature"));
     config.set_button2_upper_temperature(this->_get_nspanel_temperature_limit_setting("button2_relay_upper_temperature"));
   } else if (b2_mode == ButtonMode::OPEN_MEDIA_PLAYER) {
-    auto media_players = (*default_room)->get_all_entities_by_type<MediaPlayerEntity>(MQTT_MANAGER_ENTITY_TYPE::MEDIA_PLAYER);
-    if (!media_players.empty()) {
+    auto media_player = (*default_room)->first_media_player();
+    if (media_player) {
       config.set_button2_mode(NSPanelConfig_NSPanelButtonMode_OPEN_ENTITY_PAGE);
-      config.set_button2_entity_page_topic(media_players.front()->get_mqtt_state_topic());
+      config.set_button2_entity_page_topic(media_player->get_mqtt_state_topic());
     } else {
       SPDLOG_WARN("Button 2 on NSPanel {}::{} opens the room's first media player, but room {} has no media player.", this->_id, this->_name, this->_settings.room_id);
       config.set_button2_mode(NSPanelConfig_NSPanelButtonMode_NOTIFY_MANAGER);
@@ -392,9 +392,15 @@ void NSPanel::send_config(const char *reason) {
   config.set_optimistic_mode(MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::OPTIMISTIC_MODE));
   config.set_raise_light_level_to_100_above(MqttManagerConfig::get_setting_with_default<uint32_t>(MQTT_MANAGER_SETTING::RAISE_TO_100_LIGHT_LEVEL));
 
+  // The now-playing card follows the home room's first media player (the one the button modes open).
+  std::string media_player_topic;
+  if (auto media_player = (*default_room)->first_media_player()) {
+    media_player_topic = media_player->get_mqtt_state_topic();
+  }
   screensaver_cards::apply_to_config(config,
                                      this->_get_nspanel_setting_with_default("screensaver_cards", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_CARDS)),
-                                     this->_get_nspanel_setting_with_default("screensaver_base_card_seconds", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS)));
+                                     this->_get_nspanel_setting_with_default("screensaver_base_card_seconds", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_BASE_CARD_SECONDS)),
+                                     media_player_topic);
 
   std::string screensaver_mode = this->_get_nspanel_setting_with_default("screensaver_mode", MqttManagerConfig::get_setting_with_default<std::string>(MQTT_MANAGER_SETTING::SCREENSAVER_MODE));
   if (screensaver_mode.compare("with_background") == 0) {
