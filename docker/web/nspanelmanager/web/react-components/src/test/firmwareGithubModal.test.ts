@@ -4,7 +4,7 @@ import "../../../static/firmware_github.js";
 // The "Firmware from GitHub" modal's script, run against the ids in templates/modals.html and a fake C2 server.
 declare global {
   interface Window {
-    firmwareGithub: { open: () => Promise<void>; load: () => Promise<void>; stage: () => Promise<void> };
+    firmwareGithub: { open: () => Promise<void>; load: () => Promise<void>; stage: () => Promise<void>; pick: () => Promise<void> };
   }
 }
 
@@ -92,6 +92,23 @@ describe("staging", () => {
     calls = [];
   });
 
+  it("re-fetches the chosen release when the picker changes, without the list", async () => {
+    const select = document.getElementById("fwgh_release_select") as HTMLSelectElement;
+    select.value = "build-bbbbbbbb";
+    replies["GET /ingress/rest/v2/firmware"] = { status: 200, body: status({ release: "build-bbbbbbbb", releases: undefined, resolved: { tag: "build-bbbbbbbb", commit: "b", boards: { sonoff: { md5: "pinned1", size: 1 }, custom: { md5: "pinned2", size: 1 } } } }) };
+    await window.firmwareGithub.pick();
+
+    expect(calls[0].url).toBe("/ingress/rest/v2/firmware?release=build-bbbbbbbb");
+    expect(text("fwgh_release")).toBe("build-bbbbbbbb");
+    expect(text("fwgh_table_body")).toContain("pinned1");
+    expect(select.options).toHaveLength(2);
+    expect(select.value).toBe("build-bbbbbbbb");
+
+    select.value = "";
+    await window.firmwareGithub.pick();
+    expect(calls[1].url).toBe("/ingress/rest/v2/firmware");
+  });
+
   it("posts the chosen release with the CSRF token and shows before and after", async () => {
     (document.getElementById("fwgh_release_select") as HTMLSelectElement).value = "build-bbbbbbbb";
     replies["POST /ingress/rest/v2/firmware/stage"] = {
@@ -105,7 +122,7 @@ describe("staging", () => {
     expect((calls[0].init?.headers as Record<string, string>)["X-CSRFToken"]).toBe("token-123");
     expect(text("fwgh_result")).toContain("old1 → new1");
     expect(text("fwgh_result")).toContain("already staged");
-    expect(calls[1].url).toBe("/ingress/rest/v2/firmware?releases=1");
+    expect(calls[1].url).toBe("/ingress/rest/v2/firmware?releases=1&release=build-bbbbbbbb");
     expect((document.getElementById("fwgh_stage_button") as HTMLButtonElement).disabled).toBe(false);
   });
 

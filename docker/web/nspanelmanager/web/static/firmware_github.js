@@ -130,18 +130,24 @@
 
   async function load(options) {
     const keepResult = options && options.keepResult;
+    // The list of releases is fetched on open, refresh and after staging, not when only the picker changes.
+    const withReleases = !(options && options.pickerOnly);
     setBusy(true);
     showError(null);
     if (!keepResult) renderResult(null);
     try {
-      const response = await fetch(`${apiBase()}?releases=1`, { headers: { Accept: "application/json" } });
+      const params = [];
+      if (withReleases) params.push("releases=1");
+      const chosen = el("fwgh_release_select").value;
+      if (chosen) params.push(`release=${encodeURIComponent(chosen)}`);
+      const response = await fetch(`${apiBase()}${params.length ? `?${params.join("&")}` : ""}`, { headers: { Accept: "application/json" } });
       if (!response.ok) {
         showError(await errorFrom(response));
         return;
       }
       const data = await response.json();
       renderStatus(data);
-      renderReleases(data.releases);
+      if (data.releases) renderReleases(data.releases);
       showError(data.error);
     } catch (e) {
       showError({ message: `Couldn't reach the manager: ${e.message || e}` });
@@ -175,10 +181,14 @@
     }
   }
 
+  function pick() {
+    return load({ pickerOnly: true });
+  }
+
   function open() {
     el("firmware_github_modal").showModal();
     return load();
   }
 
-  window.firmwareGithub = { open, load, stage };
+  window.firmwareGithub = { open, load, stage, pick };
 })();
