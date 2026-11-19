@@ -232,6 +232,8 @@ def edit_nspanel(request, panel_id: int):
         "max_live_log_messages": get_setting_with_default("max_live_log_messages"),
         "screensaver_mode_global": get_setting_with_default("screensaver_mode"),
         "screensaver_cards_global": get_setting_with_default("screensaver_cards"),
+        "now_playing_player": nspanel.room.first_media_player(),
+        "now_playing_in_use": "now_playing" in (settings["screensaver_cards"] if settings["screensaver_cards_mode"] == "custom" else (get_setting_with_default("screensaver_cards") or "")),
         "screensaver_base_card_seconds_global": get_setting_with_default("screensaver_base_card_seconds"),
     }
 

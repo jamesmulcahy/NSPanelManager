@@ -5,7 +5,7 @@ export const MIN_CARD_SECONDS = 3;
 export const MAX_CARD_SECONDS = 300;
 
 // The card types this page has a row for. Other types in the setting are kept as they are.
-export const CARD_TYPES = { calendar: "Calendar", energy: "Energy" } as const;
+export const CARD_TYPES = { calendar: "Calendar", energy: "Energy", now_playing: "Now playing" } as const;
 
 export type ScreensaverCard = { type: string; seconds: number };
 

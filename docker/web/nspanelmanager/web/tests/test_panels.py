@@ -5,7 +5,7 @@ legacy panel-facing api/ endpoints.
 
 from django.urls import reverse
 
-from web.models import Entity, NSPanel
+from web.models import Entity, NSPanel, RoomEntitiesPage
 from web.settings_helper import get_nspanel_setting_with_default, set_nspanel_setting_value
 
 from .harness import NSPMTestCase
@@ -348,3 +348,27 @@ class LegacyPanelAPITests(NSPMTestCase):
 
         self.assertEqual(response.json(), {"result": "OK"})
         self.assertEqual(self.mqttmanager.restarts, 1)
+
+
+class FirstMediaPlayerTests(NSPMTestCase):
+    """Room.first_media_player() follows the MQTTManager's Room::first_media_player(): entity page order, then slot order."""
+
+    def setUp(self):
+        super().setUp()
+        self.room = self.make_room("Office")
+
+    def player(self, page, slot, name):
+        return Entity.objects.create(room=self.room, entities_page=page, room_view_position=slot, entity_type=Entity.EntityType.MEDIA_PLAYER, friendly_name=name)
+
+    def test_none_without_a_media_player(self):
+        page = RoomEntitiesPage.objects.create(room=self.room, display_order=0, page_type=4)
+        Entity.objects.create(room=self.room, entities_page=page, room_view_position=0, entity_type=Entity.EntityType.LIGHT, friendly_name="Lamp")
+        self.assertIsNone(self.room.first_media_player())
+
+    def test_page_order_wins_over_slot_order(self):
+        second = RoomEntitiesPage.objects.create(room=self.room, display_order=2, page_type=4)
+        first = RoomEntitiesPage.objects.create(room=self.room, display_order=1, page_type=4)
+        self.player(second, 0, "Late page")
+        self.player(first, 3, "Early page, late slot")
+        self.player(first, 1, "Early page, early slot")
+        self.assertEqual(self.room.first_media_player().friendly_name, "Early page, early slot")
