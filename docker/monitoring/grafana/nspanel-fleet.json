@@ -1540,8 +1540,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by (panel, outcome) (increase(nspanel_config_saves_total{job=\"nspanelmanager\",role=\"panel\",outcome=~\"refused_unreadable|lock_timeout|failed\"}[1h]))",
-          "legendFormat": "{{panel}} {{outcome}}",
+          "expr": "sum by (panel, caller, outcome) (increase(nspanel_config_saves_total{job=\"nspanelmanager\",role=\"panel\",outcome=~\"refused_unreadable|lock_timeout|failed\"}[1h]))",
+          "legendFormat": "{{panel}} {{caller}} {{outcome}}",
           "refId": "A",
           "range": true,
           "instant": false

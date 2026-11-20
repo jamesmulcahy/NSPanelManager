@@ -2628,8 +2628,8 @@
     },
     {
       "type": "timeseries",
-      "title": "Write time",
-      "description": "fopen() to fclose() of each write. The caller's task waits this long; tens of ms is normal, hundreds with a LittleFS erase.",
+      "title": "Writes by caller (per hour)",
+      "description": "What asked for each write that reached flash: look (a look chosen on the panel or sent by the manager), look_confirmed (the manager confirmed it), buttons, us_layout, panel_name, timers, firmware_update, gui_update, command, web_ui, boot_defaults.",
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -2638,6 +2638,84 @@
       "gridPos": {
         "x": 12,
         "y": 91,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (caller) (increase(nspanel_config_saves_total{job=\"nspanelmanager\",role=\"panel\",panel=~\"${panel:regex}\",outcome=\"written\"}[1h]))",
+          "legendFormat": "{{caller}}",
+          "refId": "A",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "gradientMode": "none",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Write time",
+      "description": "fopen() to fclose() of each write. The caller's task waits this long; tens of ms is normal, hundreds with a LittleFS erase.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "id": 41,
+      "gridPos": {
+        "x": 0,
+        "y": 99,
         "w": 12,
         "h": 8
       },
@@ -2734,11 +2812,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 99,
+        "y": 107,
         "w": 24,
         "h": 1
       },
-      "id": 41,
+      "id": 42,
       "panels": []
     },
     {
@@ -2749,10 +2827,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 42,
+      "id": 43,
       "gridPos": {
         "x": 0,
-        "y": 100,
+        "y": 108,
         "w": 16,
         "h": 9
       },
@@ -2836,10 +2914,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 43,
+      "id": 44,
       "gridPos": {
         "x": 16,
-        "y": 100,
+        "y": 108,
         "w": 8,
         "h": 9
       },
@@ -2910,10 +2988,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 44,
+      "id": 45,
       "gridPos": {
         "x": 0,
-        "y": 109,
+        "y": 117,
         "w": 24,
         "h": 6
       },

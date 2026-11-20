@@ -218,8 +218,8 @@ def fleet():
                 bars=True, legend_calcs=("sum",),
                 desc="Writes of the panel's config.json to LittleFS (metrics firmware with the config-save hardening). Saves skipped as unchanged are not counted here."))
     P.append(ts(L, "config.json problems (per hour)",
-                [target('sum by (panel, outcome) (increase(nspanel_config_saves_total{job="nspanelmanager",role="panel",outcome=~"refused_unreadable|lock_timeout|failed"}[1h]))',
-                        "{{panel}} {{outcome}}"),
+                [target('sum by (panel, caller, outcome) (increase(nspanel_config_saves_total{job="nspanelmanager",role="panel",outcome=~"refused_unreadable|lock_timeout|failed"}[1h]))',
+                        "{{panel}} {{caller}} {{outcome}}"),
                  target('max by (panel) (nspanel_config_load_state{job="nspanelmanager",role="panel"} > 0)', "{{panel}} boot load state", "B")],
                 bars=True, legend_calcs=("sum", "max"), steps=[("green", None), ("red", 1)],
                 desc="Should stay empty. refused_unreadable: config.json could not be read at boot and is protected until saved from the web UI. "
@@ -444,6 +444,11 @@ def panel_detail():
                 [target(f"sum by (outcome) (increase(nspanel_config_saves_total{{{SP}}}[1h]))", "{{outcome}}")], bars=True, stack=True,
                 legend_calcs=("sum",),
                 desc="Every save_config() call: written, unchanged (nothing changed, not written), refused_unreadable, lock_timeout, failed."))
+    P.append(ts(L, "Writes by caller (per hour)",
+                [target(f'sum by (caller) (increase(nspanel_config_saves_total{{{SP},outcome="written"}}[1h]))', "{{caller}}")], bars=True, stack=True,
+                legend_calcs=("sum",),
+                desc="What asked for each write that reached flash: look (a look chosen on the panel or sent by the manager), look_confirmed "
+                     "(the manager confirmed it), buttons, us_layout, panel_name, timers, firmware_update, gui_update, command, web_ui, boot_defaults."))
     P.append(ts(L, "Write time", quantiles("nspanel_config_write_duration_seconds", "", SP, ""), unit="s",
                 desc="fopen() to fclose() of each write. The caller's task waits this long; tens of ms is normal, hundreds with a LittleFS erase."))
 
