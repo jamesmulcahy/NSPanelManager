@@ -213,6 +213,17 @@ def fleet():
     P.append(ts(L, "Configs sent (per hour, by reason)",
                 [target('sum by (reason) (increase(nspm_panel_configs_sent_total[1h]))', "{{reason}}")], bars=True, stack=True,
                 desc="reload_resend is the duplicate send after every reload (see FIXES_PENDING.md).", legend_calcs=("sum",)))
+    P.append(ts(L, "config.json writes (per hour)",
+                [target('sum by (panel) (increase(nspanel_config_saves_total{job="nspanelmanager",role="panel",outcome="written"}[1h]))', "{{panel}}")],
+                bars=True, legend_calcs=("sum",),
+                desc="Writes of the panel's config.json to LittleFS (metrics firmware with the config-save hardening). Saves skipped as unchanged are not counted here."))
+    P.append(ts(L, "config.json problems (per hour)",
+                [target('sum by (panel, outcome) (increase(nspanel_config_saves_total{job="nspanelmanager",role="panel",outcome=~"refused_unreadable|lock_timeout|failed"}[1h]))',
+                        "{{panel}} {{outcome}}"),
+                 target('max by (panel) (nspanel_config_load_state{job="nspanelmanager",role="panel"} > 0)', "{{panel}} boot load state", "B")],
+                bars=True, legend_calcs=("sum", "max"), steps=[("green", None), ("red", 1)],
+                desc="Should stay empty. refused_unreadable: config.json could not be read at boot and is protected until saved from the web UI. "
+                     "Boot load state: 1 = no config.json, 2 = unreadable."))
 
     P.append(row(L, "Manager: MQTT"))
     P.append(stat(L, "Broker connected", f"max(nspm_mqtt_connected{{{MGR}}})", w=4,
@@ -412,6 +423,29 @@ def panel_detail():
         f"1 - max by (panel, pool) (nspanel_heap_free_bytes{{{SP}}}) / max by (panel, pool) (nspanel_heap_size_bytes{{{SP}}})", "{{panel}} {{pool}}")],
         unit="percentunit", w=24, h=7, legend_calcs=("max", "lastNotNull"),
         desc="Used fraction of each heap pool. Internal should match the status report's heap_used_pct; PSRAM is the large, mostly idle pool."))
+
+    P.append(row(L, "config.json (LittleFS)"))
+    P.append(stat(L, "Boot load", f"max by (panel) (nspanel_config_load_state{{{SP}}})", w=4, legend="{{panel}}",
+                  steps=[("green", None), ("orange", 1), ("red", 2)],
+                  mappings=[{"type": "value", "options": {"0": {"text": "loaded"}, "1": {"text": "missing"}, "2": {"text": "unreadable"}}}],
+                  desc="What the panel found when it read config.json at boot. Unreadable: the file is kept, and saves are refused until the setup page saves."))
+    P.append(stat(L, "Writes (24h)", f'sum by (panel) (increase(nspanel_config_saves_total{{{SP},outcome="written"}}[24h]))', w=4, decimals=0,
+                  legend="{{panel}}"))
+    P.append(stat(L, "Skipped as unchanged (24h)", f'sum by (panel) (increase(nspanel_config_saves_total{{{SP},outcome="unchanged"}}[24h]))', w=4,
+                  decimals=0, legend="{{panel}}"))
+    P.append(stat(L, "Failed or refused (24h)",
+                  f'sum by (panel) (increase(nspanel_config_saves_total{{{SP},outcome=~"refused_unreadable|lock_timeout|failed"}}[24h]))', w=4,
+                  decimals=0, legend="{{panel}}", steps=[("green", None), ("red", 1)]))
+    P.append(stat(L, "Bytes written (24h)", f"sum by (panel) (increase(nspanel_config_written_bytes_total{{{SP}}}[24h]))", unit="bytes", w=4,
+                  legend="{{panel}}", desc="What reached flash. LittleFS wear-levels over 143 × 4 KB blocks."))
+    P.append(stat(L, "File size", f"max by (panel) (nspanel_config_file_bytes{{{SP}}})", unit="bytes", w=4, legend="{{panel}}",
+                  desc="Size of the last successful write; 0 until the panel has written since boot."))
+    P.append(ts(L, "Saves by outcome (per hour)",
+                [target(f"sum by (outcome) (increase(nspanel_config_saves_total{{{SP}}}[1h]))", "{{outcome}}")], bars=True, stack=True,
+                legend_calcs=("sum",),
+                desc="Every save_config() call: written, unchanged (nothing changed, not written), refused_unreadable, lock_timeout, failed."))
+    P.append(ts(L, "Write time", quantiles("nspanel_config_write_duration_seconds", "", SP, ""), unit="s",
+                desc="fopen() to fclose() of each write. The caller's task waits this long; tens of ms is normal, hundreds with a LittleFS erase."))
 
     P.append(row(L, "Task stacks"))
     P.append(ts(L, "Lowest stack headroom", [target(

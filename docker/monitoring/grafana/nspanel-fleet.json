@@ -1442,16 +1442,188 @@
       }
     },
     {
+      "type": "timeseries",
+      "title": "config.json writes (per hour)",
+      "description": "Writes of the panel's config.json to LittleFS (metrics firmware with the config-save hardening). Saves skipped as unchanged are not counted here.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "id": 18,
+      "gridPos": {
+        "x": 12,
+        "y": 55,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (panel) (increase(nspanel_config_saves_total{job=\"nspanelmanager\",role=\"panel\",outcome=\"written\"}[1h]))",
+          "legendFormat": "{{panel}}",
+          "refId": "A",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "gradientMode": "none",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "config.json problems (per hour)",
+      "description": "Should stay empty. refused_unreadable: config.json could not be read at boot and is protected until saved from the web UI. Boot load state: 1 = no config.json, 2 = unreadable.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "id": 19,
+      "gridPos": {
+        "x": 0,
+        "y": 63,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "sum by (panel, outcome) (increase(nspanel_config_saves_total{job=\"nspanelmanager\",role=\"panel\",outcome=~\"refused_unreadable|lock_timeout|failed\"}[1h]))",
+          "legendFormat": "{{panel}} {{outcome}}",
+          "refId": "A",
+          "range": true,
+          "instant": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by (panel) (nspanel_config_load_state{job=\"nspanelmanager\",role=\"panel\"} > 0)",
+          "legendFormat": "{{panel}} boot load state",
+          "refId": "B",
+          "range": true,
+          "instant": false
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum",
+            "max"
+          ],
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "spanNulls": true,
+            "axisSoftMin": 0,
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "gradientMode": "none",
+            "axisBorderShow": false,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "color": {
+            "mode": "palette-classic-by-name"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
       "type": "row",
       "title": "Manager: MQTT",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 63,
+        "y": 71,
         "w": 24,
         "h": 1
       },
-      "id": 18,
+      "id": 20,
       "panels": []
     },
     {
@@ -1462,10 +1634,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 19,
+      "id": 21,
       "gridPos": {
         "x": 0,
-        "y": 64,
+        "y": 72,
         "w": 4,
         "h": 4
       },
@@ -1541,10 +1713,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 20,
+      "id": 22,
       "gridPos": {
         "x": 4,
-        "y": 64,
+        "y": 72,
         "w": 4,
         "h": 4
       },
@@ -1607,10 +1779,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 21,
+      "id": 23,
       "gridPos": {
         "x": 8,
-        "y": 64,
+        "y": 72,
         "w": 4,
         "h": 4
       },
@@ -1673,10 +1845,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 22,
+      "id": 24,
       "gridPos": {
         "x": 12,
-        "y": 64,
+        "y": 72,
         "w": 4,
         "h": 4
       },
@@ -1742,10 +1914,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 23,
+      "id": 25,
       "gridPos": {
         "x": 16,
-        "y": 64,
+        "y": 72,
         "w": 4,
         "h": 4
       },
@@ -1807,10 +1979,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 24,
+      "id": 26,
       "gridPos": {
         "x": 20,
-        "y": 64,
+        "y": 72,
         "w": 4,
         "h": 4
       },
@@ -1868,10 +2040,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 25,
+      "id": 27,
       "gridPos": {
         "x": 0,
-        "y": 68,
+        "y": 76,
         "w": 12,
         "h": 8
       },
@@ -1948,10 +2120,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 26,
+      "id": 28,
       "gridPos": {
         "x": 12,
-        "y": 68,
+        "y": 76,
         "w": 12,
         "h": 8
       },
@@ -2028,10 +2200,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 27,
+      "id": 29,
       "gridPos": {
         "x": 0,
-        "y": 76,
+        "y": 84,
         "w": 12,
         "h": 8
       },
@@ -2108,10 +2280,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 28,
+      "id": 30,
       "gridPos": {
         "x": 12,
-        "y": 76,
+        "y": 84,
         "w": 12,
         "h": 8
       },
@@ -2188,10 +2360,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 29,
+      "id": 31,
       "gridPos": {
         "x": 0,
-        "y": 84,
+        "y": 92,
         "w": 12,
         "h": 8
       },
@@ -2278,10 +2450,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 30,
+      "id": 32,
       "gridPos": {
         "x": 12,
-        "y": 84,
+        "y": 92,
         "w": 12,
         "h": 8
       },
@@ -2379,10 +2551,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 31,
+      "id": 33,
       "gridPos": {
         "x": 0,
-        "y": 92,
+        "y": 100,
         "w": 6,
         "h": 8
       },
@@ -2459,10 +2631,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 32,
+      "id": 34,
       "gridPos": {
         "x": 6,
-        "y": 92,
+        "y": 100,
         "w": 6,
         "h": 8
       },
@@ -2539,10 +2711,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 33,
+      "id": 35,
       "gridPos": {
         "x": 12,
-        "y": 92,
+        "y": 100,
         "w": 6,
         "h": 8
       },
@@ -2628,10 +2800,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 34,
+      "id": 36,
       "gridPos": {
         "x": 18,
-        "y": 92,
+        "y": 100,
         "w": 6,
         "h": 8
       },
@@ -2705,11 +2877,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 100,
+        "y": 108,
         "w": 24,
         "h": 1
       },
-      "id": 35,
+      "id": 37,
       "panels": []
     },
     {
@@ -2720,10 +2892,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 36,
+      "id": 38,
       "gridPos": {
         "x": 0,
-        "y": 101,
+        "y": 109,
         "w": 6,
         "h": 4
       },
@@ -2807,10 +2979,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 37,
+      "id": 39,
       "gridPos": {
         "x": 6,
-        "y": 101,
+        "y": 109,
         "w": 6,
         "h": 4
       },
@@ -2885,10 +3057,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 38,
+      "id": 40,
       "gridPos": {
         "x": 12,
-        "y": 101,
+        "y": 109,
         "w": 6,
         "h": 4
       },
@@ -2946,10 +3118,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 39,
+      "id": 41,
       "gridPos": {
         "x": 18,
-        "y": 101,
+        "y": 109,
         "w": 6,
         "h": 4
       },
@@ -3012,10 +3184,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 40,
+      "id": 42,
       "gridPos": {
         "x": 0,
-        "y": 105,
+        "y": 113,
         "w": 12,
         "h": 8
       },
@@ -3092,10 +3264,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 41,
+      "id": 43,
       "gridPos": {
         "x": 12,
-        "y": 105,
+        "y": 113,
         "w": 12,
         "h": 8
       },
@@ -3171,10 +3343,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 42,
+      "id": 44,
       "gridPos": {
         "x": 0,
-        "y": 113,
+        "y": 121,
         "w": 12,
         "h": 8
       },
@@ -3251,10 +3423,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 43,
+      "id": 45,
       "gridPos": {
         "x": 12,
-        "y": 113,
+        "y": 121,
         "w": 12,
         "h": 8
       },
@@ -3331,10 +3503,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 44,
+      "id": 46,
       "gridPos": {
         "x": 0,
-        "y": 121,
+        "y": 129,
         "w": 12,
         "h": 8
       },
@@ -3444,10 +3616,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 45,
+      "id": 47,
       "gridPos": {
         "x": 12,
-        "y": 121,
+        "y": 129,
         "w": 12,
         "h": 8
       },
@@ -3542,11 +3714,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 129,
+        "y": 137,
         "w": 24,
         "h": 1
       },
-      "id": 46,
+      "id": 48,
       "panels": []
     },
     {
@@ -3557,10 +3729,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 47,
+      "id": 49,
       "gridPos": {
         "x": 0,
-        "y": 130,
+        "y": 138,
         "w": 12,
         "h": 8
       },
@@ -3659,10 +3831,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 48,
+      "id": 50,
       "gridPos": {
         "x": 12,
-        "y": 130,
+        "y": 138,
         "w": 12,
         "h": 8
       },
@@ -3737,10 +3909,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 49,
+      "id": 51,
       "gridPos": {
         "x": 0,
-        "y": 138,
+        "y": 146,
         "w": 12,
         "h": 8
       },
@@ -3817,10 +3989,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 50,
+      "id": 52,
       "gridPos": {
         "x": 12,
-        "y": 138,
+        "y": 146,
         "w": 12,
         "h": 8
       },
@@ -3897,10 +4069,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 51,
+      "id": 53,
       "gridPos": {
         "x": 0,
-        "y": 146,
+        "y": 154,
         "w": 12,
         "h": 8
       },
@@ -3975,10 +4147,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 52,
+      "id": 54,
       "gridPos": {
         "x": 12,
-        "y": 146,
+        "y": 154,
         "w": 12,
         "h": 8
       },
@@ -4055,10 +4227,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 53,
+      "id": 55,
       "gridPos": {
         "x": 0,
-        "y": 154,
+        "y": 162,
         "w": 12,
         "h": 8
       },
@@ -4135,10 +4307,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 54,
+      "id": 56,
       "gridPos": {
         "x": 12,
-        "y": 154,
+        "y": 162,
         "w": 12,
         "h": 8
       },
@@ -4213,10 +4385,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 55,
+      "id": 57,
       "gridPos": {
         "x": 0,
-        "y": 162,
+        "y": 170,
         "w": 12,
         "h": 8
       },
@@ -4291,10 +4463,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 56,
+      "id": 58,
       "gridPos": {
         "x": 12,
-        "y": 162,
+        "y": 170,
         "w": 12,
         "h": 8
       },
@@ -4369,10 +4541,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 57,
+      "id": 59,
       "gridPos": {
         "x": 0,
-        "y": 170,
+        "y": 178,
         "w": 12,
         "h": 8
       },
@@ -4452,10 +4624,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 58,
+      "id": 60,
       "gridPos": {
         "x": 12,
-        "y": 170,
+        "y": 178,
         "w": 12,
         "h": 8
       },
@@ -4530,10 +4702,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 59,
+      "id": 61,
       "gridPos": {
         "x": 0,
-        "y": 178,
+        "y": 186,
         "w": 12,
         "h": 8
       },
@@ -4632,10 +4804,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 60,
+      "id": 62,
       "gridPos": {
         "x": 12,
-        "y": 178,
+        "y": 186,
         "w": 12,
         "h": 8
       },
@@ -4712,10 +4884,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 61,
+      "id": 63,
       "gridPos": {
         "x": 0,
-        "y": 186,
+        "y": 194,
         "w": 12,
         "h": 8
       },
@@ -4790,11 +4962,11 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 194,
+        "y": 202,
         "w": 24,
         "h": 1
       },
-      "id": 62,
+      "id": 64,
       "panels": []
     },
     {
@@ -4805,10 +4977,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 63,
+      "id": 65,
       "gridPos": {
         "x": 0,
-        "y": 195,
+        "y": 203,
         "w": 8,
         "h": 8
       },
@@ -4885,10 +5057,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 64,
+      "id": 66,
       "gridPos": {
         "x": 8,
-        "y": 195,
+        "y": 203,
         "w": 8,
         "h": 8
       },
@@ -4965,10 +5137,10 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "id": 65,
+      "id": 67,
       "gridPos": {
         "x": 16,
-        "y": 195,
+        "y": 203,
         "w": 8,
         "h": 8
       },
