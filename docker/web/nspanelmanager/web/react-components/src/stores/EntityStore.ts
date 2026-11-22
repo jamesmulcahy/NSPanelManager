@@ -18,6 +18,8 @@ interface INSPanelInfoData {
 export interface INSPanelWarningData {
   level: "error" | "warning" | "info" | "debug";
   text: string;
+  // A button the manager offers next to the warning: "gui_update" sends the panel its GUI update.
+  action?: "gui_update";
 }
 
 export interface INSPanelStatusData {

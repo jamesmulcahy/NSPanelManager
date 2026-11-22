@@ -1072,23 +1072,30 @@ void NSPanel::send_websocket_status_update() {
           {"level", "info"},
           {"text", "Firmware update available. Perform firmware update to ensure optimal compatibility with manager and latest features and bug fixes."}});
     }
-    if (this->_current_tft_md5_checksum.empty()) {
+    if (this->shows_legacy_screen()) {
+      // No HMI in the firmware: nothing is installed automatically, so say what to press.
+      status_data["warnings"].push_back(nlohmann::json{
+          {"level", "warning"},
+          {"text", "Shows the legacy screen \u2014 press Update GUI"},
+          {"action", "gui_update"}});
+    } else if (this->_current_tft_md5_checksum.empty()) {
       status_data["warnings"].push_back(nlohmann::json{
           {"level", "warning"},
           {"text", "Manager has no checksum for installed GUI on panel. If this doesn't go away within 5 minutes, try performing a GUI update."}});
     } else if (this->has_tft_update()) {
-      status_data["warnings"].push_back(nlohmann::json{
-          {"level", "info"},
-          {"text", "GUI update available. Perform GUI update to ensure optimal compatibility with new firmware."}});
+      if (this->gui_update_needs_firmware_first()) {
+        status_data["warnings"].push_back(nlohmann::json{
+            {"level", "warning"},
+            {"text", "Update the firmware first. This firmware predates LVGL, so a GUI update (the terminal TFT) would leave the display on its waiting page."}});
+      } else {
+        status_data["warnings"].push_back(nlohmann::json{
+            {"level", "info"},
+            {"text", "GUI update available. Perform GUI update to ensure optimal compatibility with new firmware."}});
+      }
     } else if (this->_lvgl_mode && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
       status_data["warnings"].push_back(nlohmann::json{
           {"level", "warning"},
-          {"text", "Panel is set to LVGL and has the TFT for it, but shows NSPM's Nextion pages. Check that the uploaded terminal TFT is an nspanel-terminal TFT."}});
-    }
-    if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE) {
-      status_data["warnings"].push_back(nlohmann::json{
-          {"level", "warning"},
-          {"text", "Panel runs the terminal TFT with LVGL switched off (lvgl_ui), so the display only shows the TFT's waiting page. Switch it on again, or set the panel to Nextion and update its GUI."}});
+          {"text", "Panel runs NSPM's HMI TFT: its GUI update installs the terminal TFT."}});
     }
   }
 
@@ -1183,7 +1190,9 @@ bool NSPanel::is_lvgl_mode() {
 
 void NSPanel::_reload_lvgl_settings() {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
-  bool lvgl_mode = this->_get_nspanel_setting_with_default("display_mode", "nextion").compare("lvgl") == 0;
+  // LVGL is the default (and the only mode that can be chosen). A "nextion" row can only be a leftover from before the
+  // Nextion HMI UI was removed; the data migration rewrites those, and it is still honored until the slot code goes.
+  bool lvgl_mode = this->_get_nspanel_setting_with_default("display_mode", "lvgl").compare("nextion") != 0;
   std::string theme = this->_get_nspanel_setting_with_default("lvgl_theme", "");
   std::string background = this->_get_nspanel_setting_with_default("lvgl_background", "");
 
@@ -1481,7 +1490,21 @@ void NSPanel::firmware_update(bool force) {
   }
 }
 
+bool NSPanel::gui_update_needs_firmware_first() {
+  std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+  return this->_features_known && !this->_panel_reports_lvgl_look;
+}
+
+bool NSPanel::shows_legacy_screen() {
+  std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+  return this->_panel_reports_no_hmi && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION;
+}
+
 void NSPanel::tft_update() {
+  if (this->gui_update_needs_firmware_first()) {
+    SPDLOG_WARN("Refusing GUI update of nspanel {}::{}: its firmware does not list the lvgl_look feature, so it predates LVGL and the terminal TFT would leave it on the waiting page. Update the firmware first.", this->_id, this->_name);
+    return;
+  }
   SPDLOG_INFO("Sending TFT update command to nspanel {}::{}.", this->_id, this->_name);
   nlohmann::json cmd;
   cmd["command"] = "tft_update";
@@ -1632,16 +1655,21 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
 
     // Features the firmware lists (absent from older firmware). Before reload_config() below, which may send the look.
     bool reports_lvgl_look = false;
+    bool reports_no_hmi = false;
     if (register_request_payload.contains("features") && register_request_payload.at("features").is_array()) {
       for (const auto &feature : register_request_payload.at("features")) {
         if (feature.is_string() && feature.get<std::string>() == "lvgl_look") {
           reports_lvgl_look = true;
+        } else if (feature.is_string() && feature.get<std::string>() == "no_hmi") {
+          reports_no_hmi = true;
         }
       }
     }
     {
       std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
       this->_panel_reports_lvgl_look = reports_lvgl_look;
+      this->_panel_reports_no_hmi = reports_no_hmi;
+      this->_features_known = true;
     }
 
     if (!register_request_payload.contains("friendly_name") || !register_request_payload.at("friendly_name").is_string()) {

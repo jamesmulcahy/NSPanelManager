@@ -141,7 +141,7 @@ const NSPanelStatusHeader = ({ state, update_progress }: { state: string; update
   }
 };
 
-const NSPanelWarnings = ({ warnings }: { warnings: INSPanelWarningData[] }) => {
+const NSPanelWarnings = ({ warnings, mac, name }: { warnings: INSPanelWarningData[]; mac: string; name: string }) => {
   if (warnings.length === 0) return null;
 
   let highest_warning_level = 5;
@@ -184,6 +184,17 @@ const NSPanelWarnings = ({ warnings }: { warnings: INSPanelWarningData[] }) => {
             <div>
               <div>{warning.text}</div>
               <div className="text-xs uppercase font-semibold opacity-60">{warning.level.charAt(0).toUpperCase() + warning.level.slice(1)}</div>
+              {warning.action === "gui_update" && (
+                <button
+                  className="btn btn-warning btn-sm mt-2"
+                  onClick={() => {
+                    useStompStore.getState().send(`nspanel/${mac}/command`, "gui_update");
+                    Notify({ message: `Sent GUI update command to ${name}.`, level: "success", duration: 2000 });
+                  }}
+                >
+                  Update GUI
+                </button>
+              )}
             </div>
           </li>
         ))}
@@ -327,7 +338,7 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
                 }
                 return null;
               })()}
-              {status.state != "offline" && <NSPanelWarnings warnings={status.warnings}></NSPanelWarnings>}
+              {status.state != "offline" && <NSPanelWarnings warnings={status.warnings} mac={status.mac} name={status.name}></NSPanelWarnings>}
             </div>
           </div>
 

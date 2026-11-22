@@ -312,23 +312,20 @@
             </div>
         </div>
 
-        <!-- Display: Nextion pages on NSPM's TFT, or LVGL on a terminal TFT. See docs/LVGL_PANEL_MODE.md -->
+        <!-- Display: LVGL on a terminal TFT. See docs/LVGL_PANEL_MODE.md -->
         <div class="mt-4" id="display_settings">
           <label for="display_mode" class="block mb-2 text-sm font-medium">Display</label>
           <div class="flex flex-row-reverse">
-            <select name="display_mode" id="display_mode" class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 focus:ring-0 focus:border-accent block flex-1 min-w-0 w-full text-sm p-2.5 peer/display_mode">
-              {% for value, label in display_info.modes.items %}
-              <option value="{{ value }}" {% if settings.display_mode == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-            <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md peer-focus/display_mode:border-accent">
+            <!-- LVGL is the only display mode; the field stays in the form so that what is posted is always valid. -->
+            <input type="hidden" name="display_mode" id="display_mode" value="lvgl">
+            <div class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 block flex-1 min-w-0 w-full text-sm p-2.5">LVGL (terminal TFT)</div>
+            <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md ">
               <span class="mdi mdi-monitor-dashboard"></span>
             </span>
           </div>
           <p class="text-xs font-light mt-2">
             Running now: <span id="display_running">{{ display_info.running.label }}</span>
             <span id="display_reported_mode" class="hidden">; panel reports <span id="display_reported_mode_value"></span></span>.
-            Changing the display changes the TFT the panel is served: save, then run <i>Update GUI</i>.
           </p>
 
           <div id="lvgl_settings" class="{% if settings.display_mode != 'lvgl' %}hidden{% endif %}">

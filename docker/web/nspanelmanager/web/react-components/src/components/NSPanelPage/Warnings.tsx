@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { useEntityStatesStore, type INSPanelWarningData } from "../../stores/EntityStore";
 import { Icon } from "@mdi/react";
 import { mdiAlertCircle } from "@mdi/js";
+import { useStompStore } from "../../stores/StompStore";
+import { Notify } from "../NSPanelToastContainer";
 
-const NSPanelWarning = ({ warning }: { warning: INSPanelWarningData }) => {
+const NSPanelWarning = ({ warning, mac }: { warning: INSPanelWarningData; mac: string }) => {
   return (
     <div key={warning.text} className="block p-3">
       <div className="grid grid-cols-[auto_1fr] items-start justify-start gap-2 w-full">
@@ -13,6 +15,17 @@ const NSPanelWarning = ({ warning }: { warning: INSPanelWarningData }) => {
           {warning.level == "info" && <Icon path={mdiAlertCircle} className="w-4 h-4 text-info mr-2"></Icon>}
           {warning.level == "debug" && <Icon path={mdiAlertCircle} className="w-4 h-4 text-base-content mr-2"></Icon>}
           <div className="flex">{warning.text}</div>
+          {warning.action === "gui_update" && (
+            <button
+              className="btn btn-warning btn-sm ml-auto"
+              onClick={() => {
+                useStompStore.getState().send(`nspanel/${mac}/command`, "gui_update");
+                Notify({ message: `Sent GUI update command.`, level: "success", duration: 2000 });
+              }}
+            >
+              Update GUI
+            </button>
+          )}
         </div>
         <div className="grid-cols-subgrid col-span-2 col-start-2">
           <div className="text-xs pl-4 uppercase font-semibold opacity-60">{warning.level.charAt(0).toUpperCase() + warning.level.slice(1)}</div>
@@ -43,7 +56,7 @@ export default function NSPanelWarnings({ nspanel_mac }: { nspanel_mac: string }
   return (
     <div className="divide-y divide-neutral w-full backdrop-blur-none backdrop-brightness-75 rounded-box border border-warning/50">
       {nspanels[nspanel_mac].warnings.map((warning) => {
-        return <NSPanelWarning warning={warning} />;
+        return <NSPanelWarning warning={warning} mac={nspanel_mac} />;
       })}
     </div>
   );
