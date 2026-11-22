@@ -25,8 +25,8 @@ NEXTION_REMOVED_MESSAGE = "LVGL is the only display mode: the Nextion HMI UI was
 
 # Values the firmware takes for {"command": "lvgl_theme"} and {"command": "lvgl_background"}. "light" is left out: the
 # firmware takes it as "grey".
-LVGL_THEMES = {"auto": "Auto (the background's own)", "dark": "Dark", "grey": "Grey", "ocean": "Ocean", "dusk": "Dusk", "aurora": "Aurora", "peaks": "Peaks"}
-LVGL_BACKGROUNDS = {"none": "None", "ocean": "Ocean", "dusk": "Dusk", "aurora": "Aurora", "peaks": "Peaks"}
+LVGL_THEMES = {"auto": "Auto (the background's own)", "dark": "Dark", "grey": "Grey", "ocean": "Ocean", "dusk": "Dusk", "aurora": "Aurora", "peaks": "Peaks", "vesuvius": "Vesuvius", "parthenon": "Parthenon"}
+LVGL_BACKGROUNDS = {"none": "None", "ocean": "Ocean", "dusk": "Dusk", "aurora": "Aurora", "peaks": "Peaks", "vesuvius": "Vesuvius", "parthenon": "Parthenon"}
 
 SLOTS = ("tft1", "tft2", "tft3", "tft4")
 # tft_file_type of each background slot upload -> its path in the default storage.

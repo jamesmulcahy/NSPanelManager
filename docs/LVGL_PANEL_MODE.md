@@ -33,8 +33,8 @@ settings follow that convention, so MQTTManager reads them with no schema change
 | Setting | Values | Default (absent) | Meaning |
 |---|---|---|---|
 | `display_mode` | `nextion`, `lvgl` | `nextion` | Which TFT the manager serves this panel, and so which UI it runs |
-| `lvgl_theme` | `auto`, `dark`, `grey`, `ocean`, `dusk`, `aurora`, `peaks` | absent | LVGL palette. Absent: the manager never sends one |
-| `lvgl_background` | `none`, `ocean`, `dusk`, `aurora`, `peaks` | absent | LVGL page background. Absent: never sent |
+| `lvgl_theme` | `auto`, `dark`, `grey`, `ocean`, `dusk`, `aurora`, `peaks`, `vesuvius`, `parthenon` | absent | LVGL palette. Absent: the manager never sends one |
+| `lvgl_background` | `none`, `ocean`, `dusk`, `aurora`, `peaks`, `vesuvius`, `parthenon` | absent | LVGL page background. Absent: never sent |
 
 `light` is not offered: the firmware takes it as `grey`.
 
@@ -140,7 +140,7 @@ emergency tool for a panel whose terminal TFT is broken and cannot be reflashed.
 ## A look chosen on the panel
 
 LVGL firmware (`feat/lvgl-look-picker`, `firmware_espidf/docs/LVGL.md`, "The look") has a look
-picker in the swipe-down menu: six background + palette combinations (Ocean, Dusk, Aurora, Peaks
+picker in the swipe-down menu: eight background + palette combinations (Ocean, Dusk, Aurora, Peaks, Vesuvius and Parthenon
 with `theme: auto`; Dark and Grey with `background: none`). A pick must become the panel's configured
 look, so the settings page shows it and the next config push does not undo it.
 
@@ -166,8 +166,8 @@ look, so the settings page shows it and the next config push does not undo it.
   only when `nspanel_id` is its own.
 
 **What MQTTManager does** (`NSPanel::_handle_lvgl_look_report`, from `command_callback`): checks the
-names against the values the firmware draws (`auto dark grey ocean dusk aurora peaks`,
-`none ocean dusk aurora peaks`, the same lists as `display_mode.LVGL_THEMES` / `LVGL_BACKGROUNDS`);
+names against the values the firmware draws (`auto dark grey ocean dusk aurora peaks vesuvius parthenon`,
+`none ocean dusk aurora peaks vesuvius parthenon`, the same lists as `display_mode.LVGL_THEMES` / `LVGL_BACKGROUNDS`);
 ignores a panel awaiting accept or denied; writes both rows with
 `MqttManagerConfig::set_nspanel_setting_value()` (update or insert, the name/value rows Django owns, so
 no migration; the database's busy timeout covers a concurrent save in the web interface); sets its

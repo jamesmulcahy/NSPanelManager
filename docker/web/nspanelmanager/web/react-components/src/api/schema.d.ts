@@ -425,9 +425,11 @@ export interface components {
          *     * `dusk` - dusk
          *     * `aurora` - aurora
          *     * `peaks` - peaks
+         *     * `vesuvius` - vesuvius
+         *     * `parthenon` - parthenon
          * @enum {string}
          */
-        LvglBackgroundEnum: "none" | "ocean" | "dusk" | "aurora" | "peaks";
+        LvglBackgroundEnum: "none" | "ocean" | "dusk" | "aurora" | "peaks" | "vesuvius" | "parthenon";
         /**
          * @description * `auto` - auto
          *     * `dark` - dark
@@ -436,9 +438,11 @@ export interface components {
          *     * `dusk` - dusk
          *     * `aurora` - aurora
          *     * `peaks` - peaks
+         *     * `vesuvius` - vesuvius
+         *     * `parthenon` - parthenon
          * @enum {string}
          */
-        LvglThemeEnum: "auto" | "dark" | "grey" | "ocean" | "dusk" | "aurora" | "peaks";
+        LvglThemeEnum: "auto" | "dark" | "grey" | "ocean" | "dusk" | "aurora" | "peaks" | "vesuvius" | "parthenon";
         /**
          * @description * `error` - error
          *     * `warning` - warning
@@ -472,6 +476,8 @@ export interface components {
              *     * `dusk` - dusk
              *     * `aurora` - aurora
              *     * `peaks` - peaks
+             *     * `vesuvius` - vesuvius
+             *     * `parthenon` - parthenon
              */
             lvgl_theme: (components["schemas"]["LvglThemeEnum"] | components["schemas"]["NullEnum"]) | null;
             /**
@@ -482,6 +488,8 @@ export interface components {
              *     * `dusk` - dusk
              *     * `aurora` - aurora
              *     * `peaks` - peaks
+             *     * `vesuvius` - vesuvius
+             *     * `parthenon` - parthenon
              */
             lvgl_background: (components["schemas"]["LvglBackgroundEnum"] | components["schemas"]["NullEnum"]) | null;
         };
@@ -520,6 +528,8 @@ export interface components {
              *     * `dusk` - dusk
              *     * `aurora` - aurora
              *     * `peaks` - peaks
+             *     * `vesuvius` - vesuvius
+             *     * `parthenon` - parthenon
              */
             lvgl_theme?: (components["schemas"]["LvglThemeEnum"] | components["schemas"]["NullEnum"]) | null;
             /**
@@ -530,6 +540,8 @@ export interface components {
              *     * `dusk` - dusk
              *     * `aurora` - aurora
              *     * `peaks` - peaks
+             *     * `vesuvius` - vesuvius
+             *     * `parthenon` - parthenon
              */
             lvgl_background?: (components["schemas"]["LvglBackgroundEnum"] | components["schemas"]["NullEnum"]) | null;
         };

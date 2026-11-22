@@ -1634,6 +1634,21 @@ TEST_F(NSPanelTest, look_chosen_on_the_panel_is_not_sent_back_as_commands) {
   EXPECT_EQ(published.config->lvgl_background(), "peaks");
 }
 
+TEST_F(NSPanelTest, look_reports_of_the_city_looks_are_saved) {
+  load_panel();
+  last_published_config();
+
+  for (const std::string look : {"vesuvius", "parthenon"}) {
+    report_look("auto", look);
+
+    EXPECT_EQ(panel_setting_values("lvgl_theme"), std::vector<std::string>{"auto"});
+    EXPECT_EQ(panel_setting_values("lvgl_background"), std::vector<std::string>{look});
+    auto config = last_published_config();
+    ASSERT_TRUE(config.has_value());
+    EXPECT_EQ(config->lvgl_background(), look);
+  }
+}
+
 TEST_F(NSPanelTest, unknown_look_report_is_ignored) {
   load_panel();
   last_published_config();
