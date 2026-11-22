@@ -150,6 +150,15 @@ class DisplayModeMigrationTests(DisplayModeTestCase):
         self.assertEqual(NSPanelSettings.objects.filter(name="display_mode").count(), 3)
         self.assertEqual(get_nspanel_setting_with_default(already_lvgl.id, "lvgl_theme", None), "dusk")
 
+    def test_duplicate_rows_are_all_rewritten(self):
+        for value in ("nextion", "lvgl", "nextion"):
+            NSPanelSettings.objects.create(nspanel=self.panel, name="display_mode", value=value)
+
+        self.migrate()
+
+        values = list(NSPanelSettings.objects.filter(nspanel=self.panel, name="display_mode").values_list("value", flat=True))
+        self.assertEqual(values, ["lvgl"] * 3)
+
     def test_migration_is_repeatable_and_reverses_to_a_no_op(self):
         import importlib
 
@@ -255,7 +264,7 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         response = self.client.get(reverse("edit_nspanel", kwargs={"panel_id": self.panel.id}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'id="lvgl_settings" class=""')
+        self.assertContains(response, 'id="lvgl_settings"')
         self.assertContains(response, '<option value="peaks" selected>Peaks</option>', html=False)
         self.assertContains(response, 'Running now: <span id="display_running">Terminal TFT (US)</span>')
         self.assertNotContains(response, "has been uploaded yet")

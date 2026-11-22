@@ -45,21 +45,17 @@
     select_background_modal.close();
   }
 
-  // Display section: show the LVGL fields in LVGL mode, the NSPM TFT backgrounds in Nextion mode.
+  // Display section: LVGL is the only display mode (the Nextion background examples stay hidden until M2 removes them).
   var lvgl_panel_ip = "";
   function update_display_fields() {
-    var lvgl = $("#display_mode").val() == "lvgl";
-    $("#lvgl_settings").toggleClass("hidden", !lvgl);
-    $("#nextion_tft_examples").toggleClass("hidden", lvgl);
     var panel_type = $("#panel_type").val();
     $("#lvgl_orientation_note").toggleClass("hidden", panel_type == "eu" || panel_type == "us_vertical");
-    if (lvgl && !$("#lvgl_screenshot").attr("src")) {
+    if (!$("#lvgl_screenshot").attr("src")) {
       refresh_lvgl_screenshot();
     }
   }
 
   function refresh_lvgl_screenshot() {
-    if ($("#display_mode").val() != "lvgl") return;
     if (!lvgl_panel_ip) {
       $("#lvgl_screenshot_status").text("Waiting for the panel's address.");
       return;
@@ -84,7 +80,6 @@
       update_now_playing_follows();
     });
     $("#screensaver_cards").on("input", update_now_playing_follows);
-    $("#display_mode").on("change", update_display_fields);
     $("#panel_type").on("change", update_display_fields);
     $("#lvgl_screenshot").on("load", function () {
       $(this).removeClass("hidden");
@@ -255,7 +250,7 @@
         </div>
 
         <!-- NSPM TFT background examples: Nextion mode only (see the Display section below) -->
-        <div id="nextion_tft_examples" class="flex items-center justify-center {% if settings.display_mode == 'lvgl' %}hidden{% endif %}">
+        <div id="nextion_tft_examples" class="flex items-center justify-center hidden">
             <!-- 81 x 81mm without frame -->
             <div id="eu-panel-example" class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[300px] mt-4 {% if settings.is_us_panel != 'False' %}hidden{% endif %}">
                 <div class="rounded-[0.2rem] w-full h-[77%] bg-black flex justify-center items-center">
@@ -328,7 +323,7 @@
             <span id="display_reported_mode" class="hidden">; panel reports <span id="display_reported_mode_value"></span></span>.
           </p>
 
-          <div id="lvgl_settings" class="{% if settings.display_mode != 'lvgl' %}hidden{% endif %}">
+          <div id="lvgl_settings">
             {% if not display_info.terminal_tft_staged %}
             <p class="text-xs text-warning mt-2">No {{ display_info.terminal_tft_label }} has been uploaded yet. Upload one (Upload TFT, "Terminal TFT") before updating this panel's GUI.</p>
             {% endif %}

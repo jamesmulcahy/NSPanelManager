@@ -180,7 +180,8 @@ public:
   bool has_tft_update();
 
   /**
-   * True when the panel has registered and its firmware did not list "lvgl_look": it predates LVGL, so the terminal
+   * True in LVGL mode when the panel's firmware predates LVGL: it registered without "lvgl_look", or its status
+   * reports have no display_mode (UNKNOWN). Nothing seen yet is not "predates". The terminal
    * TFT that a GUI update installs would leave it on the TFT's waiting page. Its firmware has to be updated first.
    */
   bool gui_update_needs_firmware_first();
@@ -289,6 +290,9 @@ private:
   // A register_request has been seen since the manager started, so the feature flags here and below are known and
   // not just the defaults of a panel that has not registered yet.
   bool _features_known = false;
+  // A status report has arrived since the manager started. Panels do not register again when only the manager
+  // restarts, so this is how a restarted manager learns the firmware's age: display_mode came with lvgl_look.
+  bool _status_report_seen = false;
   // The panel's last register_request listed the "no_hmi" feature: its firmware has no HMI pages. With the display
   // reporting DISPLAY_MODE_NEXTION it shows the legacy screen until the terminal TFT is installed (a GUI update).
   bool _panel_reports_no_hmi = false;

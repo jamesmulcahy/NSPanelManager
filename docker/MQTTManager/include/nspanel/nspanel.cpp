@@ -739,7 +739,11 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         this->_current_firmware_md5_checksum = report.md5_firmware();
         this->_current_littlefs_md5_checksum = report.md5_littlefs();
         this->_current_tft_md5_checksum = report.md5_tft_gui();
-        this->_reported_display_mode = report.display_mode();
+        {
+          std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+          this->_reported_display_mode = report.display_mode();
+          this->_status_report_seen = true;
+        }
         this->_reported_lvgl_theme = report.lvgl_theme();
         this->_reported_lvgl_background = report.lvgl_background();
         // metrics_port is repeated here so a restarted manager relearns it without waiting for a register_request.
@@ -1087,6 +1091,10 @@ void NSPanel::send_websocket_status_update() {
         status_data["warnings"].push_back(nlohmann::json{
             {"level", "warning"},
             {"text", "Update the firmware first. This firmware predates LVGL, so a GUI update (the terminal TFT) would leave the display on its waiting page."}});
+      } else if (this->_lvgl_mode && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
+        status_data["warnings"].push_back(nlohmann::json{
+            {"level", "warning"},
+            {"text", "Panel runs NSPM's HMI TFT: its GUI update installs the terminal TFT."}});
       } else {
         status_data["warnings"].push_back(nlohmann::json{
             {"level", "info"},
@@ -1095,7 +1103,12 @@ void NSPanel::send_websocket_status_update() {
     } else if (this->_lvgl_mode && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
       status_data["warnings"].push_back(nlohmann::json{
           {"level", "warning"},
-          {"text", "Panel runs NSPM's HMI TFT: its GUI update installs the terminal TFT."}});
+          {"text", "Panel is set to LVGL and has the TFT for it, but shows NSPM's Nextion pages. Check that the uploaded terminal TFT is an nspanel-terminal TFT."}});
+    }
+    if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE) {
+      status_data["warnings"].push_back(nlohmann::json{
+          {"level", "warning"},
+          {"text", "Panel runs the terminal TFT but its LVGL UI is not running (switched off, or it failed to start), so the display only shows the TFT's waiting page."}});
     }
   }
 
@@ -1492,12 +1505,19 @@ void NSPanel::firmware_update(bool force) {
 
 bool NSPanel::gui_update_needs_firmware_first() {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
-  return this->_features_known && !this->_panel_reports_lvgl_look;
+  if (!this->_lvgl_mode) {
+    return false;
+  }
+  bool registered_without_lvgl_look = this->_features_known && !this->_panel_reports_lvgl_look;
+  bool reports_no_display_mode = this->_status_report_seen && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN;
+  return registered_without_lvgl_look || reports_no_display_mode;
 }
 
 bool NSPanel::shows_legacy_screen() {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
-  return this->_panel_reports_no_hmi && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION;
+  // Only where the terminal TFT that the button installs is staged for the panel's layout.
+  return this->_lvgl_mode && this->_panel_reports_no_hmi && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION &&
+         MqttManagerConfig::get_terminal_tft_checksum(this->_is_us_panel).has_value();
 }
 
 void NSPanel::tft_update() {

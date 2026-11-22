@@ -13,7 +13,9 @@ def set_every_panel_to_lvgl(apps, schema_editor):
     NSPanel = apps.get_model("web", "NSPanel")
     NSPanelSettings = apps.get_model("web", "NSPanelSettings")
     for panel in NSPanel.objects.all():
-        NSPanelSettings.objects.update_or_create(nspanel=panel, name="display_mode", defaults={"value": "lvgl"})
+        # Not update_or_create: duplicate rows (no unique constraint is relied on) would raise MultipleObjectsReturned.
+        if NSPanelSettings.objects.filter(nspanel=panel, name="display_mode").update(value="lvgl") == 0:
+            NSPanelSettings.objects.create(nspanel=panel, name="display_mode", value="lvgl")
 
 
 class Migration(migrations.Migration):

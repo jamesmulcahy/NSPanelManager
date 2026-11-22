@@ -1486,6 +1486,51 @@ TEST_F(NSPanelTest, gui_update_is_not_refused_before_the_panel_has_registered) {
   EXPECT_EQ(tft_update_commands(commands_sent()), 1);
 }
 
+namespace {
+NSPanelStatusReport status_report_with_display_mode(NSPanelStatusReport_NSPanelDisplayMode mode) {
+  NSPanelStatusReport report;
+  report.set_display_mode(mode);
+  return report;
+}
+} // namespace
+
+TEST_F(NSPanelTest, gui_update_is_refused_after_a_manager_restart_when_status_reports_have_no_display_mode) {
+  // No register_request since the manager started, but the status report says the firmware predates display_mode.
+  load_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", status_report_with_display_mode(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN).SerializeAsString());
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_TRUE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 0);
+}
+
+TEST_F(NSPanelTest, gui_update_is_allowed_when_status_reports_have_a_display_mode) {
+  for (auto mode : {NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_LVGL, NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION}) {
+    load_panel();
+    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", status_report_with_display_mode(mode).SerializeAsString());
+    commands_sent();
+
+    panel->tft_update();
+
+    EXPECT_FALSE(panel->gui_update_needs_firmware_first());
+    EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+  }
+}
+
+TEST_F(NSPanelTest, gui_update_gate_does_not_apply_to_a_leftover_nextion_row) {
+  set_panel_setting("display_mode", "nextion");
+  load_panel();
+  register_panel();
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_FALSE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+}
+
 TEST_F(NSPanelTest, panel_without_an_hmi_that_reports_the_nextion_display_shows_the_legacy_screen) {
   load_panel();
   register_panel(nlohmann::json::array({"lvgl_look", "no_hmi"}));
