@@ -1236,8 +1236,8 @@ void NSPanel::_send_lvgl_look(bool theme, bool background) {
 
 void NSPanel::_handle_lvgl_look_report(const std::string &theme, const std::string &background) {
   // The names the firmware draws (lib/LvglRenderer: Theme.hpp, Background.hpp), and so the values the settings page offers.
-  static const std::vector<std::string> themes = {"auto", "dark", "grey", "ocean", "dusk", "aurora", "peaks"};
-  static const std::vector<std::string> backgrounds = {"none", "ocean", "dusk", "aurora", "peaks"};
+  static const std::vector<std::string> themes = {"auto", "dark", "grey", "ocean", "dusk", "aurora", "peaks", "vesuvius", "parthenon"};
+  static const std::vector<std::string> backgrounds = {"none", "ocean", "dusk", "aurora", "peaks", "vesuvius", "parthenon"};
   // Not stored, and not confirmed: a panel that keeps sending it is answered by nothing, so nothing can go back and forth.
   if (std::find(themes.begin(), themes.end(), theme) == themes.end() || std::find(backgrounds.begin(), backgrounds.end(), background) == backgrounds.end()) {
     SPDLOG_WARN("NSPanel {}::{} reported an unknown LVGL look '{}'/'{}'. Ignoring it.", this->_id, this->_name, background, theme);

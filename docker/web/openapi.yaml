@@ -1114,6 +1114,8 @@ components:
       - dusk
       - aurora
       - peaks
+      - vesuvius
+      - parthenon
       type: string
       description: |-
         * `none` - none
@@ -1121,6 +1123,8 @@ components:
         * `dusk` - dusk
         * `aurora` - aurora
         * `peaks` - peaks
+        * `vesuvius` - vesuvius
+        * `parthenon` - parthenon
     LvglThemeEnum:
       enum:
       - auto
@@ -1130,6 +1134,8 @@ components:
       - dusk
       - aurora
       - peaks
+      - vesuvius
+      - parthenon
       type: string
       description: |-
         * `auto` - auto
@@ -1139,6 +1145,8 @@ components:
         * `dusk` - dusk
         * `aurora` - aurora
         * `peaks` - peaks
+        * `vesuvius` - vesuvius
+        * `parthenon` - parthenon
     MqttmanagerLogLevelEnum:
       enum:
       - error
@@ -1189,6 +1197,8 @@ components:
             * `dusk` - dusk
             * `aurora` - aurora
             * `peaks` - peaks
+            * `vesuvius` - vesuvius
+            * `parthenon` - parthenon
           oneOf:
           - $ref: '#/components/schemas/LvglThemeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -1202,6 +1212,8 @@ components:
             * `dusk` - dusk
             * `aurora` - aurora
             * `peaks` - peaks
+            * `vesuvius` - vesuvius
+            * `parthenon` - parthenon
           oneOf:
           - $ref: '#/components/schemas/LvglBackgroundEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -1267,6 +1279,8 @@ components:
             * `dusk` - dusk
             * `aurora` - aurora
             * `peaks` - peaks
+            * `vesuvius` - vesuvius
+            * `parthenon` - parthenon
           oneOf:
           - $ref: '#/components/schemas/LvglThemeEnum'
           - $ref: '#/components/schemas/NullEnum'
@@ -1280,6 +1294,8 @@ components:
             * `dusk` - dusk
             * `aurora` - aurora
             * `peaks` - peaks
+            * `vesuvius` - vesuvius
+            * `parthenon` - parthenon
           oneOf:
           - $ref: '#/components/schemas/LvglBackgroundEnum'
           - $ref: '#/components/schemas/NullEnum'

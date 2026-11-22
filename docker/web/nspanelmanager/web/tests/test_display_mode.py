@@ -219,7 +219,7 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
 
     def test_every_look_the_panel_offers_can_be_shown_and_saved(self):
         # The firmware's look picker (LookView.cpp, Looks::ALL) and what MQTTManager accepts in a report.
-        for theme, background in (("auto", "ocean"), ("auto", "dusk"), ("auto", "aurora"), ("auto", "peaks"), ("dark", "none"), ("grey", "none")):
+        for theme, background in (("auto", "ocean"), ("auto", "dusk"), ("auto", "aurora"), ("auto", "peaks"), ("auto", "vesuvius"), ("auto", "parthenon"), ("dark", "none"), ("grey", "none")):
             self.assertIn(theme, display_mode.LVGL_THEMES)
             self.assertIn(background, display_mode.LVGL_BACKGROUNDS)
             self.save(display_mode="lvgl", lvgl_theme=theme, lvgl_background=background)
