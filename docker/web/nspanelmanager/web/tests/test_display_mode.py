@@ -6,11 +6,12 @@ naming the TFT a panel runs, and the Display section of the panel settings form.
 import shutil
 import tempfile
 
+from django.db.migrations import RunPython
 from django.test import override_settings
 from django.urls import reverse
 
 from web import display_mode
-from web.models import TftUpload
+from web.models import NSPanelSettings, TftUpload
 from web.settings_helper import get_nspanel_setting_with_default, set_nspanel_setting_value
 
 from .test_files import FileTestCase, md5
@@ -91,7 +92,7 @@ class TerminalTftTests(DisplayModeTestCase):
 
         self.assertEqual(response.content, EU_TERMINAL[2:8])
 
-    def test_switching_back_to_nextion_serves_the_selected_slot_again(self):
+    def test_a_leftover_nextion_row_serves_the_selected_slot(self):
         self.upload_tft("terminal_us", US_TERMINAL)
         self.upload_tft("us3", b"us3")
         self.configure_panel(mode="lvgl", is_us_panel="True", orientation="vertical", tft="tft3")
@@ -108,12 +109,64 @@ class TerminalTftTests(DisplayModeTestCase):
 
         self.assertEqual(self.served(), (404, b"", 404, ""))
 
-    def test_unknown_display_mode_is_nextion(self):
+    def test_unknown_display_mode_is_lvgl(self):
         self.upload_tft("eu1", b"eu1")
         self.upload_tft("terminal_eu", EU_TERMINAL)
         self.configure_panel(mode="something else")
 
-        self.assertEqual(self.served()[1], b"eu1")
+        self.assertEqual(self.served()[1], EU_TERMINAL)
+
+    def test_a_panel_without_a_display_mode_is_lvgl(self):
+        self.upload_tft("eu1", b"eu1")
+        self.upload_tft("terminal_eu", EU_TERMINAL)
+
+        self.assertEqual(display_mode.get_display_mode(self.panel.id), "lvgl")
+        self.assertEqual(self.served()[1], EU_TERMINAL)
+
+
+class DisplayModeMigrationTests(DisplayModeTestCase):
+    """Migration 0076 writes display_mode=lvgl for every panel."""
+
+    def migrate(self):
+        import importlib
+
+        from django.apps import apps
+
+        migration = importlib.import_module("web.migrations.0076_display_mode_lvgl")
+        migration.set_every_panel_to_lvgl(apps, None)
+
+    def test_panels_on_nextion_or_without_a_row_become_lvgl(self):
+        on_nextion = self.make_panel(self.room, accepted=True)
+        set_nspanel_setting_value(on_nextion.id, "display_mode", "nextion")
+        already_lvgl = self.make_panel(self.room, accepted=True)
+        set_nspanel_setting_value(already_lvgl.id, "display_mode", "lvgl")
+        set_nspanel_setting_value(already_lvgl.id, "lvgl_theme", "dusk")
+
+        self.migrate()
+
+        for panel in (self.panel, on_nextion, already_lvgl):
+            self.assertEqual(NSPanelSettings.objects.get(nspanel=panel, name="display_mode").value, "lvgl")
+        # Nothing else is touched, and no row is added twice.
+        self.assertEqual(NSPanelSettings.objects.filter(name="display_mode").count(), 3)
+        self.assertEqual(get_nspanel_setting_with_default(already_lvgl.id, "lvgl_theme", None), "dusk")
+
+    def test_duplicate_rows_are_all_rewritten(self):
+        for value in ("nextion", "lvgl", "nextion"):
+            NSPanelSettings.objects.create(nspanel=self.panel, name="display_mode", value=value)
+
+        self.migrate()
+
+        values = list(NSPanelSettings.objects.filter(nspanel=self.panel, name="display_mode").values_list("value", flat=True))
+        self.assertEqual(values, ["lvgl"] * 3)
+
+    def test_migration_is_repeatable_and_reverses_to_a_no_op(self):
+        import importlib
+
+        self.migrate()
+        self.migrate()
+        self.assertEqual(NSPanelSettings.objects.filter(name="display_mode").count(), 1)
+        migration = importlib.import_module("web.migrations.0076_display_mode_lvgl")
+        self.assertIs(migration.Migration.operations[0].reverse_code, RunPython.noop)
 
 
 class DescribeTftTests(DisplayModeTestCase):
@@ -173,6 +226,17 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         self.assertIsNone(self.setting("lvgl_theme"))
         self.assertIsNone(self.setting("lvgl_background"))
 
+    def test_nextion_can_no_longer_be_chosen(self):
+        self.save(display_mode="nextion")
+
+        self.assertIsNone(self.setting("display_mode"))
+
+    def test_settings_page_offers_only_lvgl(self):
+        response = self.client.get(reverse("edit_nspanel", kwargs={"panel_id": self.panel.id}))
+
+        self.assertContains(response, 'name="display_mode" id="display_mode" value="lvgl"')
+        self.assertNotContains(response, 'value="nextion"')
+
     def test_unknown_values_are_ignored(self):
         set_nspanel_setting_value(self.panel.id, "lvgl_theme", "grey")
 
@@ -200,7 +264,7 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         response = self.client.get(reverse("edit_nspanel", kwargs={"panel_id": self.panel.id}))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'id="lvgl_settings" class=""')
+        self.assertContains(response, 'id="lvgl_settings"')
         self.assertContains(response, '<option value="peaks" selected>Peaks</option>', html=False)
         self.assertContains(response, 'Running now: <span id="display_running">Terminal TFT (US)</span>')
         self.assertNotContains(response, "has been uploaded yet")

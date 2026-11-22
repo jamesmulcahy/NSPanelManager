@@ -1296,7 +1296,15 @@ TEST_F(NSPanelTest, unchanged_lvgl_look_is_not_sent_again_on_reload) {
   EXPECT_TRUE(lvgl_commands_sent().empty());
 }
 
-TEST_F(NSPanelTest, panel_in_nextion_mode_is_sent_no_lvgl_commands) {
+TEST_F(NSPanelTest, panel_without_a_display_mode_is_in_lvgl_mode) {
+  load_panel();
+
+  EXPECT_TRUE(panel->is_lvgl_mode());
+}
+
+// A leftover "nextion" row (nothing can write one now; a rollback to an older manager can).
+TEST_F(NSPanelTest, panel_with_a_leftover_nextion_row_is_sent_no_lvgl_commands) {
+  set_panel_setting("display_mode", "nextion");
   set_panel_setting("lvgl_theme", "dusk");
   load_panel();
   commands_sent();
@@ -1406,6 +1414,162 @@ TEST_F(NSPanelTest, panel_in_lvgl_mode_without_a_terminal_tft_has_no_update) {
   panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
 
   EXPECT_FALSE(panel->has_tft_update());
+}
+
+// The GUI update gate and the legacy screen, NEXTION_REMOVAL_PLAN.md (M1).
+
+namespace {
+int tft_update_commands(const std::vector<nlohmann::json> &commands) {
+  return std::count_if(commands.begin(), commands.end(), [](const nlohmann::json &command) { return command["command"] == "tft_update"; });
+}
+} // namespace
+
+TEST_F(NSPanelTest, gui_update_is_sent_to_a_panel_that_lists_lvgl_look) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_FALSE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+}
+
+TEST_F(NSPanelTest, gui_update_is_refused_for_a_panel_whose_firmware_predates_lvgl) {
+  load_panel();
+  register_panel(); // No "features": firmware from before LVGL.
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_TRUE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 0);
+}
+
+TEST_F(NSPanelTest, gui_update_is_refused_when_the_features_lack_lvgl_look) {
+  load_panel();
+  register_panel(nlohmann::json::array({"something_else"}));
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_EQ(tft_update_commands(commands_sent()), 0);
+}
+
+TEST_F(NSPanelTest, gui_update_through_the_stomp_command_is_gated_too) {
+  auto gui_update_from_web = [&] {
+    StompFrame frame;
+    frame.body = "gui_update";
+    panel->handle_stomp_command_callback(frame);
+  };
+  load_panel();
+  register_panel();
+  commands_sent();
+
+  gui_update_from_web();
+  EXPECT_EQ(tft_update_commands(commands_sent()), 0);
+
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  commands_sent();
+  gui_update_from_web();
+  EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+}
+
+TEST_F(NSPanelTest, gui_update_is_not_refused_before_the_panel_has_registered) {
+  // After a manager restart the features are unknown until the panel registers again; that is not "predates LVGL".
+  load_panel();
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_FALSE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+}
+
+namespace {
+NSPanelStatusReport status_report_with_display_mode(NSPanelStatusReport_NSPanelDisplayMode mode) {
+  NSPanelStatusReport report;
+  report.set_md5_tft_gui("t"); // UNKNOWN is the default and not serialized: keep the payload from being empty.
+  report.set_display_mode(mode);
+  return report;
+}
+} // namespace
+
+TEST_F(NSPanelTest, gui_update_is_refused_after_a_manager_restart_when_status_reports_have_no_display_mode) {
+  // No register_request since the manager started, but the status report says the firmware predates display_mode.
+  load_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", status_report_with_display_mode(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN).SerializeAsString());
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_TRUE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 0);
+}
+
+TEST_F(NSPanelTest, gui_update_is_allowed_when_status_reports_have_a_display_mode) {
+  for (auto mode : {NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_LVGL, NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION}) {
+    load_panel();
+    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", status_report_with_display_mode(mode).SerializeAsString());
+    commands_sent();
+
+    panel->tft_update();
+
+    EXPECT_FALSE(panel->gui_update_needs_firmware_first());
+    EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+  }
+}
+
+TEST_F(NSPanelTest, gui_update_gate_does_not_apply_to_a_leftover_nextion_row) {
+  set_panel_setting("display_mode", "nextion");
+  load_panel();
+  register_panel();
+  commands_sent();
+
+  panel->tft_update();
+
+  EXPECT_FALSE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+}
+
+TEST_F(NSPanelTest, panel_without_an_hmi_that_reports_the_nextion_display_shows_the_legacy_screen) {
+  // The terminal TFT that the button installs has to be staged.
+  auto directory = std::filesystem::temp_directory_path() / fmt::format("nspm-legacy-tft-{}", ::getpid());
+  std::filesystem::create_directories(directory / "us");
+  std::filesystem::create_directories(directory / "eu");
+  std::ofstream(directory / "us" / "gui.tft") << "us terminal tft";
+  std::ofstream(directory / "eu" / "gui.tft") << "eu terminal tft";
+  std::string previous_directory = MqttManagerConfig::terminal_tft_directory;
+  OnExit restore{[&] {
+    MqttManagerConfig::terminal_tft_directory = previous_directory;
+    MqttManagerConfig::update_tft_checksums();
+    std::filesystem::remove_all(directory);
+  }};
+  MqttManagerConfig::terminal_tft_directory = directory.string();
+  MqttManagerConfig::update_tft_checksums();
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_hmi"}));
+  auto report_display = [&](NSPanelStatusReport_NSPanelDisplayMode mode) {
+    NSPanelStatusReport report;
+    report.set_display_mode(mode);
+    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+  };
+
+  EXPECT_FALSE(panel->shows_legacy_screen()); // Display mode not reported yet.
+  report_display(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION);
+  EXPECT_TRUE(panel->shows_legacy_screen());
+  report_display(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_LVGL);
+  EXPECT_FALSE(panel->shows_legacy_screen());
+}
+
+TEST_F(NSPanelTest, panel_with_an_hmi_on_the_nextion_display_does_not_show_the_legacy_screen) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  NSPanelStatusReport report;
+  report.set_display_mode(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION);
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+
+  EXPECT_FALSE(panel->shows_legacy_screen());
 }
 
 // Panels whose web UI is embedded in the firmware have no LittleFS image to update.

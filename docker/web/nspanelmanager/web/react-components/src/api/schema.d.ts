@@ -456,7 +456,7 @@ export interface components {
         /** @description A panel's settings, for reading and (with partial=True) for PATCH. */
         NSPanelSettings: {
             /**
-             * @description Which TFT the manager serves this panel, and so which UI it runs: NSPM's Nextion pages, or LVGL on the terminal TFT.
+             * @description Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.
              *
              *     * `nextion` - nextion
              *     * `lvgl` - lvgl
@@ -504,7 +504,7 @@ export interface components {
         /** @description A panel's settings, for reading and (with partial=True) for PATCH. */
         PatchedNSPanelSettingsRequest: {
             /**
-             * @description Which TFT the manager serves this panel, and so which UI it runs: NSPM's Nextion pages, or LVGL on the terminal TFT.
+             * @description Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.
              *
              *     * `nextion` - nextion
              *     * `lvgl` - lvgl

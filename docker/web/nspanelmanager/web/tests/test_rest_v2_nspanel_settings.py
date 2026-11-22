@@ -22,7 +22,7 @@ class NSPanelSettingsTests(NSPMTestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"display_mode": "nextion", "lvgl_theme": None, "lvgl_background": None})
+        self.assertEqual(response.json(), {"display_mode": "lvgl", "lvgl_theme": None, "lvgl_background": None})
 
     def test_get_reads_the_rows_the_form_writes(self):
         set_nspanel_setting_value(self.panel.id, "display_mode", "lvgl")
@@ -78,6 +78,21 @@ class NSPanelSettingsTests(NSPMTestCase):
                 self.assertEqual(response.json()["status"], "error")
         self.assertEqual(self.rows(), {})
         self.assertManagerNotReloaded()
+
+    def test_nextion_is_rejected_and_says_why(self):
+        response = self.patch_json(self.url, {"display_mode": "nextion"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("LVGL is the only display mode", response.json()["message"])
+        self.assertIn("Nextion HMI UI was removed", response.json()["message"])
+        self.assertEqual(self.rows(), {})
+        self.assertManagerNotReloaded()
+
+    def test_a_leftover_nextion_row_reads_as_nextion_until_it_is_rewritten(self):
+        set_nspanel_setting_value(self.panel.id, "display_mode", "nextion")
+
+        self.assertEqual(self.client.get(self.url).json()["display_mode"], "nextion")
+        self.assertEqual(self.patch_json(self.url, {"display_mode": "lvgl"}).json()["display_mode"], "lvgl")
 
     def test_unknown_fields_are_rejected(self):
         response = self.patch_json(self.url, {"display_mode": "lvgl", "selected_tft": "tft2"})

@@ -45,21 +45,17 @@
     select_background_modal.close();
   }
 
-  // Display section: show the LVGL fields in LVGL mode, the NSPM TFT backgrounds in Nextion mode.
+  // Display section: LVGL is the only display mode (the Nextion background examples stay hidden until M2 removes them).
   var lvgl_panel_ip = "";
   function update_display_fields() {
-    var lvgl = $("#display_mode").val() == "lvgl";
-    $("#lvgl_settings").toggleClass("hidden", !lvgl);
-    $("#nextion_tft_examples").toggleClass("hidden", lvgl);
     var panel_type = $("#panel_type").val();
     $("#lvgl_orientation_note").toggleClass("hidden", panel_type == "eu" || panel_type == "us_vertical");
-    if (lvgl && !$("#lvgl_screenshot").attr("src")) {
+    if (!$("#lvgl_screenshot").attr("src")) {
       refresh_lvgl_screenshot();
     }
   }
 
   function refresh_lvgl_screenshot() {
-    if ($("#display_mode").val() != "lvgl") return;
     if (!lvgl_panel_ip) {
       $("#lvgl_screenshot_status").text("Waiting for the panel's address.");
       return;
@@ -84,7 +80,6 @@
       update_now_playing_follows();
     });
     $("#screensaver_cards").on("input", update_now_playing_follows);
-    $("#display_mode").on("change", update_display_fields);
     $("#panel_type").on("change", update_display_fields);
     $("#lvgl_screenshot").on("load", function () {
       $(this).removeClass("hidden");
@@ -255,7 +250,7 @@
         </div>
 
         <!-- NSPM TFT background examples: Nextion mode only (see the Display section below) -->
-        <div id="nextion_tft_examples" class="flex items-center justify-center {% if settings.display_mode == 'lvgl' %}hidden{% endif %}">
+        <div id="nextion_tft_examples" class="flex items-center justify-center hidden">
             <!-- 81 x 81mm without frame -->
             <div id="eu-panel-example" class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[300px] mt-4 {% if settings.is_us_panel != 'False' %}hidden{% endif %}">
                 <div class="rounded-[0.2rem] w-full h-[77%] bg-black flex justify-center items-center">
@@ -312,26 +307,23 @@
             </div>
         </div>
 
-        <!-- Display: Nextion pages on NSPM's TFT, or LVGL on a terminal TFT. See docs/LVGL_PANEL_MODE.md -->
+        <!-- Display: LVGL on a terminal TFT. See docs/LVGL_PANEL_MODE.md -->
         <div class="mt-4" id="display_settings">
           <label for="display_mode" class="block mb-2 text-sm font-medium">Display</label>
           <div class="flex flex-row-reverse">
-            <select name="display_mode" id="display_mode" class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 focus:ring-0 focus:border-accent block flex-1 min-w-0 w-full text-sm p-2.5 peer/display_mode">
-              {% for value, label in display_info.modes.items %}
-              <option value="{{ value }}" {% if settings.display_mode == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-            <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md peer-focus/display_mode:border-accent">
+            <!-- LVGL is the only display mode; the field stays in the form so that what is posted is always valid. -->
+            <input type="hidden" name="display_mode" id="display_mode" value="lvgl">
+            <div class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 block flex-1 min-w-0 w-full text-sm p-2.5">LVGL (terminal TFT)</div>
+            <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md ">
               <span class="mdi mdi-monitor-dashboard"></span>
             </span>
           </div>
           <p class="text-xs font-light mt-2">
             Running now: <span id="display_running">{{ display_info.running.label }}</span>
             <span id="display_reported_mode" class="hidden">; panel reports <span id="display_reported_mode_value"></span></span>.
-            Changing the display changes the TFT the panel is served: save, then run <i>Update GUI</i>.
           </p>
 
-          <div id="lvgl_settings" class="{% if settings.display_mode != 'lvgl' %}hidden{% endif %}">
+          <div id="lvgl_settings">
             {% if not display_info.terminal_tft_staged %}
             <p class="text-xs text-warning mt-2">No {{ display_info.terminal_tft_label }} has been uploaded yet. Upload one (Upload TFT, "Terminal TFT") before updating this panel's GUI.</p>
             {% endif %}

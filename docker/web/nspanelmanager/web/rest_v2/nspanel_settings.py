@@ -8,7 +8,7 @@ settings come later, with the panel page's move to React (HAPanel.md, "REST v2 p
 Storage is unchanged: one NSPanelSettings row per name, as the panel settings form writes them and
 MQTTManager reads them (NSPanel::_get_nspanel_setting_with_default).
 
-  * display_mode: "nextion" (also what an absent row means) or "lvgl".
+  * display_mode: "lvgl" (also what an absent row means). "nextion" is rejected: the Nextion HMI UI was removed.
   * lvgl_theme / lvgl_background: a name, or null for "keep the panel's own": no row, so the manager never
     sends that part of the look. The form's empty choice means the same.
 
@@ -47,8 +47,14 @@ class NSPanelSettingsSerializer(serializers.Serializer):
 
     display_mode = StrictChoiceField(
         choices=list(modes.DISPLAY_MODES),
-        help_text="Which TFT the manager serves this panel, and so which UI it runs: NSPM's Nextion pages, or LVGL on the terminal TFT.",
+        help_text="Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.",
     )
+    def validate_display_mode(self, value):
+        # Still a choice in the schema (its shape is unchanged until the slot code goes), but no longer one that is accepted.
+        if value == modes.DISPLAY_MODE_NEXTION:
+            raise serializers.ValidationError(modes.NEXTION_REMOVED_MESSAGE)
+        return value
+
     lvgl_theme = StrictChoiceField(
         choices=list(modes.LVGL_THEMES),
         allow_null=True,
@@ -100,7 +106,7 @@ def read_settings(panel):
     rows = _rows(panel)
     mode = rows.get("display_mode")
     return {
-        "display_mode": mode if mode in modes.DISPLAY_MODES else modes.DISPLAY_MODE_NEXTION,
+        "display_mode": mode if mode in modes.DISPLAY_MODES else modes.DISPLAY_MODE_LVGL,
         # A row with a value the firmware does not draw reads as unmanaged, as the form shows it.
         "lvgl_theme": rows.get("lvgl_theme") if rows.get("lvgl_theme") in modes.LVGL_THEMES else None,
         "lvgl_background": rows.get("lvgl_background") if rows.get("lvgl_background") in modes.LVGL_BACKGROUNDS else None,

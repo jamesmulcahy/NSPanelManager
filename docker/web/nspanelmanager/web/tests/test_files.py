@@ -124,6 +124,8 @@ class TFTTests(FileTestCase):
         return self.client.get(reverse("download_tft", kwargs={"panel_id": self.panel.id}), **headers).content
 
     def configure_panel(self, is_us_panel="False", orientation=None, tft="tft1"):
+        # LVGL is the default display mode; these cases cover the slot code that serves a leftover "nextion" row.
+        set_nspanel_setting_value(self.panel.id, "display_mode", "nextion")
         set_nspanel_setting_value(self.panel.id, "is_us_panel", is_us_panel)
         set_nspanel_setting_value(self.panel.id, "selected_tft", tft)
         if orientation:
@@ -149,6 +151,7 @@ class TFTTests(FileTestCase):
 
     def test_tft_range_download(self):
         self.upload_tft("eu1", FIRMWARE)
+        self.configure_panel()
 
         self.assertEqual(self.panel_tft(HTTP_RANGE="bytes=10-20"), FIRMWARE[10:20])
 

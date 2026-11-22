@@ -1,9 +1,11 @@
 """
 Which TFT a panel is served, and what a panel's TFT md5 is. See docs/LVGL_PANEL_MODE.md.
 
-A panel's "display_mode" setting is "nextion" (NSPM's Nextion TFT from the background slot in "selected_tft", the
-default) or "lvgl" (an nspanel-terminal TFT; the firmware then draws its pages with LVGL). The terminal TFT is chosen
-by layout alone, as the firmware chooses its LVGL layout from is_us_panel alone.
+A panel's "display_mode" setting is "lvgl" (the default: an nspanel-terminal TFT; the firmware then draws its pages
+with LVGL). The terminal TFT is chosen by layout alone, as the firmware chooses its LVGL layout from is_us_panel alone.
+"nextion" (NSPM's Nextion TFT from the background slot in "selected_tft") can no longer be chosen, as the Nextion HMI
+UI was removed. Migration 0076 rewrites every panel to "lvgl"; a "nextion" row that turns up later (a rollback to an
+older manager can write one) is still honored until the slot code goes.
 """
 
 import hashlib
@@ -17,6 +19,9 @@ from .settings_helper import get_nspanel_setting_with_default
 DISPLAY_MODE_NEXTION = "nextion"
 DISPLAY_MODE_LVGL = "lvgl"
 DISPLAY_MODES = {DISPLAY_MODE_NEXTION: "Nextion (NSPM TFT)", DISPLAY_MODE_LVGL: "LVGL (terminal TFT)"}
+# What can be chosen (the form, REST v2). A stored "nextion" is only read, never written.
+SELECTABLE_DISPLAY_MODES = {DISPLAY_MODE_LVGL: DISPLAY_MODES[DISPLAY_MODE_LVGL]}
+NEXTION_REMOVED_MESSAGE = "LVGL is the only display mode: the Nextion HMI UI was removed, so the Nextion display mode can no longer be chosen."
 
 # Values the firmware takes for {"command": "lvgl_theme"} and {"command": "lvgl_background"}. "light" is left out: the
 # firmware takes it as "grey".
@@ -44,8 +49,8 @@ def terminal_storage():
 
 
 def get_display_mode(panel_id) -> str:
-    mode = get_nspanel_setting_with_default(panel_id, "display_mode", DISPLAY_MODE_NEXTION)
-    return mode if mode in DISPLAY_MODES else DISPLAY_MODE_NEXTION
+    mode = get_nspanel_setting_with_default(panel_id, "display_mode", DISPLAY_MODE_LVGL)
+    return mode if mode in DISPLAY_MODES else DISPLAY_MODE_LVGL
 
 
 def terminal_tft_type(panel_id) -> str:

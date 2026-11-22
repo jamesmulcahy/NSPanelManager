@@ -219,7 +219,7 @@ def edit_nspanel(request, panel_id: int):
 
     terminal_tft_type = display_mode.terminal_tft_type(panel_id)
     display_info = {
-        "modes": display_mode.DISPLAY_MODES,
+        "modes": display_mode.SELECTABLE_DISPLAY_MODES,
         "themes": display_mode.LVGL_THEMES,
         "backgrounds": display_mode.LVGL_BACKGROUNDS,
         "running": display_mode.describe_tft_md5(nspanel.md5_tft_file),
@@ -410,7 +410,7 @@ def save_panel_settings(request, panel_id: int):
 
 def save_display_settings(panel_id, post):
     """The Display card. A field that is not in the form is left as it is, so older clients keep working."""
-    if post.get("display_mode") in display_mode.DISPLAY_MODES:
+    if post.get("display_mode") in display_mode.SELECTABLE_DISPLAY_MODES:
         set_nspanel_setting_value(panel_id, "display_mode", post["display_mode"])
     # An empty theme or background means "keep the panel's own": the manager stops sending it.
     for name, choices in (("lvgl_theme", display_mode.LVGL_THEMES), ("lvgl_background", display_mode.LVGL_BACKGROUNDS)):
