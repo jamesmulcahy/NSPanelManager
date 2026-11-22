@@ -1399,11 +1399,12 @@ bool NSPanel::shows_legacy_screen() {
   }
   // The firmware shows its legacy screen and reports DISPLAY_MODE_NEXTION when NSPM's HMI TFT sent its banner. When the
   // banner is missed during the firmware's short wait, the panel lands in TERMINAL_IDLE with a blank screen instead.
-  // That is the legacy TFT too unless the TFT is the terminal TFT (then its LVGL UI is off or failed to start).
+  // That is the legacy TFT too, unless the TFT is any terminal TFT the manager knows (then it is a healthy terminal panel
+  // whose LVGL UI is off or failed to start, even when the layout has changed since and a newer one is staged).
   if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
     return true;
   }
-  return this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE && this->_current_tft_md5_checksum.compare(*staged) != 0;
+  return this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE && !MqttManagerConfig::is_known_terminal_tft_md5(this->_current_tft_md5_checksum);
 }
 
 void NSPanel::tft_update() {

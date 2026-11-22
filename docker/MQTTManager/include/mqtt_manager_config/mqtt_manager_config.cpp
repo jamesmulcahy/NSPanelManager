@@ -252,6 +252,7 @@ void MqttManagerConfig::update_tft_checksums() {
       file_checksum = MqttManagerConfig::_get_file_md5_checksum(bundled);
     }
     checksum = file_checksum.value_or("");
+    (us_layout ? MqttManagerConfig::_md5_checksum_bundled_terminal_us : MqttManagerConfig::_md5_checksum_bundled_terminal_eu) = MqttManagerConfig::_get_file_md5_checksum(bundled).value_or("");
     if (file_checksum.has_value()) {
       SPDLOG_INFO("{} terminal TFT checksum: {} ({})", us_layout ? "US" : "EU", *file_checksum, path == uploaded ? "uploaded" : "bundled");
     } else {
@@ -267,6 +268,28 @@ std::expected<std::string, bool> MqttManagerConfig::get_terminal_tft_checksum(bo
     return std::unexpected(false);
   }
   return checksum;
+}
+
+bool MqttManagerConfig::is_known_terminal_tft_md5(const std::string &md5) {
+  if (md5.empty()) {
+    return false;
+  }
+  {
+    std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
+    for (const std::string *known : {&MqttManagerConfig::_md5_checksum_terminal_us, &MqttManagerConfig::_md5_checksum_terminal_eu, &MqttManagerConfig::_md5_checksum_bundled_terminal_us, &MqttManagerConfig::_md5_checksum_bundled_terminal_eu}) {
+      if (!known->empty() && *known == md5) {
+        return true;
+      }
+    }
+  }
+  try {
+    return !database_manager::database
+                .get_all<database_manager::TftUpload>(sqlite_orm::where(sqlite_orm::c(&database_manager::TftUpload::md5) == md5 && sqlite_orm::c(&database_manager::TftUpload::kind) == std::string("terminal")), sqlite_orm::limit(1))
+                .empty();
+  } catch (const std::exception &e) {
+    SPDLOG_WARN("Failed to look up TFT upload history for {}: {}", md5, e.what());
+    return false;
+  }
 }
 
 std::optional<std::string> MqttManagerConfig::_get_file_md5_checksum(std::string file_path) {

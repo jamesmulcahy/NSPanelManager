@@ -153,6 +153,9 @@ public:
   static std::expected<std::string, bool> get_littlefs_custom_checksum();
   // The terminal TFT for the US (portrait) or EU (landscape) LVGL layout. Unexpected when it has not been uploaded.
   static std::expected<std::string, bool> get_terminal_tft_checksum(bool us_layout);
+  // Whether an md5 is one of the terminal TFTs the manager knows: the staged US or EU one, the ones the image ships,
+  // or an earlier terminal upload (Django's TftUpload history).
+  static bool is_known_terminal_tft_md5(const std::string &md5);
 
   /**
    * Attach a callback to be called when config has been fully loaded.
@@ -188,6 +191,8 @@ private:
   static inline std::string _md5_checksum_firmware_custom;
   static inline std::string _md5_checksum_littlefs_sonoff;
   static inline std::string _md5_checksum_littlefs_custom;
+  static inline std::string _md5_checksum_bundled_terminal_us;
+  static inline std::string _md5_checksum_bundled_terminal_eu;
   static inline std::string _md5_checksum_terminal_us;
   static inline std::string _md5_checksum_terminal_eu;
 

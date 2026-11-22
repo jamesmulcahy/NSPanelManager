@@ -23,6 +23,15 @@ struct NSPanelSettingHolder {
   int nspanel_id = 0;
 };
 
+// A TFT file the manager has been given (Django's web_tftupload). kind is "terminal" or "nextion".
+struct TftUpload {
+  int id = 0;
+  std::string md5;
+  std::string kind;
+  std::string target;
+  std::string uploaded_at;
+};
+
 // An NSPanel as presented in the database
 struct NSPanel {
   int id = 0;
@@ -131,6 +140,12 @@ static inline auto make_database() {
                                                                               sqlite_orm::make_column("name", &NSPanelSettingHolder::name),
                                                                               sqlite_orm::make_column("value", &NSPanelSettingHolder::value),
                                                                               sqlite_orm::make_column("nspanel_id", &NSPanelSettingHolder::nspanel_id)),
+                                                       sqlite_orm::make_table("web_tftupload",
+                                                                              sqlite_orm::make_column("id", &TftUpload::id, sqlite_orm::primary_key().autoincrement()),
+                                                                              sqlite_orm::make_column("md5", &TftUpload::md5),
+                                                                              sqlite_orm::make_column("kind", &TftUpload::kind),
+                                                                              sqlite_orm::make_column("target", &TftUpload::target),
+                                                                              sqlite_orm::make_column("uploaded_at", &TftUpload::uploaded_at)),
                                                        sqlite_orm::make_table("web_nspanel",
                                                                               sqlite_orm::make_column("id", &NSPanel::id, sqlite_orm::primary_key().autoincrement()),
                                                                               sqlite_orm::make_column("friendly_name", &NSPanel::friendly_name),

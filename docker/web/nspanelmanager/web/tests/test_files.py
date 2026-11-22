@@ -157,5 +157,5 @@ class TFTTests(FileTestCase):
         self.assertManagerReloaded(times=1)
 
     def test_unknown_tft_type_is_rejected(self):
-        self.assertEqual(self.upload_tft("eu1", FIRMWARE).status_code, 500)
+        self.assertEqual(self.upload_tft("eu1", FIRMWARE).status_code, 400)
         self.assertManagerNotReloaded()

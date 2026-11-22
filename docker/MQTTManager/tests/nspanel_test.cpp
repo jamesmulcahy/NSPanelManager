@@ -1672,6 +1672,63 @@ TEST_F(NSPanelTest, panel_without_an_hmi_that_missed_the_banner_shows_the_legacy
   EXPECT_FALSE(panel->shows_legacy_screen());
 }
 
+namespace {
+void report_terminal_idle(NSPanel &panel, const std::string &md5) {
+  NSPanelStatusReport report;
+  report.set_display_mode(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE);
+  report.set_md5_tft_gui(md5);
+  panel.mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+}
+} // namespace
+
+TEST_F(NSPanelTest, terminal_idle_on_the_other_staged_layouts_terminal_tft_is_not_the_legacy_screen) {
+  // A healthy terminal panel whose layout changed since its TFT was installed.
+  StagedTerminalTfts staged;
+  set_panel_setting("is_us_panel", "True");
+  set_panel_setting("us_panel_orientation", "horizontal"); // Staged: the EU TFT.
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_hmi"}));
+
+  report_terminal_idle(*panel, staged.us_md5);
+
+  EXPECT_FALSE(panel->shows_legacy_screen());
+}
+
+TEST_F(NSPanelTest, terminal_idle_on_an_older_terminal_upload_is_not_the_legacy_screen) {
+  StagedTerminalTfts staged;
+  database_manager::TftUpload upload;
+  upload.md5 = "aaaabbbbccccddddeeeeffff00001111";
+  upload.kind = "terminal";
+  upload.target = "terminal_us";
+  upload.uploaded_at = "2026-01-01 00:00:00";
+  upload.id = database_manager::database.insert(upload);
+  OnExit remove{[id = upload.id] { database_manager::database.remove<database_manager::TftUpload>(id); }};
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_hmi"}));
+
+  report_terminal_idle(*panel, upload.md5);
+
+  EXPECT_FALSE(panel->shows_legacy_screen());
+}
+
+TEST_F(NSPanelTest, terminal_idle_on_an_old_nextion_upload_or_without_an_md5_is_the_legacy_screen) {
+  StagedTerminalTfts staged;
+  database_manager::TftUpload upload;
+  upload.md5 = "11112222333344445555666677778888";
+  upload.kind = "nextion";
+  upload.target = "us1";
+  upload.uploaded_at = "2026-01-01 00:00:00";
+  upload.id = database_manager::database.insert(upload);
+  OnExit remove{[id = upload.id] { database_manager::database.remove<database_manager::TftUpload>(id); }};
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_hmi"}));
+
+  report_terminal_idle(*panel, upload.md5);
+  EXPECT_TRUE(panel->shows_legacy_screen());
+  report_terminal_idle(*panel, "");
+  EXPECT_TRUE(panel->shows_legacy_screen());
+}
+
 TEST_F(NSPanelTest, terminal_idle_without_the_no_hmi_feature_is_not_the_legacy_screen) {
   StagedTerminalTfts staged;
   load_panel();

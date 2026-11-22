@@ -250,6 +250,29 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         self.assertNotContains(response, "select_background_modal")
         self.assertNotContains(response, "HMI_files")
 
+    def test_layout_notes_follow_the_effective_layout(self):
+        url = reverse("edit_nspanel", kwargs={"panel_id": self.panel.id})
+        for orientation, hidden in (("vertical", True), ("horizontal", False), ("something odd", True)):
+            self.configure_panel(is_us_panel="True", orientation=orientation)
+            html = self.client.get(url).content.decode()
+            note = html[html.index('id="lvgl_orientation_note"') :].split(">", 1)[0]
+            self.assertEqual("hidden" in note, hidden, orientation)
+        self.assertContains(self.client.get(url), "press Update GUI to install the matching display image")
+
+    def test_settings_page_warns_when_the_display_image_is_not_the_layouts(self):
+        self.upload_tft("terminal_us", US_TERMINAL)
+        self.upload_tft("terminal_eu", EU_TERMINAL)
+        self.configure_panel(is_us_panel="True", orientation="horizontal")
+        self.panel.md5_tft_file = md5(US_TERMINAL)
+        self.panel.save()
+        url = reverse("edit_nspanel", kwargs={"panel_id": self.panel.id})
+
+        self.assertContains(self.client.get(url), 'id="display_image_differs_note"')
+
+        self.panel.md5_tft_file = md5(EU_TERMINAL)
+        self.panel.save()
+        self.assertNotContains(self.client.get(url), 'id="display_image_differs_note"')
+
     def test_unknown_values_are_ignored(self):
         set_nspanel_setting_value(self.panel.id, "lvgl_theme", "grey")
 

@@ -216,12 +216,16 @@ def edit_nspanel(request, panel_id: int):
     panel_info["data"] = nspanel
 
     terminal_tft_type = display_mode.terminal_tft_type(panel_id)
+    staged_md5 = display_mode.file_md5(*display_mode.staged_terminal_tft_file(terminal_tft_type))
     display_info = {
         "themes": display_mode.LVGL_THEMES,
         "backgrounds": display_mode.LVGL_BACKGROUNDS,
         "running": display_mode.describe_tft_md5(nspanel.md5_tft_file),
         "terminal_tft_label": display_mode.TERMINAL_TFT_LABELS[terminal_tft_type],
-        "terminal_tft_staged": display_mode.file_md5(*display_mode.staged_terminal_tft_file(terminal_tft_type)) is not None,
+        "terminal_tft_staged": staged_md5 is not None,
+        # The layout (and so the staged terminal TFT) follows the orientation at once, the display image only after a GUI update.
+        "us_layout": display_mode.lvgl_is_us_layout(panel_id),
+        "image_differs_from_layout": bool(staged_md5 and nspanel.md5_tft_file and nspanel.md5_tft_file != staged_md5),
     }
 
     data = get_base_data(request)
@@ -500,7 +504,7 @@ def save_new_tft_file(request):
         fs, file_path = display_mode.upload_tft_file(tft_file_type)
         if fs is None:
             print("ERROR! Unknown TFT file type!")
-            return HttpResponse("ERROR! Unknown TFT file type!", status=500)
+            return HttpResponse("ERROR! Unknown TFT file type!", status=400)
 
         print("Saving new TFT file ", file_path)
 
@@ -510,7 +514,7 @@ def save_new_tft_file(request):
         # Remembered so that a panel still running this file can be named after it is overwritten.
         TftUpload.objects.create(
             md5=display_mode.file_md5(fs, file_path),
-            kind=TftUpload.Kind.TERMINAL if tft_file_type in display_mode.TERMINAL_TFT_PATHS else TftUpload.Kind.NEXTION,
+            kind=TftUpload.Kind.TERMINAL,
             target=tft_file_type,
         )
         send_mqttmanager_reload_command()

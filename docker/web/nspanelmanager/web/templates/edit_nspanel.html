@@ -13,7 +13,6 @@
 
 {% block content %}
 {% load static %}
-{% static "" as static_prefix %}
 
 <!-- Data needed by javascript -->
 <span class="hidden" id="nspanel_id">{{ panel_info.data.id }}</span>
@@ -149,7 +148,11 @@
             {% if not display_info.terminal_tft_staged %}
             <p class="text-xs text-warning mt-2">No {{ display_info.terminal_tft_label }} has been uploaded yet. Upload one (Upload TFT, "Terminal TFT") before updating this panel's GUI.</p>
             {% endif %}
-            <p id="lvgl_orientation_note" class="text-xs font-light mt-2 {% if settings.is_us_panel != 'True' or settings.us_panel_orientation == 'vertical' %}hidden{% endif %}">A US panel mounted sideways draws the landscape layout, and runs the EU terminal TFT.</p>
+            <p id="lvgl_orientation_note" class="text-xs font-light mt-2 {% if settings.is_us_panel != 'True' or display_info.us_layout %}hidden{% endif %}">A US panel mounted sideways draws the landscape layout, and runs the EU terminal TFT.</p>
+            <p class="text-xs font-light mt-2">Changing the panel type or orientation switches the panel's layout as soon as you save; press Update GUI to install the matching display image.</p>
+            {% if display_info.image_differs_from_layout %}
+            <p id="display_image_differs_note" class="text-xs text-warning mt-2">The display image this panel runs is not the {{ display_info.terminal_tft_label }} its layout needs: press Update GUI.</p>
+            {% endif %}
             <p class="text-xs font-light mt-2">The terminal TFT needs panel firmware with LVGL: update the firmware before the GUI, as older firmware leaves the terminal TFT on its waiting page.</p>
 
             <div class="mt-4">

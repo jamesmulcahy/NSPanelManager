@@ -3,7 +3,12 @@
 #include <metrics/metrics.hpp>
 #include <metrics/panel_metrics_collector.hpp>
 #include <metrics/prometheus_targets.hpp>
+#include <mqtt_manager_config/mqtt_manager_config.hpp>
+#include <filesystem>
+#include <fstream>
+#include <unistd.h>
 #include <nlohmann/json.hpp>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -205,4 +210,42 @@ TEST(ManagerMetricsTest, renaming_a_panel_removes_its_old_series) {
   ManagerMetrics::panel_removed("AA:BB:CC:00:00:02");
   EXPECT_EQ(Metrics::serialize().find("panel=\"Rename After\""), std::string::npos);
   EXPECT_EQ(removed.size(), 2u);
+}
+
+TEST(PanelMetricsCollectorTest, staged_terminal_tfts_are_exported_as_staged_images) {
+  auto directory = std::filesystem::temp_directory_path() / ("nspm-metrics-tft-" + std::to_string(::getpid()));
+  std::filesystem::create_directories(directory / "us");
+  std::filesystem::create_directories(directory / "eu");
+  std::ofstream(directory / "us" / "gui.tft") << "us terminal tft";
+  std::ofstream(directory / "eu" / "gui.tft") << "eu terminal tft";
+  std::string previous = MqttManagerConfig::terminal_tft_directory;
+  MqttManagerConfig::terminal_tft_directory = directory.string();
+  MqttManagerConfig::update_tft_checksums();
+  auto us_md5 = MqttManagerConfig::get_terminal_tft_checksum(true);
+  auto eu_md5 = MqttManagerConfig::get_terminal_tft_checksum(false);
+  ASSERT_TRUE(us_md5.has_value());
+  ASSERT_TRUE(eu_md5.has_value());
+
+  std::map<std::string, std::string> staged_tfts; // variant -> md5
+  for (const auto &family : PanelMetricsCollector().Collect()) {
+    if (family.name != "nspm_staged_image_info") {
+      continue;
+    }
+    for (const auto &metric : family.metric) {
+      std::map<std::string, std::string> labels;
+      for (const auto &label : metric.label) {
+        labels[label.name] = label.value;
+      }
+      if (labels["type"] == "tft") {
+        staged_tfts[labels["variant"]] = labels["md5"];
+      }
+    }
+  }
+
+  MqttManagerConfig::terminal_tft_directory = previous;
+  MqttManagerConfig::update_tft_checksums();
+  std::filesystem::remove_all(directory);
+
+  // Only the terminal TFTs: the Nextion background slots are gone.
+  EXPECT_EQ(staged_tfts, (std::map<std::string, std::string>{{"terminal_us", *us_md5}, {"terminal_eu", *eu_md5}}));
 }
