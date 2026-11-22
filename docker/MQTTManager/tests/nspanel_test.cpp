@@ -1489,6 +1489,7 @@ TEST_F(NSPanelTest, gui_update_is_not_refused_before_the_panel_has_registered) {
 namespace {
 NSPanelStatusReport status_report_with_display_mode(NSPanelStatusReport_NSPanelDisplayMode mode) {
   NSPanelStatusReport report;
+  report.set_md5_tft_gui("t"); // UNKNOWN is the default and not serialized: keep the payload from being empty.
   report.set_display_mode(mode);
   return report;
 }
@@ -1532,6 +1533,20 @@ TEST_F(NSPanelTest, gui_update_gate_does_not_apply_to_a_leftover_nextion_row) {
 }
 
 TEST_F(NSPanelTest, panel_without_an_hmi_that_reports_the_nextion_display_shows_the_legacy_screen) {
+  // The terminal TFT that the button installs has to be staged.
+  auto directory = std::filesystem::temp_directory_path() / fmt::format("nspm-legacy-tft-{}", ::getpid());
+  std::filesystem::create_directories(directory / "us");
+  std::filesystem::create_directories(directory / "eu");
+  std::ofstream(directory / "us" / "gui.tft") << "us terminal tft";
+  std::ofstream(directory / "eu" / "gui.tft") << "eu terminal tft";
+  std::string previous_directory = MqttManagerConfig::terminal_tft_directory;
+  OnExit restore{[&] {
+    MqttManagerConfig::terminal_tft_directory = previous_directory;
+    MqttManagerConfig::update_tft_checksums();
+    std::filesystem::remove_all(directory);
+  }};
+  MqttManagerConfig::terminal_tft_directory = directory.string();
+  MqttManagerConfig::update_tft_checksums();
   load_panel();
   register_panel(nlohmann::json::array({"lvgl_look", "no_hmi"}));
   auto report_display = [&](NSPanelStatusReport_NSPanelDisplayMode mode) {
