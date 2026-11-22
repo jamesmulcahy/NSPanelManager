@@ -1250,17 +1250,14 @@ TEST_F(NSPanelTest, lvgl_look_is_sent_in_the_config) {
 
 TEST_F(NSPanelTest, loading_a_panel_sends_no_lvgl_commands) {
   // The manager starting is not a reason to repaint every panel; the panel gets its look when it registers.
-  set_panel_setting("display_mode", "lvgl");
   set_panel_setting("lvgl_theme", "dusk");
 
   load_panel();
 
   EXPECT_TRUE(lvgl_commands_sent().empty());
-  EXPECT_TRUE(panel->is_lvgl_mode());
 }
 
-TEST_F(NSPanelTest, changed_lvgl_theme_is_sent_to_a_panel_in_lvgl_mode) {
-  set_panel_setting("display_mode", "lvgl");
+TEST_F(NSPanelTest, changed_lvgl_theme_is_sent_to_a_panel) {
   set_panel_setting("lvgl_theme", "dusk");
   set_panel_setting("lvgl_background", "dusk");
   load_panel();
@@ -1272,8 +1269,7 @@ TEST_F(NSPanelTest, changed_lvgl_theme_is_sent_to_a_panel_in_lvgl_mode) {
   EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{theme_command("grey")}));
 }
 
-TEST_F(NSPanelTest, changed_lvgl_background_is_sent_to_a_panel_in_lvgl_mode) {
-  set_panel_setting("display_mode", "lvgl");
+TEST_F(NSPanelTest, changed_lvgl_background_is_sent_to_a_panel) {
   set_panel_setting("lvgl_background", "none");
   load_panel();
   commands_sent();
@@ -1285,7 +1281,6 @@ TEST_F(NSPanelTest, changed_lvgl_background_is_sent_to_a_panel_in_lvgl_mode) {
 }
 
 TEST_F(NSPanelTest, unchanged_lvgl_look_is_not_sent_again_on_reload) {
-  set_panel_setting("display_mode", "lvgl");
   set_panel_setting("lvgl_theme", "dusk");
   load_panel();
   commands_sent();
@@ -1296,14 +1291,8 @@ TEST_F(NSPanelTest, unchanged_lvgl_look_is_not_sent_again_on_reload) {
   EXPECT_TRUE(lvgl_commands_sent().empty());
 }
 
-TEST_F(NSPanelTest, panel_without_a_display_mode_is_in_lvgl_mode) {
-  load_panel();
-
-  EXPECT_TRUE(panel->is_lvgl_mode());
-}
-
-// A leftover "nextion" row (nothing can write one now; a rollback to an older manager can).
-TEST_F(NSPanelTest, panel_with_a_leftover_nextion_row_is_sent_no_lvgl_commands) {
+// A leftover display_mode row (a rollback to an older manager can write "nextion") is not read.
+TEST_F(NSPanelTest, a_leftover_nextion_row_does_not_stop_the_look_being_sent) {
   set_panel_setting("display_mode", "nextion");
   set_panel_setting("lvgl_theme", "dusk");
   load_panel();
@@ -1311,33 +1300,15 @@ TEST_F(NSPanelTest, panel_with_a_leftover_nextion_row_is_sent_no_lvgl_commands) 
 
   change_panel_setting("lvgl_theme", "ocean");
   panel->reload_config();
-  register_panel();
 
-  EXPECT_TRUE(lvgl_commands_sent().empty());
-  EXPECT_FALSE(panel->is_lvgl_mode());
-}
-
-TEST_F(NSPanelTest, moving_a_panel_to_lvgl_sends_its_whole_look) {
-  set_panel_setting("display_mode", "nextion");
-  set_panel_setting("lvgl_theme", "peaks");
-  set_panel_setting("lvgl_background", "peaks");
-  load_panel();
-  commands_sent();
-
-  change_panel_setting("display_mode", "lvgl");
-  panel->reload_config();
-
-  EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{theme_command("peaks"), background_command("peaks")}));
+  EXPECT_EQ(lvgl_commands_sent(), (std::vector<nlohmann::json>{theme_command("ocean")}));
 }
 
 TEST_F(NSPanelTest, unmanaged_lvgl_look_is_never_sent) {
-  set_panel_setting("display_mode", "nextion");
   set_panel_setting("lvgl_background", "ocean");
   load_panel();
   commands_sent();
 
-  change_panel_setting("display_mode", "lvgl");
-  panel->reload_config();
   register_panel();
 
   // Only the background is managed; the panel keeps its own theme.
@@ -1345,7 +1316,6 @@ TEST_F(NSPanelTest, unmanaged_lvgl_look_is_never_sent) {
 }
 
 TEST_F(NSPanelTest, lvgl_look_is_sent_after_the_first_registration_only) {
-  set_panel_setting("display_mode", "lvgl");
   set_panel_setting("lvgl_theme", "aurora");
   load_panel();
   commands_sent();
@@ -1363,7 +1333,7 @@ TEST_F(NSPanelTest, lvgl_look_is_sent_after_the_first_registration_only) {
   EXPECT_EQ(second[0]["command"], "register_accept");
 }
 
-TEST_F(NSPanelTest, panel_in_lvgl_mode_is_compared_with_the_terminal_tft_for_its_layout) {
+TEST_F(NSPanelTest, panel_is_compared_with_the_terminal_tft_for_its_layout) {
   auto directory = std::filesystem::temp_directory_path() / fmt::format("nspm-terminal-tft-{}", ::getpid());
   std::filesystem::create_directories(directory / "us");
   std::filesystem::create_directories(directory / "eu");
@@ -1383,7 +1353,6 @@ TEST_F(NSPanelTest, panel_in_lvgl_mode_is_compared_with_the_terminal_tft_for_its
   ASSERT_TRUE(eu_checksum.has_value());
   EXPECT_NE(*us_checksum, *eu_checksum);
 
-  set_panel_setting("display_mode", "lvgl");
   set_panel_setting("is_us_panel", "True");
   load_panel();
   auto report_tft = [&](const std::string &md5) {
@@ -1398,7 +1367,7 @@ TEST_F(NSPanelTest, panel_in_lvgl_mode_is_compared_with_the_terminal_tft_for_its
   EXPECT_FALSE(panel->has_tft_update());
 }
 
-TEST_F(NSPanelTest, panel_in_lvgl_mode_without_a_terminal_tft_has_no_update) {
+TEST_F(NSPanelTest, panel_without_a_terminal_tft_has_no_update) {
   std::string previous_directory = MqttManagerConfig::terminal_tft_directory;
   OnExit restore{[&] {
     MqttManagerConfig::terminal_tft_directory = previous_directory;
@@ -1406,11 +1375,124 @@ TEST_F(NSPanelTest, panel_in_lvgl_mode_without_a_terminal_tft_has_no_update) {
   }};
   MqttManagerConfig::terminal_tft_directory = "/nonexistent/nspm-terminal-tft";
   MqttManagerConfig::update_tft_checksums();
-  set_panel_setting("display_mode", "lvgl");
   load_panel();
 
   NSPanelStatusReport report;
   report.set_md5_tft_gui("0123456789abcdef0123456789abcdef");
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+
+  EXPECT_FALSE(panel->has_tft_update());
+}
+
+// A US panel mounted sideways draws the landscape layout (NEXTION_REMOVAL_PLAN.md, decision 3).
+TEST_F(NSPanelTest, a_sideways_us_panel_is_sent_as_not_a_us_panel) {
+  set_panel_setting("is_us_panel", "True");
+  set_panel_setting("us_panel_orientation", "horizontal");
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_FALSE(config->is_us_panel());
+  // Independent of the layout: the temperature unit is a global setting, not part of the orientation.
+  EXPECT_EQ(config->use_fahrenheit(), MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT));
+}
+
+TEST_F(NSPanelTest, a_mirrored_sideways_us_panel_is_sent_as_not_a_us_panel) {
+  set_panel_setting("is_us_panel", "True");
+  set_panel_setting("us_panel_orientation", "horizontal_mirrored");
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_FALSE(config->is_us_panel());
+}
+
+TEST_F(NSPanelTest, an_upright_us_panel_is_sent_as_a_us_panel) {
+  set_panel_setting("is_us_panel", "True");
+  set_panel_setting("us_panel_orientation", "vertical");
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_TRUE(config->is_us_panel());
+}
+
+TEST_F(NSPanelTest, an_eu_panel_stays_not_a_us_panel_whatever_its_leftover_orientation) {
+  set_panel_setting("is_us_panel", "False");
+  set_panel_setting("us_panel_orientation", "vertical");
+  load_panel();
+
+  auto config = last_published_config();
+  ASSERT_TRUE(config.has_value());
+  EXPECT_FALSE(config->is_us_panel());
+}
+
+namespace {
+// Stages terminal TFTs ("us" and "eu" layouts) for the test's lifetime.
+struct StagedTerminalTfts {
+  std::filesystem::path directory;
+  std::string previous_directory;
+  std::string us_md5;
+  std::string eu_md5;
+
+  StagedTerminalTfts() {
+    directory = std::filesystem::temp_directory_path() / fmt::format("nspm-staged-tft-{}-{}", ::getpid(), reinterpret_cast<uintptr_t>(this));
+    std::filesystem::create_directories(directory / "us");
+    std::filesystem::create_directories(directory / "eu");
+    std::ofstream(directory / "us" / "gui.tft") << "us terminal tft";
+    std::ofstream(directory / "eu" / "gui.tft") << "eu terminal tft";
+    previous_directory = MqttManagerConfig::terminal_tft_directory;
+    MqttManagerConfig::terminal_tft_directory = directory.string();
+    MqttManagerConfig::update_tft_checksums();
+    us_md5 = *MqttManagerConfig::get_terminal_tft_checksum(true);
+    eu_md5 = *MqttManagerConfig::get_terminal_tft_checksum(false);
+  }
+
+  ~StagedTerminalTfts() {
+    MqttManagerConfig::terminal_tft_directory = previous_directory;
+    MqttManagerConfig::update_tft_checksums();
+    std::filesystem::remove_all(directory);
+  }
+};
+} // namespace
+
+TEST_F(NSPanelTest, a_sideways_us_panel_is_compared_with_the_eu_terminal_tft) {
+  StagedTerminalTfts staged;
+  ASSERT_NE(staged.us_md5, staged.eu_md5);
+  set_panel_setting("is_us_panel", "True");
+  set_panel_setting("us_panel_orientation", "horizontal_mirrored");
+  load_panel();
+  auto report_tft = [&](const std::string &md5) {
+    NSPanelStatusReport report;
+    report.set_md5_tft_gui(md5);
+    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+  };
+
+  report_tft(staged.us_md5);
+  EXPECT_TRUE(panel->has_tft_update());
+  report_tft(staged.eu_md5);
+  EXPECT_FALSE(panel->has_tft_update());
+}
+
+TEST_F(NSPanelTest, an_upright_us_panel_is_still_compared_with_the_us_terminal_tft) {
+  StagedTerminalTfts staged;
+  set_panel_setting("is_us_panel", "True");
+  load_panel();
+  NSPanelStatusReport report;
+  report.set_md5_tft_gui(staged.us_md5);
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+
+  EXPECT_FALSE(panel->has_tft_update());
+}
+
+TEST_F(NSPanelTest, the_terminal_tft_is_the_only_tft_a_panel_is_compared_with) {
+  // A leftover slot selection from the days of the Nextion pages changes nothing.
+  StagedTerminalTfts staged;
+  set_panel_setting("selected_tft", "tft3");
+  set_panel_setting("display_mode", "nextion");
+  load_panel();
+  NSPanelStatusReport report;
+  report.set_md5_tft_gui(staged.eu_md5);
   panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
 
   EXPECT_FALSE(panel->has_tft_update());
@@ -1520,16 +1602,16 @@ TEST_F(NSPanelTest, gui_update_is_allowed_when_status_reports_have_a_display_mod
   }
 }
 
-TEST_F(NSPanelTest, gui_update_gate_does_not_apply_to_a_leftover_nextion_row) {
+TEST_F(NSPanelTest, gui_update_gate_ignores_a_leftover_nextion_row) {
   set_panel_setting("display_mode", "nextion");
   load_panel();
-  register_panel();
+  register_panel(); // Firmware from before LVGL.
   commands_sent();
 
   panel->tft_update();
 
-  EXPECT_FALSE(panel->gui_update_needs_firmware_first());
-  EXPECT_EQ(tft_update_commands(commands_sent()), 1);
+  EXPECT_TRUE(panel->gui_update_needs_firmware_first());
+  EXPECT_EQ(tft_update_commands(commands_sent()), 0);
 }
 
 TEST_F(NSPanelTest, panel_without_an_hmi_that_reports_the_nextion_display_shows_the_legacy_screen) {
@@ -1567,6 +1649,36 @@ TEST_F(NSPanelTest, panel_with_an_hmi_on_the_nextion_display_does_not_show_the_l
   register_panel(nlohmann::json::array({"lvgl_look"}));
   NSPanelStatusReport report;
   report.set_display_mode(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION);
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+
+  EXPECT_FALSE(panel->shows_legacy_screen());
+}
+
+TEST_F(NSPanelTest, panel_without_an_hmi_that_missed_the_banner_shows_the_legacy_screen_too) {
+  // It reports TERMINAL_IDLE (blank screen) but its TFT is not the staged terminal TFT: it is on NSPM's HMI TFT.
+  StagedTerminalTfts staged;
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_hmi"}));
+  auto report_idle = [&](const std::string &md5) {
+    NSPanelStatusReport report;
+    report.set_display_mode(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE);
+    report.set_md5_tft_gui(md5);
+    panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+  };
+
+  report_idle("0123456789abcdef0123456789abcdef");
+  EXPECT_TRUE(panel->shows_legacy_screen());
+  report_idle(staged.eu_md5); // The terminal TFT with its LVGL UI off: not the legacy screen.
+  EXPECT_FALSE(panel->shows_legacy_screen());
+}
+
+TEST_F(NSPanelTest, terminal_idle_without_the_no_hmi_feature_is_not_the_legacy_screen) {
+  StagedTerminalTfts staged;
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  NSPanelStatusReport report;
+  report.set_display_mode(NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE);
+  report.set_md5_tft_gui("0123456789abcdef0123456789abcdef");
   panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
 
   EXPECT_FALSE(panel->shows_legacy_screen());
@@ -1617,7 +1729,6 @@ TEST_F(NSPanelTest, look_chosen_on_the_panel_replaces_the_managed_look) {
 
 TEST_F(NSPanelTest, look_chosen_on_the_panel_is_not_sent_back_as_commands) {
   // Even to a panel whose firmware takes commands only: the report proves the panel has the look already.
-  set_panel_setting("display_mode", "lvgl");
   set_panel_setting("lvgl_theme", "dusk");
   set_panel_setting("lvgl_background", "dusk");
   load_panel();
@@ -1675,7 +1786,6 @@ TEST_F(NSPanelTest, look_reported_for_another_panel_is_ignored) {
 }
 
 TEST_F(NSPanelTest, panel_that_reports_its_look_is_sent_no_lvgl_commands) {
-  set_panel_setting("display_mode", "lvgl");
   set_panel_setting("lvgl_theme", "aurora");
   set_panel_setting("lvgl_background", "aurora");
   load_panel();
@@ -1697,7 +1807,6 @@ TEST_F(NSPanelTest, panel_that_reports_its_look_is_sent_no_lvgl_commands) {
 
 TEST_F(NSPanelTest, panel_that_stops_listing_the_feature_is_sent_commands_again) {
   // Firmware rolled back to a build that only knows the commands.
-  set_panel_setting("display_mode", "lvgl");
   set_panel_setting("lvgl_theme", "aurora");
   load_panel();
   register_panel(nlohmann::json::array({"lvgl_look"}));

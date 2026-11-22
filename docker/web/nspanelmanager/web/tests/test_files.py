@@ -123,25 +123,21 @@ class TFTTests(FileTestCase):
     def panel_tft(self, **headers):
         return self.client.get(reverse("download_tft", kwargs={"panel_id": self.panel.id}), **headers).content
 
-    def configure_panel(self, is_us_panel="False", orientation=None, tft="tft1"):
-        # LVGL is the default display mode; these cases cover the slot code that serves a leftover "nextion" row.
-        set_nspanel_setting_value(self.panel.id, "display_mode", "nextion")
+    def configure_panel(self, is_us_panel="False", orientation=None):
         set_nspanel_setting_value(self.panel.id, "is_us_panel", is_us_panel)
-        set_nspanel_setting_value(self.panel.id, "selected_tft", tft)
         if orientation:
             set_nspanel_setting_value(self.panel.id, "us_panel_orientation", orientation)
 
-    def test_each_panel_gets_the_image_for_its_type_and_selected_tft(self):
-        for tft_file_type in ("eu1", "eu3", "us2", "us4_horizontal_mirrored"):
+    def test_each_panel_gets_the_terminal_tft_for_its_layout(self):
+        for tft_file_type in ("terminal_eu", "terminal_us"):
             self.upload_tft(tft_file_type, tft_file_type.encode())
 
         cases = [
-            ({}, b"eu1"),  # defaults: EU panel, tft1
-            ({"tft": "tft3"}, b"eu3"),
-            ({"is_us_panel": "True", "orientation": "vertical", "tft": "tft2"}, b"us2"),
-            # A horizontal US panel has the same screen orientation as an EU panel.
-            ({"is_us_panel": "True", "orientation": "horizontal", "tft": "tft3"}, b"eu3"),
-            ({"is_us_panel": "True", "orientation": "horizontal_mirrored", "tft": "tft4"}, b"us4_horizontal_mirrored"),
+            ({}, b"terminal_eu"),  # defaults: EU panel
+            ({"is_us_panel": "True", "orientation": "vertical"}, b"terminal_us"),
+            # A US panel mounted sideways draws the landscape layout, as an EU panel does.
+            ({"is_us_panel": "True", "orientation": "horizontal"}, b"terminal_eu"),
+            ({"is_us_panel": "True", "orientation": "horizontal_mirrored"}, b"terminal_eu"),
         ]
         for config, expected in cases:
             with self.subTest(config=config):
@@ -150,16 +146,16 @@ class TFTTests(FileTestCase):
                 self.assertEqual(self.client.get(reverse("checksum_tft_file", kwargs={"panel_id": self.panel.id})).content.decode(), md5(expected))
 
     def test_tft_range_download(self):
-        self.upload_tft("eu1", FIRMWARE)
+        self.upload_tft("terminal_eu", FIRMWARE)
         self.configure_panel()
 
         self.assertEqual(self.panel_tft(HTTP_RANGE="bytes=10-20"), FIRMWARE[10:20])
 
     def test_upload_reloads_manager(self):
-        self.upload_tft("eu1", FIRMWARE)
+        self.upload_tft("terminal_eu", FIRMWARE)
 
         self.assertManagerReloaded(times=1)
 
     def test_unknown_tft_type_is_rejected(self):
-        self.assertEqual(self.upload_tft("eu9", FIRMWARE).status_code, 500)
+        self.assertEqual(self.upload_tft("eu1", FIRMWARE).status_code, 500)
         self.assertManagerNotReloaded()

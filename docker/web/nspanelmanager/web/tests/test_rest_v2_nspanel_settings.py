@@ -38,8 +38,9 @@ class NSPanelSettingsTests(NSPMTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"display_mode": "lvgl", "lvgl_theme": "ocean", "lvgl_background": None})
-        self.assertEqual(self.rows(), {"display_mode": "lvgl", "lvgl_theme": "ocean"})
-        self.assertManagerReloaded(times=1)
+        # Read-only: nothing is stored for it, so nothing changed and the manager is not reloaded.
+        self.assertEqual(self.rows(), {"lvgl_theme": "ocean"})
+        self.assertManagerNotReloaded()
 
     def test_patch_look(self):
         response = self.patch_json(self.url, {"lvgl_theme": "auto", "lvgl_background": "aurora"})
@@ -61,13 +62,12 @@ class NSPanelSettingsTests(NSPMTestCase):
         self.assertManagerReloaded(times=1)
 
     def test_unchanged_values_write_nothing_and_do_not_reload(self):
-        set_nspanel_setting_value(self.panel.id, "display_mode", "lvgl")
         current = self.client.get(self.url).json()
 
         response = self.patch_json(self.url, current)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.rows(), {"display_mode": "lvgl"})  # No rows created for the nulls.
+        self.assertEqual(self.rows(), {})  # No rows created, not even for display_mode.
         self.assertManagerNotReloaded()
 
     def test_unknown_values_are_rejected(self):
@@ -88,11 +88,14 @@ class NSPanelSettingsTests(NSPMTestCase):
         self.assertEqual(self.rows(), {})
         self.assertManagerNotReloaded()
 
-    def test_a_leftover_nextion_row_reads_as_nextion_until_it_is_rewritten(self):
+    def test_a_leftover_nextion_row_is_ignored(self):
         set_nspanel_setting_value(self.panel.id, "display_mode", "nextion")
 
-        self.assertEqual(self.client.get(self.url).json()["display_mode"], "nextion")
-        self.assertEqual(self.patch_json(self.url, {"display_mode": "lvgl"}).json()["display_mode"], "lvgl")
+        self.assertEqual(self.client.get(self.url).json()["display_mode"], "lvgl")
+        response = self.patch_json(self.url, {"display_mode": "lvgl"})
+        self.assertEqual(response.json()["display_mode"], "lvgl")
+        # The stale row is left alone: display_mode is not written.
+        self.assertEqual(self.rows(), {"display_mode": "nextion"})
 
     def test_unknown_fields_are_rejected(self):
         response = self.patch_json(self.url, {"display_mode": "lvgl", "selected_tft": "tft2"})

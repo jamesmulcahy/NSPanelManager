@@ -175,27 +175,23 @@ public:
   bool has_littlefs_update();
 
   /**
-   * Compare stored TFT checksum with current TFT checksum for the selected panel type and background (ie. TFT-file) and return true if they are different.
+   * Compare stored TFT checksum with the staged terminal TFT checksum for the panel's layout and return true if they are different.
    */
   bool has_tft_update();
 
   /**
-   * True in LVGL mode when the panel's firmware predates LVGL: it registered without "lvgl_look", or its status
+   * True when the panel's firmware predates LVGL: it registered without "lvgl_look", or its status
    * reports have no display_mode (UNKNOWN). Nothing seen yet is not "predates". The terminal
    * TFT that a GUI update installs would leave it on the TFT's waiting page. Its firmware has to be updated first.
    */
   bool gui_update_needs_firmware_first();
 
   /**
-   * True when the panel's firmware has no HMI pages ("no_hmi") and its display reports NSPM's HMI TFT
-   * (DISPLAY_MODE_NEXTION): it shows the legacy screen until a GUI update installs the terminal TFT.
+   * True when the panel's firmware has no HMI pages ("no_hmi") and its display is NSPM's HMI TFT: it reports
+   * DISPLAY_MODE_NEXTION, or TERMINAL_IDLE (it missed the TFT's banner and shows nothing) with a TFT that is not the
+   * staged terminal TFT. It shows the legacy screen, or nothing, until a GUI update installs the terminal TFT.
    */
   bool shows_legacy_screen();
-
-  /**
-   * True when the panel's display_mode setting is "lvgl": it is served the terminal TFT and draws its pages with LVGL.
-   */
-  bool is_lvgl_mode();
 
   /**
    * Register NSPanel to manager.
@@ -248,6 +244,9 @@ private:
   MQTT_MANAGER_NSPANEL_MODEL _model;   // The model of the NSPanel.
   std::string _name;                   // Friendly name of the NSPanel.
   bool _is_us_panel;
+  // The panel draws the US (portrait) layout: a US panel that is not mounted sideways. What the firmware is told as
+  // is_us_panel, and which terminal TFT (US or EU) it runs.
+  bool _us_layout = false;
   enum US_PANEL_ORIENTATION {
     LANDSCAPE_LEFT,
     LANDSCAPE_RIGHT,
@@ -277,8 +276,7 @@ private:
   std::string _current_littlefs_md5_checksum;
   std::string _current_tft_md5_checksum;
 
-  // LVGL mode (docs/LVGL_PANEL_MODE.md). The settings as of the last reload_config(); an empty look is not managed.
-  bool _lvgl_mode = false;
+  // The look (docs/LVGL_PANEL_MODE.md). The settings as of the last reload_config(); an empty look is not managed.
   std::string _lvgl_theme;
   std::string _lvgl_background;
   bool _lvgl_settings_loaded = false; // reload_config() has run once, so a later difference is a change.

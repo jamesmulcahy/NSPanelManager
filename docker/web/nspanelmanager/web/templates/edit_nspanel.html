@@ -33,19 +33,8 @@
     {% RC "NSPanelWarnings" nspanel_mac=panel_info.data.mac_address %}
 </div>
 
-<!-- NSPanel select background modal -->
-{% static "" as static_prefix %}
 <script>
-  function selectBackground(background, image) {
-    $("#selected_tft").val("tft" + background);
-    $("#eu-panel-example-image").attr("src", "{{ static_prefix }}HMI_files/eu/output_tft" + background + "/example.png");
-    $("#us-panel-horizontal-example-image").attr("src", "{{ static_prefix }}HMI_files/eu/output_tft" + background + "/example.png");
-    $("#us-panel-horizontal-mirrored-example-image").attr("src", "{{ static_prefix }}HMI_files/eu/output_tft" + background + "/example.png");
-    $("#us-panel-vertical-example-image").attr("src", "{{ static_prefix }}HMI_files/us/output_tft" + background + "/example.png");
-    select_background_modal.close();
-  }
-
-  // Display section: LVGL is the only display mode (the Nextion background examples stay hidden until M2 removes them).
+  // Display section: LVGL on the terminal TFT is the only display.
   var lvgl_panel_ip = "";
   function update_display_fields() {
     var panel_type = $("#panel_type").val();
@@ -71,7 +60,7 @@
     $("#screensaver_now_playing_follows").toggleClass("hidden", cards.indexOf("now_playing") < 0);
   }
 
-  const display_mode_names = {nextion: "Nextion pages", lvgl: "LVGL", terminal_idle: "terminal TFT with LVGL off"};
+  const display_mode_names = {nextion: "legacy screen (its GUI needs updating)", lvgl: "LVGL", terminal_idle: "terminal TFT with LVGL off"};
   $(document).ready(function () {
     $("#screensaver_cards_mode").on("change", function () {
       var custom = $(this).val() == "custom";
@@ -87,7 +76,7 @@
     });
     $("#lvgl_screenshot").on("error", function () {
       $(this).addClass("hidden");
-      $("#lvgl_screenshot_status").text("Screenshot unavailable: the panel shows its Nextion pages (until its GUI is updated), is busy, or cannot be reached from this browser at " + lvgl_panel_ip + ".");
+      $("#lvgl_screenshot_status").text("Screenshot unavailable: the panel shows its legacy screen (until its GUI is updated), is busy, or cannot be reached from this browser at " + lvgl_panel_ip + ".");
     });
     stomp_subscribe("nspanel/" + nspanel_mac + "/status", function (message) {
       var status = JSON.parse(message.body);
@@ -102,112 +91,11 @@
       }
     });
   });
-
-  function openBackgroundSelector() {
-      const modal = document.getElementById('select_background_modal');
-
-      $(".eu-backgrounds").addClass("hidden");
-      $(".us-vertical-backgrounds").addClass("hidden");
-      $(".us-horizontal-backgrounds").addClass("hidden");
-      $(".us-horizontal-mirrored-backgrounds").addClass("hidden");
-
-      var panel_type = $("#panel_type").val();
-      if(panel_type == "eu") {
-        $(".eu-backgrounds").removeClass("hidden");
-      } else if(panel_type == "us_vertical") {
-        $(".us-vertical-backgrounds").removeClass("hidden");
-      } else if(panel_type == "us_horizontal") {
-        $(".us-horizontal-backgrounds").removeClass("hidden");
-      } else if(panel_type == "us_horizontal_mirrored") {
-        $(".us-horizontal-mirrored-backgrounds").removeClass("hidden");
-      }
-
-      modal.showModal();
-  }
 </script>
-<dialog id="select_background_modal" class="modal">
-    <div class="modal-box max-w-2xl">
-        <form method="dialog">
-            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-        </form>
-
-        <!-- 69x69 without frame EU panel -->
-        <div class="grid md:grid-cols-2 content-start gap-2 mb-2 eu-backgrounds">
-            {% for i in "1234" %}
-            <div class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[300px] mt-4">
-                <div class="rounded-[0.2rem] w-full h-[77%] bg-black flex justify-center items-center">
-                    <img src="{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_tft{{ i }}/example.png" alt="Display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <button onclick="selectBackground('{{ i }}', '{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_tft{{ i }}/example.png')" class="absolute top-0 left-0 rounded-[0.2rem] w-full h-[77%] opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="Select background">
-                    <span class="text-2xl text-success mdi mdi-check-circle"></span>
-                </button> <!-- Select background overlay -->
-                <div class="rounded-[0.2rem] w-[49%] h-[21.5%] bg-base-200 absolute bottom-0"></div> <!-- Left button -->
-                <div class="rounded-[0.2rem] w-[49%] h-[21.5%] bg-base-200 absolute bottom-0 right-0"></div> <!-- Right button -->
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- 69 x 115mm without frame US vertical -->
-        <div class="grid md:grid-cols-2 content-start gap-2 mb-2 us-vertical-backgrounds">
-            {% for i in "1234" %}
-            <div class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[500px] w-[300px] mt-4">
-                <div class="rounded-[0.2rem] w-full h-[81.5%] bg-black flex justify-center items-center">
-                    <img src="{{ ingress_path }}{{ static_prefix }}HMI_files/us/output_tft{{ i }}/example.png" alt="Display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <button onclick="selectBackground('{{ i }}', '{{ ingress_path }}{{ static_prefix }}HMI_files/us/output_tft{{ i }}/example.png')" class="absolute top-0 left-0 rounded-[0.2rem] w-full h-[81.5%] opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="Select background">
-                    <span class="mdi mdi-check-circle"></span>
-                </button> <!-- Select background overlay -->
-                <div class="rounded-[0.2rem] w-[49%] h-[15.6%] bg-base-200 absolute bottom-0"></div> <!-- Left button -->
-                <div class="rounded-[0.2rem] w-[49%] h-[15.6%] bg-base-200 absolute bottom-0 right-0"></div> <!-- Right button -->
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- 115 x 69mm without frame US horizontal -->
-        <div class="grid grid-cols-1 content-start gap-2 mb-2 us-horizontal-backgrounds">
-            {% for i in "1234" %}
-            <div class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[500px] mt-4">
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute top-0 right-0"></div> <!-- Upper button -->
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute bottom-0 right-0"></div> <!-- Bottom button -->
-                <div class="rounded-[0.2rem] w-[81.5%] h-full bg-black flex justify-center items-center absolute top-0 left-0">
-                    <!-- We use EU tft file for a horizontal US panel with buttons on left as it's the same screen and the correct layout -->
-                    <img src="{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_tft{{ i }}/example.png" alt="Display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <button onclick="selectBackground('{{ i }}', '{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_tft{{ i }}/example.png')" class="absolute top-0 left-0 rounded-[0.2rem] w-[81.5%] h-full opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="Select background">
-                    <span class="mdi mdi-check-circle"></span>
-                </button> <!-- Select background overlay -->
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- 115 x 69mm without frame US horizontal (mirrored) -->
-        <div class="grid grid-cols-1 content-start gap-2 mb-2 us-horizontal-mirrored-backgrounds">
-            {% for i in "1234" %}
-            <div class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[500px] mt-4">
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute top-0 left-0"></div> <!-- Upper button -->
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute bottom-0 left-0"></div> <!-- Bottom button -->
-                <div class="rounded-[0.2rem] w-[81.5%] h-full bg-black flex justify-center items-center absolute top-0 right-0">
-                    <!-- We use EU tft file for a horizontal US panel with buttons on left as it's the same screen and the correct layout -->
-                    <img src="{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_tft{{ i }}/example.png" alt="Display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <button onclick="selectBackground('{{ i }}', '{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_tft{{ i }}/example.png')" class="absolute top-0 right-0 rounded-[0.2rem] w-[81.5%] h-full opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="Select background">
-                    <span class="mdi mdi-check-circle"></span>
-                </button> <!-- Select background overlay -->
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-    </form>
-</dialog>
-
 <div class="md:flex md:justify-between md:items-start mt-2 mb-6">
   <div class="w-full mr-4">
     <form method="POST" class="mt-2" action="{{ ingress_path }}{% url 'save_panel_settings' panel_id=panel_info.data.id %}">
       {% csrf_token %}
-      <input type="hidden" name="selected_tft" id="selected_tft" value="{{ settings.selected_tft }}">
 
       <div class="p-4 bg-base-100 rounded-md shadow-lg w-full">
         <!-- General settings -->
@@ -249,75 +137,9 @@
           </div>
         </div>
 
-        <!-- NSPM TFT background examples: Nextion mode only (see the Display section below) -->
-        <div id="nextion_tft_examples" class="flex items-center justify-center hidden">
-            <!-- 81 x 81mm without frame -->
-            <div id="eu-panel-example" class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[300px] mt-4 {% if settings.is_us_panel != 'False' %}hidden{% endif %}">
-                <div class="rounded-[0.2rem] w-full h-[77%] bg-black flex justify-center items-center">
-                    <img id="eu-panel-example-image" src="{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_{{ settings.selected_tft }}/example.png" alt="Display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <div class="absolute top-0 left-0 rounded-[0.2rem] w-full h-[77%] opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="Choose background"
-                    onclick="openBackgroundSelector();">
-                    <span class="mdi mdi-image-size-select-actual"></span>
-                </div> <!-- Select background overlay -->
-                <div class="rounded-[0.2rem] w-[49%] h-[21.5%] bg-base-200 absolute bottom-0"></div> <!-- Left button -->
-                <div class="rounded-[0.2rem] w-[49%] h-[21.5%] bg-base-200 absolute bottom-0 right-0"></div> <!-- Right button -->
-            </div>
-
-            <!-- 69 x 115mm without frame -->
-            <div id="us-panel-vertical-example" class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[500px] w-[300px] mt-4 {% if settings.is_us_panel != 'True' or settings.us_panel_orientation != 'vertical' %}hidden{% endif %}">
-                <div class="rounded-[0.2rem] w-full h-[81.5%] bg-black flex justify-center items-center">
-                    <img id="us-panel-vertical-example-image" src="{{ ingress_path }}{{ static_prefix }}HMI_files/us/output_{{ settings.selected_tft }}/example.png" alt="Display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <div class="absolute top-0 left-0 rounded-[0.2rem] w-full h-[81.5%] opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="Choose background"
-                    onclick="openBackgroundSelector();">
-                    <span class="mdi mdi-image-size-select-actual"></span>
-                </div> <!-- Select background overlay -->
-                <div class="rounded-[0.2rem] w-[49%] h-[15.6%] bg-base-200 absolute bottom-0"></div> <!-- Left button -->
-                <div class="rounded-[0.2rem] w-[49%] h-[15.6%] bg-base-200 absolute bottom-0 right-0"></div> <!-- Right button -->
-            </div>
-
-            <!-- 115 x 69mm without frame -->
-            <div id="us-panel-horizontal-example" class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[500px] mt-4 {% if settings.is_us_panel != 'True' or settings.us_panel_orientation != 'horizontal_mirrored' %}hidden{% endif %}">
-                <div class="rounded-[0.2rem] w-[81.5%] h-full bg-black flex justify-center items-center absolute top-0 left-0">
-                    <!-- we use eu tft file for a horizontal us panel with buttons on left as it's the same screen and the correct layout -->
-                    <img id="us-panel-horizontal-example-image" src="{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_{{ settings.selected_tft }}/example.png" alt="display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <div class="absolute top-0 left-0 rounded-[0.2rem] w-[81.5%] h-full opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="choose background"
-                    onclick="openBackgroundSelector();">
-                    <span class="mdi mdi-image-size-select-actual"></span>
-                </div> <!-- select background overlay -->
-
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute top-0 right-0"></div> <!-- upper button -->
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute bottom-0 right-0"></div> <!-- bottom button -->
-            </div>
-
-            <!-- 115 x 69mm without frame (mirrored) -->
-            <div id="us-panel-horizontal-mirrored-example" class="relative mx-auto border-base-300 bg-base-300 border-[0.5rem] rounded-[0.5rem] h-[300px] w-[500px] mt-4 {% if settings.is_us_panel != 'True' or settings.us_panel_orientation != 'horizontal' %}hidden{% endif %}">
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute top-0 left-0"></div> <!-- Upper button -->
-                <div class="rounded-[0.2rem] w-[15.6%] h-[49%] bg-base-200 absolute bottom-0 left-0"></div> <!-- Bottom button -->
-                <div class="rounded-[0.2rem] w-[81.5%] h-full bg-black flex justify-center items-center absolute top-0 right-0">
-                    <!-- We use EU tft file for a horizontal US panel with buttons on left as it's the same screen and the correct layout -->
-                    <img id="us-panel-horizontal-mirrored-example-image" src="{{ ingress_path }}{{ static_prefix }}HMI_files/eu/output_{{ settings.selected_tft }}/example.png" alt="Display example" class="p-[22.2px] object-fill">
-                </div> <!-- screen -->
-                <div class="absolute top-0 right-0 rounded-[0.2rem] w-[81.5%] h-full opacity-0 flex justify-center items-center hover:backdrop-blur-sm transition-all duration-[20ms] hover:opacity-100 cursor-pointer" title="Choose background"
-                    onclick="openBackgroundSelector();">
-                    <span class="mdi mdi-image-size-select-actual"></span>
-                </div> <!-- Select background overlay -->
-            </div>
-        </div>
-
-        <!-- Display: LVGL on a terminal TFT. See docs/LVGL_PANEL_MODE.md -->
+        <!-- Display: the terminal TFT, drawn with LVGL. See docs/LVGL_PANEL_MODE.md -->
         <div class="mt-4" id="display_settings">
-          <label for="display_mode" class="block mb-2 text-sm font-medium">Display</label>
-          <div class="flex flex-row-reverse">
-            <!-- LVGL is the only display mode; the field stays in the form so that what is posted is always valid. -->
-            <input type="hidden" name="display_mode" id="display_mode" value="lvgl">
-            <div class="rounded-none bg-base-300 border-neutral rounded-e-md border border-l-0 block flex-1 min-w-0 w-full text-sm p-2.5">LVGL (terminal TFT)</div>
-            <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md ">
-              <span class="mdi mdi-monitor-dashboard"></span>
-            </span>
-          </div>
+          <span class="block mb-2 text-sm font-medium">Display</span>
           <p class="text-xs font-light mt-2">
             Running now: <span id="display_running">{{ display_info.running.label }}</span>
             <span id="display_reported_mode" class="hidden">; panel reports <span id="display_reported_mode_value"></span></span>.
@@ -327,8 +149,8 @@
             {% if not display_info.terminal_tft_staged %}
             <p class="text-xs text-warning mt-2">No {{ display_info.terminal_tft_label }} has been uploaded yet. Upload one (Upload TFT, "Terminal TFT") before updating this panel's GUI.</p>
             {% endif %}
-            <p id="lvgl_orientation_note" class="text-xs text-warning mt-2 {% if settings.is_us_panel != 'True' or settings.us_panel_orientation == 'vertical' %}hidden{% endif %}">LVGL draws US panels in portrait whatever the orientation set above.</p>
-            <p class="text-xs font-light mt-2">LVGL mode needs panel firmware with LVGL. Firmware without it leaves a terminal TFT on its waiting page; switch back to Nextion and update the GUI to recover.</p>
+            <p id="lvgl_orientation_note" class="text-xs font-light mt-2 {% if settings.is_us_panel != 'True' or settings.us_panel_orientation == 'vertical' %}hidden{% endif %}">A US panel mounted sideways draws the landscape layout, and runs the EU terminal TFT.</p>
+            <p class="text-xs font-light mt-2">The terminal TFT needs panel firmware with LVGL: update the firmware before the GUI, as older firmware leaves the terminal TFT on its waiting page.</p>
 
             <div class="mt-4">
               <label for="lvgl_theme" class="block mb-2 text-sm font-medium">LVGL theme</label>

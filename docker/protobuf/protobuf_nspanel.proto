@@ -172,9 +172,9 @@ message NSPanelStatusReport {
   // What the display shows. Firmware that does not report it leaves it UNKNOWN.
   enum NSPanelDisplayMode {
     DISPLAY_MODE_UNKNOWN = 0;
-    DISPLAY_MODE_NEXTION = 1;       // NSPM's Nextion pages
+    DISPLAY_MODE_NEXTION = 1;       // A legacy TFT (NSPM's Nextion HMI TFT): the firmware has no UI for it and shows a "display update needed" screen
     DISPLAY_MODE_LVGL = 2;          // LVGL draws the pages through a terminal TFT
-    DISPLAY_MODE_TERMINAL_IDLE = 3; // A terminal TFT with LVGL switched off (lvgl_ui false): the TFT's own waiting page
+    DISPLAY_MODE_TERMINAL_IDLE = 3; // No UI: no terminal TFT is installed, the banner was missed, or LVGL failed to start. The display shows at most the TFT's own waiting page
   }
   NSPanelDisplayMode display_mode = 16;
   string lvgl_theme = 17;      // The palette in use in LVGL mode ("light" reported as "grey"), empty otherwise

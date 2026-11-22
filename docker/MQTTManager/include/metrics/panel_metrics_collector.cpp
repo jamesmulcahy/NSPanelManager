@@ -179,18 +179,8 @@ std::vector<prometheus::MetricFamily> PanelMetricsCollector::Collect() const {
       {"firmware", "custom", MqttManagerConfig::get_firmware_custom_checksum()},
       {"littlefs", "sonoff", MqttManagerConfig::get_littlefs_sonoff_checksum()},
       {"littlefs", "custom", MqttManagerConfig::get_littlefs_custom_checksum()},
-      {"tft", "eu_tft1", MqttManagerConfig::get_eu_tft1_checksum()},
-      {"tft", "eu_tft2", MqttManagerConfig::get_eu_tft2_checksum()},
-      {"tft", "eu_tft3", MqttManagerConfig::get_eu_tft3_checksum()},
-      {"tft", "eu_tft4", MqttManagerConfig::get_eu_tft4_checksum()},
-      {"tft", "us_tft1", MqttManagerConfig::get_us_tft1_checksum()},
-      {"tft", "us_tft2", MqttManagerConfig::get_us_tft2_checksum()},
-      {"tft", "us_tft3", MqttManagerConfig::get_us_tft3_checksum()},
-      {"tft", "us_tft4", MqttManagerConfig::get_us_tft4_checksum()},
-      {"tft", "us_horizontal_mirrored_tft1", MqttManagerConfig::get_us_horizontal_mirrored_tft1_checksum()},
-      {"tft", "us_horizontal_mirrored_tft2", MqttManagerConfig::get_us_horizontal_mirrored_tft2_checksum()},
-      {"tft", "us_horizontal_mirrored_tft3", MqttManagerConfig::get_us_horizontal_mirrored_tft3_checksum()},
-      {"tft", "us_horizontal_mirrored_tft4", MqttManagerConfig::get_us_horizontal_mirrored_tft4_checksum()},
+      {"tft", "terminal_us", MqttManagerConfig::get_terminal_tft_checksum(true)},
+      {"tft", "terminal_eu", MqttManagerConfig::get_terminal_tft_checksum(false)},
   };
   for (const auto &[type, variant, checksum] : staged_images) {
     if (checksum.has_value()) {

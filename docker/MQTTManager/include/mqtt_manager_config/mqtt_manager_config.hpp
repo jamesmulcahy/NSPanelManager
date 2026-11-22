@@ -151,18 +151,6 @@ public:
   static std::expected<std::string, bool> get_firmware_custom_checksum();
   static std::expected<std::string, bool> get_littlefs_sonoff_checksum();
   static std::expected<std::string, bool> get_littlefs_custom_checksum();
-  static std::expected<std::string, bool> get_eu_tft1_checksum();
-  static std::expected<std::string, bool> get_eu_tft2_checksum();
-  static std::expected<std::string, bool> get_eu_tft3_checksum();
-  static std::expected<std::string, bool> get_eu_tft4_checksum();
-  static std::expected<std::string, bool> get_us_tft1_checksum();
-  static std::expected<std::string, bool> get_us_tft2_checksum();
-  static std::expected<std::string, bool> get_us_tft3_checksum();
-  static std::expected<std::string, bool> get_us_tft4_checksum();
-  static std::expected<std::string, bool> get_us_horizontal_mirrored_tft1_checksum();
-  static std::expected<std::string, bool> get_us_horizontal_mirrored_tft2_checksum();
-  static std::expected<std::string, bool> get_us_horizontal_mirrored_tft3_checksum();
-  static std::expected<std::string, bool> get_us_horizontal_mirrored_tft4_checksum();
   // The terminal TFT for the US (portrait) or EU (landscape) LVGL layout. Unexpected when it has not been uploaded.
   static std::expected<std::string, bool> get_terminal_tft_checksum(bool us_layout);
 
@@ -200,18 +188,6 @@ private:
   static inline std::string _md5_checksum_firmware_custom;
   static inline std::string _md5_checksum_littlefs_sonoff;
   static inline std::string _md5_checksum_littlefs_custom;
-  static inline std::string _md5_checksum_eu_tft1;
-  static inline std::string _md5_checksum_eu_tft2;
-  static inline std::string _md5_checksum_eu_tft3;
-  static inline std::string _md5_checksum_eu_tft4;
-  static inline std::string _md5_checksum_us_tft1;
-  static inline std::string _md5_checksum_us_tft2;
-  static inline std::string _md5_checksum_us_tft3;
-  static inline std::string _md5_checksum_us_tft4;
-  static inline std::string _md5_checksum_us_horizontal_mirrored_tft1;
-  static inline std::string _md5_checksum_us_horizontal_mirrored_tft2;
-  static inline std::string _md5_checksum_us_horizontal_mirrored_tft3;
-  static inline std::string _md5_checksum_us_horizontal_mirrored_tft4;
   static inline std::string _md5_checksum_terminal_us;
   static inline std::string _md5_checksum_terminal_eu;
 

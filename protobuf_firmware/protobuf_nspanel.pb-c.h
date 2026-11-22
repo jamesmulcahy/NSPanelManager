@@ -138,7 +138,7 @@ typedef enum _NSPanelStatusReport__State {
 typedef enum _NSPanelStatusReport__NSPanelDisplayMode {
   NSPANEL_STATUS_REPORT__NSPANEL_DISPLAY_MODE__DISPLAY_MODE_UNKNOWN = 0,
   /*
-   * NSPM's Nextion pages
+   * A legacy TFT (NSPM's Nextion HMI TFT): the firmware has no UI for it and shows a "display update needed" screen
    */
   NSPANEL_STATUS_REPORT__NSPANEL_DISPLAY_MODE__DISPLAY_MODE_NEXTION = 1,
   /*
@@ -146,7 +146,7 @@ typedef enum _NSPanelStatusReport__NSPanelDisplayMode {
    */
   NSPANEL_STATUS_REPORT__NSPANEL_DISPLAY_MODE__DISPLAY_MODE_LVGL = 2,
   /*
-   * A terminal TFT with LVGL switched off (lvgl_ui false): the TFT's own waiting page
+   * No UI: no terminal TFT is installed, the banner was missed, or LVGL failed to start. The display shows at most the TFT's own waiting page
    */
   NSPANEL_STATUS_REPORT__NSPANEL_DISPLAY_MODE__DISPLAY_MODE_TERMINAL_IDLE = 3
     PROTOBUF_C__FORCE_ENUM_TO_BE_INT_SIZE(NSPANEL_STATUS_REPORT__NSPANEL_DISPLAY_MODE)
