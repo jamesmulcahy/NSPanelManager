@@ -9,8 +9,13 @@
 > [jamesmulcahy/NSPanelManager-firmware](https://github.com/jamesmulcahy/NSPanelManager-firmware).
 > The Nextion pages are still supported today but are being dropped soon: **LVGL is the path forward.**
 
-The fork replaces the Nextion pages with a UI drawn by the panel itself (LVGL), and builds more on top of it:
-screensaver cards, themes, timers, media players and a panel you can observe and drive from your desk.
+The fork's focus is **low latency and reliability**. It replaces the Nextion pages with a UI drawn by the panel
+itself (LVGL), and builds more on top of it: screensaver cards, themes, timers, media players, and Home
+Assistant room sync to make configuring a house easy.
+
+**One thing to update.** The LVGL UI and the setup web UI are part of the firmware, and the fork no longer
+ships a LittleFS image. So the main firmware is the only thing you ever upgrade, and a firmware update takes
+one reboot.
 
 <p align="center"><img src="images/readme/themes.png" alt="The six looks: Ocean, Dusk, Aurora, Peaks, Dark and Grey" width="640"></p>
 
@@ -53,15 +58,18 @@ timer-finished sound.
 
 <p align="center"><img src="images/readme/timers-running.png" alt="A running timer" width="240"></p>
 
+### Home Assistant room sync
+
+Setting up rooms by hand is the slow part of a new install. Link a room to a Home Assistant area, then use the
+*Sync from Home Assistant* page to see the entities Home Assistant has in that area and import them in bulk,
+already placed in the right room.
+
 ### Also in the fork
 
 - **Media players** with album art, transport controls and volume, and the multi-room audio improvements.
 - **Covers**, with open, stop and close controls and a position slider.
-- **Home Assistant sync**: link rooms to Home Assistant areas and import entities in bulk from a *Sync from Home
-  Assistant* page.
 - **Panel clock** from the container's timezone, and a **temperature sensor** that reports in your unit.
-- **Reliable updates**: one reboot per firmware update, and the GUI update checks its responses and retries
-  with bounds.
+- **Reliable updates**: one reboot per firmware update, with bounded retries and checksum checks.
 - **Firmware from GitHub**: pick the firmware release the manager serves from the settings.
 - **Metrics**: Prometheus metrics and Grafana dashboards for the manager and the whole fleet of panels.
 - **A self-contained dev stack** and QEMU tests that run the real firmware against the real manager in CI.
@@ -71,8 +79,7 @@ timer-finished sound.
 Run the manager from the fork's Docker image, `jamesmulcahy/nspanelmanager:fork-latest`, and flash panels with
 firmware from the
 [fork's firmware releases](https://github.com/jamesmulcahy/NSPanelManager-firmware/releases). The image ships
-that firmware and the terminal TFT LVGL panels need, so a panel can be switched to LVGL from its settings page in
-the manager.
+that firmware, so a panel can be switched to LVGL from its settings page in the manager.
 
 ---
 
