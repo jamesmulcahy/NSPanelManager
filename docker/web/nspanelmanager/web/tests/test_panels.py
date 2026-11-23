@@ -130,7 +130,6 @@ PANEL_FORM = {
     "button2_relay_lower_temperature": "",
     "button2_relay_upper_temperature": "",
     "panel_type": "eu",
-    "selected_tft": "tft1",
     "relay1_is_light": "False",
     "relay2_is_light": "False",
 }

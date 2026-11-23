@@ -8,7 +8,9 @@ settings come later, with the panel page's move to React (HAPanel.md, "REST v2 p
 Storage is unchanged: one NSPanelSettings row per name, as the panel settings form writes them and
 MQTTManager reads them (NSPanel::_get_nspanel_setting_with_default).
 
-  * display_mode: "lvgl" (also what an absent row means). "nextion" is rejected: the Nextion HMI UI was removed.
+  * display_mode: read-only, always "lvgl" (the terminal TFT). Sending "lvgl" is accepted and changes nothing, so
+    clients written for the earlier two-mode API keep working; "nextion" is rejected with a 400 that says why, as the
+    Nextion HMI UI was removed. Nothing is ever stored for it.
   * lvgl_theme / lvgl_background: a name, or null for "keep the panel's own": no row, so the manager never
     sends that part of the look. The form's empty choice means the same.
 
@@ -42,18 +44,22 @@ class StrictChoiceField(serializers.ChoiceField):
         return super().to_internal_value(data)
 
 
+class DisplayModeField(StrictChoiceField):
+    """Accepts "lvgl" only. "nextion" gets an error that says why it can no longer be chosen."""
+
+    def to_internal_value(self, data):
+        if data == modes.DISPLAY_MODE_NEXTION:
+            raise serializers.ValidationError(modes.NEXTION_REMOVED_MESSAGE)
+        return super().to_internal_value(data)
+
+
 class NSPanelSettingsSerializer(serializers.Serializer):
     """A panel's settings, for reading and (with partial=True) for PATCH."""
 
-    display_mode = StrictChoiceField(
-        choices=list(modes.DISPLAY_MODES),
-        help_text="Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.",
+    display_mode = DisplayModeField(
+        choices=[modes.DISPLAY_MODE_LVGL],
+        help_text="Which TFT the manager serves this panel, and so which UI it runs. Read-only: always lvgl (the terminal TFT). Sending lvgl changes nothing; sending nextion is a 400, as NSPM's Nextion pages were removed.",
     )
-    def validate_display_mode(self, value):
-        # Still a choice in the schema (its shape is unchanged until the slot code goes), but no longer one that is accepted.
-        if value == modes.DISPLAY_MODE_NEXTION:
-            raise serializers.ValidationError(modes.NEXTION_REMOVED_MESSAGE)
-        return value
 
     lvgl_theme = StrictChoiceField(
         choices=list(modes.LVGL_THEMES),
@@ -95,7 +101,8 @@ class NSPanelDetailSerializer(serializers.Serializer):
     message = serializers.CharField()
 
 
-NAMES = tuple(NSPanelSettingsSerializer().fields)
+# The stored settings. display_mode is read-only and has no row of its own.
+NAMES = tuple(name for name in NSPanelSettingsSerializer().fields if name != "display_mode")
 
 
 def _rows(panel):
@@ -104,9 +111,8 @@ def _rows(panel):
 
 def read_settings(panel):
     rows = _rows(panel)
-    mode = rows.get("display_mode")
     return {
-        "display_mode": mode if mode in modes.DISPLAY_MODES else modes.DISPLAY_MODE_LVGL,
+        "display_mode": modes.get_display_mode(panel.id),
         # A row with a value the firmware does not draw reads as unmanaged, as the form shows it.
         "lvgl_theme": rows.get("lvgl_theme") if rows.get("lvgl_theme") in modes.LVGL_THEMES else None,
         "lvgl_background": rows.get("lvgl_background") if rows.get("lvgl_background") in modes.LVGL_BACKGROUNDS else None,
@@ -118,6 +124,8 @@ def write_settings(panel, validated):
     changed = []
     rows = _rows(panel)
     for name, value in validated.items():
+        if name == "display_mode":
+            continue  # Read-only: always lvgl.
         if value is None:
             if name in rows:
                 NSPanelSettings.objects.filter(nspanel=panel, name=name).delete()

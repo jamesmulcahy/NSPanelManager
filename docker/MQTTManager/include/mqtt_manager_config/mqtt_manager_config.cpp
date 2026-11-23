@@ -235,130 +235,10 @@ void MqttManagerConfig::update_firmware_checksum() {
 
 void MqttManagerConfig::update_tft_checksums() {
   std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  SPDLOG_INFO("Updating/calculating MD5 checksums for all .tft GUI files.");
+  SPDLOG_INFO("Updating/calculating MD5 checksums for the terminal .tft GUI files.");
 
-  auto eu_tft1_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/eu/output_tft1/gui.tft");
-  if (eu_tft1_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_eu_tft1 = eu_tft1_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for EU tft1 was not able to be calculated.");
-    SPDLOG_INFO("EU TFT1 GUI file checksum: {}", eu_tft1_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for EU tft1 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for EU TFT1 Nextion GUI file!");
-  }
-
-  auto eu_tft2_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/eu/output_tft2/gui.tft");
-  if (eu_tft2_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_eu_tft2 = eu_tft2_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for EU tft2 was not able to be calculated.");
-    SPDLOG_INFO("EU TFT2 GUI file checksum: {}", eu_tft2_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for EU tft2 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for EU TFT2 Nextion GUI file!");
-  }
-
-  auto eu_tft3_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/eu/output_tft3/gui.tft");
-  if (eu_tft3_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_eu_tft3 = eu_tft3_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for EU tft3 was not able to be calculated.");
-    SPDLOG_INFO("EU TFT3 GUI file checksum: {}", eu_tft3_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for EU tft3 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for EU TFT3 Nextion GUI file!");
-  }
-
-  auto eu_tft4_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/eu/output_tft4/gui.tft");
-  if (eu_tft4_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_eu_tft4 = eu_tft4_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for EU tft4 was not able to be calculated.");
-    SPDLOG_INFO("EU TFT4 GUI file checksum: {}", eu_tft4_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for EU tft4 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for EU TFT4 Nextion GUI file!");
-  }
-
-  auto us_tft1_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us/output_tft1/gui.tft");
-  if (us_tft1_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_tft1 = us_tft1_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft1 was not able to be calculated.");
-    SPDLOG_INFO("US TFT1 GUI file checksum: {}", us_tft1_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft1 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US TFT1 Nextion GUI file!");
-  }
-
-  auto us_tft2_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us/output_tft2/gui.tft");
-  if (us_tft2_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_tft2 = us_tft2_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft2 was not able to be calculated.");
-    SPDLOG_INFO("US TFT2 GUI file checksum: {}", us_tft2_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft2 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US TFT2 Nextion GUI file!");
-  }
-
-  auto us_tft3_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us/output_tft3/gui.tft");
-  if (us_tft3_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_tft3 = us_tft3_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft3 was not able to be calculated.");
-    SPDLOG_INFO("US TFT3 GUI file checksum: {}", us_tft3_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft3 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US TFT3 Nextion GUI file!");
-  }
-
-  auto us_tft4_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us/output_tft4/gui.tft");
-  if (us_tft4_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_tft4 = us_tft4_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft4 was not able to be calculated.");
-    SPDLOG_INFO("US TFT4 GUI file checksum: {}", us_tft4_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft4 was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US TFT4 Nextion GUI file!");
-  }
-
-  auto us_tft1_horizontal_mirrored_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us_horizontal_mirrored/output_tft1/gui.tft");
-  if (us_tft1_horizontal_mirrored_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft1 = us_tft1_horizontal_mirrored_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft1 (mirrored) was not able to be calculated.");
-    SPDLOG_INFO("US landscape mirrored TFT1 GUI file checksum: {}", us_tft1_horizontal_mirrored_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft1 (mirrored) was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US landscape mirrored TFT1 Nextion GUI file!");
-  }
-
-  auto us_tft2_horizontal_mirrored_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us_horizontal_mirrored/output_tft2/gui.tft");
-  if (us_tft2_horizontal_mirrored_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft2 = us_tft2_horizontal_mirrored_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft2 (mirrored) was not able to be calculated.");
-    SPDLOG_INFO("US landscape mirrored TFT2 GUI file checksum: {}", us_tft2_horizontal_mirrored_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft2 (mirrored) was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US landscape mirrored TFT2 Nextion GUI file!");
-  }
-
-  auto us_tft3_horizontal_mirrored_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us_horizontal_mirrored/output_tft3/gui.tft");
-  if (us_tft3_horizontal_mirrored_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft3 = us_tft3_horizontal_mirrored_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft3 (mirrored) was not able to be calculated.");
-    SPDLOG_INFO("US landscape mirrored TFT3 GUI file checksum: {}", us_tft3_horizontal_mirrored_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft3 (mirrored) was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US landscape mirrored TFT3 Nextion GUI file!");
-  }
-
-  auto us_tft4_horizontal_mirrored_checksum = MqttManagerConfig::_get_file_md5_checksum("/usr/src/app/nspanelmanager/HMI_files/tft_automation/us_horizontal_mirrored/output_tft4/gui.tft");
-  if (us_tft4_horizontal_mirrored_checksum.has_value()) {
-    MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft4 = us_tft4_horizontal_mirrored_checksum.value();
-    WebsocketServer::remove_warning("MD5 checksum for US tft4 (mirrored) was not able to be calculated.");
-    SPDLOG_INFO("US landscape mirrored TFT4 GUI file checksum: {}", us_tft4_horizontal_mirrored_checksum.value());
-  } else {
-    WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, "MD5 checksum for US tft4 (mirrored) was not able to be calculated.");
-    SPDLOG_ERROR("Failed to calculate checksum for US landscape mirrored TFT4 Nextion GUI file!");
-  }
-
-  // The terminal TFTs, used only by panels in LVGL mode: an uploaded one if there is one, else the one the image ships
-  // (as Django's display_mode.staged_terminal_tft_file() picks). A panel in LVGL mode with neither gets "no checksum"
+  // The terminal TFTs, which every panel runs: an uploaded one if there is one, else the one the image ships
+  // (as Django's display_mode.staged_terminal_tft_file() picks). A panel with neither gets "no checksum"
   // from the web server and is not offered a GUI update.
   for (bool us_layout : {true, false}) {
     std::string layout = us_layout ? "us" : "eu";
@@ -372,6 +252,7 @@ void MqttManagerConfig::update_tft_checksums() {
       file_checksum = MqttManagerConfig::_get_file_md5_checksum(bundled);
     }
     checksum = file_checksum.value_or("");
+    (us_layout ? MqttManagerConfig::_md5_checksum_bundled_terminal_us : MqttManagerConfig::_md5_checksum_bundled_terminal_eu) = MqttManagerConfig::_get_file_md5_checksum(bundled).value_or("");
     if (file_checksum.has_value()) {
       SPDLOG_INFO("{} terminal TFT checksum: {} ({})", us_layout ? "US" : "EU", *file_checksum, path == uploaded ? "uploaded" : "bundled");
     } else {
@@ -387,6 +268,28 @@ std::expected<std::string, bool> MqttManagerConfig::get_terminal_tft_checksum(bo
     return std::unexpected(false);
   }
   return checksum;
+}
+
+bool MqttManagerConfig::is_known_terminal_tft_md5(const std::string &md5) {
+  if (md5.empty()) {
+    return false;
+  }
+  {
+    std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
+    for (const std::string *known : {&MqttManagerConfig::_md5_checksum_terminal_us, &MqttManagerConfig::_md5_checksum_terminal_eu, &MqttManagerConfig::_md5_checksum_bundled_terminal_us, &MqttManagerConfig::_md5_checksum_bundled_terminal_eu}) {
+      if (!known->empty() && *known == md5) {
+        return true;
+      }
+    }
+  }
+  try {
+    return !database_manager::database
+                .get_all<database_manager::TftUpload>(sqlite_orm::where(sqlite_orm::c(&database_manager::TftUpload::md5) == md5 && sqlite_orm::c(&database_manager::TftUpload::kind) == std::string("terminal")), sqlite_orm::limit(1))
+                .empty();
+  } catch (const std::exception &e) {
+    SPDLOG_WARN("Failed to look up TFT upload history for {}: {}", md5, e.what());
+    return false;
+  }
 }
 
 std::optional<std::string> MqttManagerConfig::_get_file_md5_checksum(std::string file_path) {
@@ -469,102 +372,6 @@ std::expected<std::string, bool> MqttManagerConfig::get_littlefs_custom_checksum
     return std::unexpected(false);
   }
   return MqttManagerConfig::_md5_checksum_littlefs_custom;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_eu_tft1_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_eu_tft1.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_eu_tft1;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_eu_tft2_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_eu_tft2.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_eu_tft2;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_eu_tft3_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_eu_tft3.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_eu_tft3;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_eu_tft4_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_eu_tft4.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_eu_tft4;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_tft1_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_tft1.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_tft1;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_tft2_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_tft2.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_tft2;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_tft3_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_tft3.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_tft3;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_tft4_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_tft4.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_tft4;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_horizontal_mirrored_tft1_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft1.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft1;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_horizontal_mirrored_tft2_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft2.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft2;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_horizontal_mirrored_tft3_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft3.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft3;
-}
-
-std::expected<std::string, bool> MqttManagerConfig::get_us_horizontal_mirrored_tft4_checksum() {
-  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
-  if (MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft4.empty()) {
-    return std::unexpected(false);
-  }
-  return MqttManagerConfig::_md5_checksum_us_horizontal_mirrored_tft4;
 }
 
 std::string MqttManagerConfig::read_posix_tz_rule(const std::string &tzif_path) {

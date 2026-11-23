@@ -265,11 +265,10 @@ export interface components {
             detail: string;
         };
         /**
-         * @description * `nextion` - nextion
-         *     * `lvgl` - lvgl
+         * @description * `lvgl` - lvgl
          * @enum {string}
          */
-        DisplayModeEnum: "nextion" | "lvgl";
+        DisplayModeEnum: "lvgl";
         /**
          * @description * `home_assistant_energy` - home_assistant_energy
          *     * `entities` - entities
@@ -460,9 +459,8 @@ export interface components {
         /** @description A panel's settings, for reading and (with partial=True) for PATCH. */
         NSPanelSettings: {
             /**
-             * @description Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.
+             * @description Which TFT the manager serves this panel, and so which UI it runs. Read-only: always lvgl (the terminal TFT). Sending lvgl changes nothing; sending nextion is a 400, as NSPM's Nextion pages were removed.
              *
-             *     * `nextion` - nextion
              *     * `lvgl` - lvgl
              */
             display_mode: components["schemas"]["DisplayModeEnum"];
@@ -512,9 +510,8 @@ export interface components {
         /** @description A panel's settings, for reading and (with partial=True) for PATCH. */
         PatchedNSPanelSettingsRequest: {
             /**
-             * @description Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.
+             * @description Which TFT the manager serves this panel, and so which UI it runs. Read-only: always lvgl (the terminal TFT). Sending lvgl changes nothing; sending nextion is a 400, as NSPM's Nextion pages were removed.
              *
-             *     * `nextion` - nextion
              *     * `lvgl` - lvgl
              */
             display_mode?: components["schemas"]["DisplayModeEnum"];

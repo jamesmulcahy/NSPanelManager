@@ -184,7 +184,6 @@ def edit_nspanel(request, panel_id: int):
         "screensaver_dim_level": get_nspanel_setting_with_default(panel_id, "screensaver_dim_level", ""),
         "is_us_panel": get_nspanel_setting_with_default(panel_id, "is_us_panel", "False"),
         "us_panel_orientation": get_nspanel_setting_with_default(panel_id, "us_panel_orientation", "vertical"),
-        "selected_tft": get_nspanel_setting_with_default(panel_id, "selected_tft", "tft1"),
         "show_screensaver_inside_temperature": get_nspanel_setting_with_default(panel_id, "show_screensaver_inside_temperature", "global"),
         "show_screensaver_outside_temperature": get_nspanel_setting_with_default(panel_id, "show_screensaver_outside_temperature", "global"),
         "screensaver_activation_timeout": get_nspanel_setting_with_default(panel_id, "screensaver_activation_timeout", ""),
@@ -208,7 +207,6 @@ def edit_nspanel(request, panel_id: int):
         "button2_relay_lower_temperature": get_nspanel_setting_with_default(panel_id, "button2_relay_lower_temperature", ""),
         "button2_relay_upper_temperature": get_nspanel_setting_with_default(panel_id, "button2_relay_upper_temperature", ""),
         "default_page": get_nspanel_setting_with_default(panel_id, "default_page", "0"),
-        "display_mode": display_mode.get_display_mode(panel_id),
         "lvgl_theme": get_nspanel_setting_with_default(panel_id, "lvgl_theme", ""),
         "lvgl_background": get_nspanel_setting_with_default(panel_id, "lvgl_background", ""),
     }
@@ -218,13 +216,16 @@ def edit_nspanel(request, panel_id: int):
     panel_info["data"] = nspanel
 
     terminal_tft_type = display_mode.terminal_tft_type(panel_id)
+    staged_md5 = display_mode.file_md5(*display_mode.staged_terminal_tft_file(terminal_tft_type))
     display_info = {
-        "modes": display_mode.SELECTABLE_DISPLAY_MODES,
         "themes": display_mode.LVGL_THEMES,
         "backgrounds": display_mode.LVGL_BACKGROUNDS,
         "running": display_mode.describe_tft_md5(nspanel.md5_tft_file),
         "terminal_tft_label": display_mode.TERMINAL_TFT_LABELS[terminal_tft_type],
-        "terminal_tft_staged": display_mode.file_md5(*display_mode.staged_terminal_tft_file(terminal_tft_type)) is not None,
+        "terminal_tft_staged": staged_md5 is not None,
+        # The layout (and so the staged terminal TFT) follows the orientation at once, the display image only after a GUI update.
+        "us_layout": display_mode.lvgl_is_us_layout(panel_id),
+        "image_differs_from_layout": bool(staged_md5 and nspanel.md5_tft_file and nspanel.md5_tft_file != staged_md5),
     }
 
     data = get_base_data(request)
@@ -397,7 +398,6 @@ def save_panel_settings(request, panel_id: int):
             set_nspanel_setting_value(panel_id, "is_us_panel", "True")
             set_nspanel_setting_value(panel_id, "us_panel_orientation", "vertical")
 
-    set_nspanel_setting_value(panel_id, "selected_tft", request.POST.get("selected_tft"))
     save_display_settings(panel_id, request.POST)
 
     set_nspanel_setting_value(panel_id, "relay1_is_light", request.POST["relay1_is_light"])
@@ -410,8 +410,6 @@ def save_panel_settings(request, panel_id: int):
 
 def save_display_settings(panel_id, post):
     """The Display card. A field that is not in the form is left as it is, so older clients keep working."""
-    if post.get("display_mode") in display_mode.SELECTABLE_DISPLAY_MODES:
-        set_nspanel_setting_value(panel_id, "display_mode", post["display_mode"])
     # An empty theme or background means "keep the panel's own": the manager stops sending it.
     for name, choices in (("lvgl_theme", display_mode.LVGL_THEMES), ("lvgl_background", display_mode.LVGL_BACKGROUNDS)):
         if name not in post:
@@ -506,17 +504,17 @@ def save_new_tft_file(request):
         fs, file_path = display_mode.upload_tft_file(tft_file_type)
         if fs is None:
             print("ERROR! Unknown TFT file type!")
-            return HttpResponse("ERROR! Unknown TFT file type!", status=500)
+            return HttpResponse("ERROR! Unknown TFT file type!", status=400)
 
         print("Saving new TFT file ", file_path)
 
         uploaded_file = request.FILES["tft_file"]
         fs.delete(file_path)
         fs.save(file_path, uploaded_file)
-        # Remembered so that a panel still running this file can be named after the slot is overwritten.
+        # Remembered so that a panel still running this file can be named after it is overwritten.
         TftUpload.objects.create(
             md5=display_mode.file_md5(fs, file_path),
-            kind=TftUpload.Kind.TERMINAL if tft_file_type in display_mode.TERMINAL_TFT_PATHS else TftUpload.Kind.NEXTION,
+            kind=TftUpload.Kind.TERMINAL,
             target=tft_file_type,
         )
         send_mqttmanager_reload_command()
@@ -578,10 +576,10 @@ def download_data_file(request):
 
 
 def download_tft(request, panel_id):
-    # The terminal TFT in LVGL mode, the selected background slot otherwise (web/display_mode.py).
+    # The terminal TFT for the panel's layout (web/display_mode.py).
     fs, tft_file = display_mode.panel_tft_file(panel_id)
     if fs is None or not fs.exists(tft_file):
-        # Ex. a panel in LVGL mode before a terminal TFT for its layout has been uploaded.
+        # Ex. before a terminal TFT for its layout has been uploaded.
         return HttpResponse("", status=404)
 
     if "Range" in request.headers and request.headers["Range"].startswith("bytes="):

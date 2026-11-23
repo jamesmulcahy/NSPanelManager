@@ -1,6 +1,6 @@
 """
-LVGL panel mode (docs/LVGL_PANEL_MODE.md): terminal TFT uploads, which TFT a panel is served in each display mode,
-naming the TFT a panel runs, and the Display section of the panel settings form.
+The display (docs/LVGL_PANEL_MODE.md): terminal TFT uploads, which terminal TFT a panel is served for its layout and
+orientation, naming the TFT a panel runs, and the Display section of the panel settings form.
 """
 
 import shutil
@@ -36,9 +36,8 @@ class DisplayModeTestCase(FileTestCase):
     def upload_tft(self, tft_file_type, data):
         return self.upload("save_new_tft_file", "tft_file", data, tft_file_type=tft_file_type)
 
-    def configure_panel(self, mode=None, is_us_panel="False", orientation=None, tft="tft1"):
+    def configure_panel(self, mode=None, is_us_panel="False", orientation=None):
         set_nspanel_setting_value(self.panel.id, "is_us_panel", is_us_panel)
-        set_nspanel_setting_value(self.panel.id, "selected_tft", tft)
         if orientation:
             set_nspanel_setting_value(self.panel.id, "us_panel_orientation", orientation)
         if mode:
@@ -62,22 +61,23 @@ class TerminalTftTests(DisplayModeTestCase):
 
     def test_every_upload_is_recorded(self):
         self.upload_tft("terminal_eu", EU_TERMINAL)
-        self.upload_tft("us4", b"nspm us 4")
+        self.upload_tft("terminal_us", b"us terminal")
 
         uploads = list(TftUpload.objects.order_by("id").values_list("md5", "kind", "target"))
-        self.assertEqual(uploads, [(md5(EU_TERMINAL), "terminal", "terminal_eu"), (md5(b"nspm us 4"), "nextion", "us4")])
+        self.assertEqual(uploads, [(md5(EU_TERMINAL), "terminal", "terminal_eu"), (md5(b"us terminal"), "terminal", "terminal_us")])
 
     def test_lvgl_panels_get_the_terminal_tft_for_their_layout(self):
         self.upload_tft("terminal_us", US_TERMINAL)
         self.upload_tft("terminal_eu", EU_TERMINAL)
-        self.upload_tft("eu1", b"eu1")
 
         cases = [
             ({"is_us_panel": "False"}, EU_TERMINAL),
             ({"is_us_panel": "True", "orientation": "vertical"}, US_TERMINAL),
-            # The firmware lays LVGL out by is_us_panel alone, so horizontal US panels get the US terminal TFT too.
-            ({"is_us_panel": "True", "orientation": "horizontal"}, US_TERMINAL),
-            ({"is_us_panel": "True", "orientation": "horizontal_mirrored"}, US_TERMINAL),
+            # A US panel mounted sideways draws the landscape layout: it gets the EU terminal TFT.
+            ({"is_us_panel": "True", "orientation": "horizontal"}, EU_TERMINAL),
+            ({"is_us_panel": "True", "orientation": "horizontal_mirrored"}, EU_TERMINAL),
+            # An EU panel ignores a leftover orientation.
+            ({"is_us_panel": "False", "orientation": "horizontal_mirrored"}, EU_TERMINAL),
         ]
         for config, expected in cases:
             with self.subTest(config=config):
@@ -92,32 +92,35 @@ class TerminalTftTests(DisplayModeTestCase):
 
         self.assertEqual(response.content, EU_TERMINAL[2:8])
 
-    def test_a_leftover_nextion_row_serves_the_selected_slot(self):
+    def test_a_leftover_nextion_row_is_ignored(self):
         self.upload_tft("terminal_us", US_TERMINAL)
-        self.upload_tft("us3", b"us3")
-        self.configure_panel(mode="lvgl", is_us_panel="True", orientation="vertical", tft="tft3")
-        self.assertEqual(self.served()[1], US_TERMINAL)
+        self.configure_panel(mode="nextion", is_us_panel="True", orientation="vertical")
 
-        set_nspanel_setting_value(self.panel.id, "display_mode", "nextion")
+        self.assertEqual(display_mode.get_display_mode(self.panel.id), "lvgl")
+        self.assertEqual(self.served(), (200, US_TERMINAL, 200, md5(US_TERMINAL)))
 
-        self.assertEqual(self.served(), (200, b"us3", 200, md5(b"us3")))
+    def test_orientation_only_changes_the_layout(self):
+        # use_fahrenheit and the like are separate settings: sideways mounting does not touch them.
+        set_nspanel_setting_value(self.panel.id, "use_fahrenheit", "True")
+        self.configure_panel(is_us_panel="True", orientation="horizontal")
+
+        self.assertFalse(display_mode.lvgl_is_us_layout(self.panel.id))
+        self.assertEqual(get_nspanel_setting_with_default(self.panel.id, "is_us_panel", None), "True")
+        self.assertEqual(get_nspanel_setting_with_default(self.panel.id, "use_fahrenheit", None), "True")
 
     def test_lvgl_panel_without_a_terminal_tft_gets_not_found(self):
         # The panel must not be told a checksum it would then try to download.
-        self.upload_tft("eu1", b"eu1")
         self.configure_panel(mode="lvgl")
 
         self.assertEqual(self.served(), (404, b"", 404, ""))
 
     def test_unknown_display_mode_is_lvgl(self):
-        self.upload_tft("eu1", b"eu1")
         self.upload_tft("terminal_eu", EU_TERMINAL)
         self.configure_panel(mode="something else")
 
         self.assertEqual(self.served()[1], EU_TERMINAL)
 
     def test_a_panel_without_a_display_mode_is_lvgl(self):
-        self.upload_tft("eu1", b"eu1")
         self.upload_tft("terminal_eu", EU_TERMINAL)
 
         self.assertEqual(display_mode.get_display_mode(self.panel.id), "lvgl")
@@ -175,18 +178,26 @@ class DescribeTftTests(DisplayModeTestCase):
 
         self.assertEqual(display_mode.describe_tft_md5(md5(US_TERMINAL)), {"kind": "terminal", "label": "Terminal TFT (US)", "current": True})
 
-    def test_staged_slot(self):
-        self.upload_tft("us4_horizontal_mirrored", b"mirrored 4")
+    def test_a_sideways_us_panel_runs_the_eu_terminal_tft(self):
+        self.upload_tft("terminal_eu", EU_TERMINAL)
+        self.configure_panel(is_us_panel="True", orientation="horizontal")
+        self.panel.md5_tft_file = md5(EU_TERMINAL)
+        self.panel.save()
 
-        self.assertEqual(display_mode.describe_tft_md5(md5(b"mirrored 4")), {"kind": "nextion", "label": "NSPM TFT slot 4 (US, landscape mirrored)", "current": True})
+        self.assertEqual(display_mode.describe_tft_md5(self.panel.md5_tft_file)["label"], "Terminal TFT (EU)")
+        self.assertEqual(self.served()[3], md5(EU_TERMINAL))
+
+    def test_an_old_nextion_upload_is_still_named(self):
+        # Uploads of NSPM's Nextion TFTs were recorded under their background slot; the history stays.
+        TftUpload.objects.create(md5=md5(b"mirrored 4"), kind=TftUpload.Kind.NEXTION, target="us4_horizontal_mirrored")
+
+        self.assertEqual(display_mode.describe_tft_md5(md5(b"mirrored 4")), {"kind": "nextion", "label": "NSPM TFT slot 4 (US, landscape mirrored), an older upload", "current": False})
 
     def test_replaced_upload_is_still_named(self):
-        # The way the terminal TFT was installed by hand before: uploaded over a background slot, then replaced.
-        self.upload_tft("us4", US_TERMINAL)
-        self.upload_tft("us4", b"nspm us 4")
-        TftUpload.objects.filter(md5=md5(US_TERMINAL)).update(kind=TftUpload.Kind.TERMINAL)
+        self.upload_tft("terminal_us", b"old terminal")
+        self.upload_tft("terminal_us", US_TERMINAL)
 
-        self.assertEqual(display_mode.describe_tft_md5(md5(US_TERMINAL)), {"kind": "terminal", "label": "NSPM TFT slot 4 (US), an older upload", "current": False})
+        self.assertEqual(display_mode.describe_tft_md5(md5(b"old terminal")), {"kind": "terminal", "label": "Terminal TFT (US), an older upload", "current": False})
 
     def test_unknown_and_missing(self):
         self.assertEqual(display_mode.describe_tft_md5("0123456789abcdef0123456789abcdef")["kind"], "unknown")
@@ -210,18 +221,18 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         return get_nspanel_setting_with_default(self.panel.id, name, None)
 
     def test_display_settings_are_stored(self):
-        self.save(display_mode="lvgl", lvgl_theme="ocean", lvgl_background="peaks")
+        self.save(lvgl_theme="ocean", lvgl_background="peaks")
 
-        self.assertEqual((self.setting("display_mode"), self.setting("lvgl_theme"), self.setting("lvgl_background")), ("lvgl", "ocean", "peaks"))
-        # The slot is kept for switching back.
-        self.assertEqual(self.setting("selected_tft"), "tft1")
+        self.assertEqual((self.setting("lvgl_theme"), self.setting("lvgl_background")), ("ocean", "peaks"))
+        # display_mode is read-only: nothing is stored for it.
+        self.assertIsNone(self.setting("display_mode"))
         self.assertManagerReloaded(times=1)
 
     def test_empty_look_is_no_longer_managed(self):
         set_nspanel_setting_value(self.panel.id, "lvgl_theme", "dusk")
         set_nspanel_setting_value(self.panel.id, "lvgl_background", "dusk")
 
-        self.save(display_mode="lvgl", lvgl_theme="", lvgl_background="")
+        self.save(lvgl_theme="", lvgl_background="")
 
         self.assertIsNone(self.setting("lvgl_theme"))
         self.assertIsNone(self.setting("lvgl_background"))
@@ -231,11 +242,36 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
 
         self.assertIsNone(self.setting("display_mode"))
 
-    def test_settings_page_offers_only_lvgl(self):
+    def test_settings_page_has_no_display_mode_or_background_picker(self):
         response = self.client.get(reverse("edit_nspanel", kwargs={"panel_id": self.panel.id}))
 
-        self.assertContains(response, 'name="display_mode" id="display_mode" value="lvgl"')
-        self.assertNotContains(response, 'value="nextion"')
+        self.assertNotContains(response, 'name="display_mode"')
+        self.assertNotContains(response, 'name="selected_tft"')
+        self.assertNotContains(response, "select_background_modal")
+        self.assertNotContains(response, "HMI_files")
+
+    def test_layout_notes_follow_the_effective_layout(self):
+        url = reverse("edit_nspanel", kwargs={"panel_id": self.panel.id})
+        for orientation, hidden in (("vertical", True), ("horizontal", False), ("something odd", True)):
+            self.configure_panel(is_us_panel="True", orientation=orientation)
+            html = self.client.get(url).content.decode()
+            note = html[html.index('id="lvgl_orientation_note"') :].split(">", 1)[0]
+            self.assertEqual("hidden" in note, hidden, orientation)
+        self.assertContains(self.client.get(url), "press Update GUI to install the matching display image")
+
+    def test_settings_page_warns_when_the_display_image_is_not_the_layouts(self):
+        self.upload_tft("terminal_us", US_TERMINAL)
+        self.upload_tft("terminal_eu", EU_TERMINAL)
+        self.configure_panel(is_us_panel="True", orientation="horizontal")
+        self.panel.md5_tft_file = md5(US_TERMINAL)
+        self.panel.save()
+        url = reverse("edit_nspanel", kwargs={"panel_id": self.panel.id})
+
+        self.assertContains(self.client.get(url), 'id="display_image_differs_note"')
+
+        self.panel.md5_tft_file = md5(EU_TERMINAL)
+        self.panel.save()
+        self.assertNotContains(self.client.get(url), 'id="display_image_differs_note"')
 
     def test_unknown_values_are_ignored(self):
         set_nspanel_setting_value(self.panel.id, "lvgl_theme", "grey")
@@ -247,12 +283,11 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         self.assertIsNone(self.setting("lvgl_background"))
 
     def test_a_form_without_the_display_fields_leaves_them_alone(self):
-        set_nspanel_setting_value(self.panel.id, "display_mode", "lvgl")
         set_nspanel_setting_value(self.panel.id, "lvgl_theme", "aurora")
 
         self.save()
 
-        self.assertEqual((self.setting("display_mode"), self.setting("lvgl_theme")), ("lvgl", "aurora"))
+        self.assertEqual(self.setting("lvgl_theme"), "aurora")
 
     def test_settings_page_shows_the_display_section(self):
         self.upload_tft("terminal_us", US_TERMINAL)
@@ -286,7 +321,7 @@ class DisplaySettingsFormTests(DisplayModeTestCase):
         for theme, background in (("auto", "ocean"), ("auto", "dusk"), ("auto", "aurora"), ("auto", "peaks"), ("auto", "vesuvius"), ("auto", "parthenon"), ("dark", "none"), ("grey", "none")):
             self.assertIn(theme, display_mode.LVGL_THEMES)
             self.assertIn(background, display_mode.LVGL_BACKGROUNDS)
-            self.save(display_mode="lvgl", lvgl_theme=theme, lvgl_background=background)
+            self.save(lvgl_theme=theme, lvgl_background=background)
             self.assertEqual((self.setting("lvgl_theme"), self.setting("lvgl_background")), (theme, background))
 
     def test_settings_page_warns_when_the_terminal_tft_is_missing(self):

@@ -162,6 +162,10 @@ void NSPanel::reload_config(const char *reason) {
       this->_us_panel_orientation = US_PANEL_ORIENTATION::PORTRAIT;
       SPDLOG_ERROR("Error while processing US panel orientation, unknown orientation '{}'. Defaulting to vertical/portrait.", us_panel_orientation);
     }
+    // The terminal TFT and the firmware's LVGL layout are US (portrait) or landscape. A US panel mounted sideways draws
+    // the landscape layout, which is what an EU panel draws (and what the EU terminal TFT is): it is told it is not a US
+    // panel, as QEMU's "eu-on-us" does. Everything else (use_fahrenheit, ...) is a separate setting.
+    this->_us_layout = this->_is_us_panel && this->_us_panel_orientation == US_PANEL_ORIENTATION::PORTRAIT;
 
     if (this->_name.compare(panel_settings.friendly_name) != 0) {
       this->_name = panel_settings.friendly_name;
@@ -279,7 +283,7 @@ void NSPanel::reload_config(const char *reason) {
 
     this->_reload_lvgl_settings();
 
-    SPDLOG_DEBUG("Loaded NSPanel {}::{}, type: {}. Sending config.", this->_id, this->_name, this->_is_us_panel ? "US" : "EU");
+    SPDLOG_DEBUG("Loaded NSPanel {}::{}, type: {}. Sending config.", this->_id, this->_name, this->_is_us_panel ? (this->_us_layout ? "US" : "US (landscape)") : "EU");
 
     this->send_config(reason);
   } catch (std::system_error &ex) {
@@ -322,7 +326,7 @@ void NSPanel::send_config(const char *reason) {
   config.set_lvgl_theme(this->_get_nspanel_setting_with_default("lvgl_theme", ""));
   config.set_lvgl_background(this->_get_nspanel_setting_with_default("lvgl_background", ""));
   config.set_use_fahrenheit(MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT));
-  config.set_is_us_panel(this->_get_nspanel_setting_with_default("is_us_panel", "False").compare("True") == 0);
+  config.set_is_us_panel(this->_us_layout);
   config.set_reverse_relays(this->_get_nspanel_setting_with_default("reverse_relays", "False").compare("True") == 0);
   config.set_relay1_default_mode(this->_get_nspanel_setting_with_default("relay1_default_mode", "False").compare("True") == 0);
   config.set_relay2_default_mode(this->_get_nspanel_setting_with_default("relay2_default_mode", "False").compare("True") == 0);
@@ -1027,7 +1031,7 @@ void NSPanel::send_websocket_status_update() {
       {"accepted", this->_state != MQTT_MANAGER_NSPANEL_STATE::AWAITING_ACCEPT},
       {"denied", this->_state == MQTT_MANAGER_NSPANEL_STATE::DENIED},
       {"default_room_id", this->get_default_room_id()},
-      {"display_mode_setting", this->_lvgl_mode ? "lvgl" : "nextion"},
+      {"display_mode_setting", "lvgl"},
       {"lvgl_theme", this->_reported_lvgl_theme},
       {"lvgl_background", this->_reported_lvgl_background},
   };
@@ -1091,7 +1095,7 @@ void NSPanel::send_websocket_status_update() {
         status_data["warnings"].push_back(nlohmann::json{
             {"level", "warning"},
             {"text", "Update the firmware first. This firmware predates LVGL, so a GUI update (the terminal TFT) would leave the display on its waiting page."}});
-      } else if (this->_lvgl_mode && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
+      } else if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
         status_data["warnings"].push_back(nlohmann::json{
             {"level", "warning"},
             {"text", "Panel runs NSPM's HMI TFT: its GUI update installs the terminal TFT."}});
@@ -1100,12 +1104,12 @@ void NSPanel::send_websocket_status_update() {
             {"level", "info"},
             {"text", "GUI update available. Perform GUI update to ensure optimal compatibility with new firmware."}});
       }
-    } else if (this->_lvgl_mode && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
+    } else if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
       status_data["warnings"].push_back(nlohmann::json{
           {"level", "warning"},
-          {"text", "Panel is set to LVGL and has the TFT for it, but shows NSPM's Nextion pages. Check that the uploaded terminal TFT is an nspanel-terminal TFT."}});
+          {"text", "Panel has the staged TFT but reports a legacy display. Check that the uploaded terminal TFT is an nspanel-terminal TFT."}});
     }
-    if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE) {
+    if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE && !this->shows_legacy_screen()) {
       status_data["warnings"].push_back(nlohmann::json{
           {"level", "warning"},
           {"text", "Panel runs the terminal TFT but its LVGL UI is not running (switched off, or it failed to start), so the display only shows the TFT's waiting page."}});
@@ -1197,26 +1201,17 @@ bool NSPanel::has_littlefs_update() {
   return this->_current_littlefs_md5_checksum.compare(file_checksum) != 0;
 }
 
-bool NSPanel::is_lvgl_mode() {
-  return this->_lvgl_mode;
-}
-
 void NSPanel::_reload_lvgl_settings() {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
-  // LVGL is the default (and the only mode that can be chosen). A "nextion" row can only be a leftover from before the
-  // Nextion HMI UI was removed; the data migration rewrites those, and it is still honored until the slot code goes.
-  bool lvgl_mode = this->_get_nspanel_setting_with_default("display_mode", "lvgl").compare("nextion") != 0;
+  // LVGL is the only display mode. A "display_mode" row (a "nextion" one left by an older manager) is not read.
   std::string theme = this->_get_nspanel_setting_with_default("lvgl_theme", "");
   std::string background = this->_get_nspanel_setting_with_default("lvgl_background", "");
 
   // Only a change is sent here: a panel that has just started gets its look when it registers (register_to_manager).
-  // A panel that has just been moved to LVGL gets all of it, for when it already runs the terminal TFT.
-  bool send = this->_lvgl_settings_loaded && lvgl_mode;
-  bool entered_lvgl_mode = !this->_lvgl_mode;
-  bool theme_changed = entered_lvgl_mode || theme.compare(this->_lvgl_theme) != 0;
-  bool background_changed = entered_lvgl_mode || background.compare(this->_lvgl_background) != 0;
+  bool send = this->_lvgl_settings_loaded;
+  bool theme_changed = theme.compare(this->_lvgl_theme) != 0;
+  bool background_changed = background.compare(this->_lvgl_background) != 0;
 
-  this->_lvgl_mode = lvgl_mode;
   this->_lvgl_theme = theme;
   this->_lvgl_background = background;
   this->_lvgl_settings_loaded = true;
@@ -1292,130 +1287,12 @@ void NSPanel::_handle_lvgl_look_report(const std::string &theme, const std::stri
 }
 
 bool NSPanel::has_tft_update() {
-  if (this->_lvgl_mode) {
-    // LVGL mode runs the terminal TFT for the panel's layout, which the firmware picks from is_us_panel alone.
-    auto file_checksum = MqttManagerConfig::get_terminal_tft_checksum(this->_is_us_panel);
-    if (file_checksum) {
-      return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-    }
-    SPDLOG_DEBUG("NSPanel {}::{} is in LVGL mode but no {} terminal TFT has been uploaded.", this->_id, this->_name, this->_is_us_panel ? "US" : "EU");
-    return false;
+  // Every panel runs the terminal TFT for its layout (the US layout, or the landscape layout that the EU TFT draws).
+  auto file_checksum = MqttManagerConfig::get_terminal_tft_checksum(this->_us_layout);
+  if (file_checksum) {
+    return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
   }
-  // Check if using EU file (we use EU file for US panel in landscape left orientation as it's the same screen and orientation as the EU panel).
-  if (!this->_is_us_panel || (this->_is_us_panel && this->_us_panel_orientation == US_PANEL_ORIENTATION::LANDSCAPE_LEFT)) {
-    if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft1") == 0) {
-      auto file_checksum = MqttManagerConfig::get_eu_tft1_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft2") == 0) {
-      auto file_checksum = MqttManagerConfig::get_eu_tft2_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft3") == 0) {
-      auto file_checksum = MqttManagerConfig::get_eu_tft3_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft4") == 0) {
-      auto file_checksum = MqttManagerConfig::get_eu_tft4_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else {
-      SPDLOG_ERROR("Could not determin selected TFT file when comparing checksums! Selected TFT for nspanel {}::{} is {}", this->_id, this->_name, this->_get_nspanel_setting_with_default("selected_tft", "tft1"));
-      return false;
-    }
-  } else if (this->_is_us_panel && this->_us_panel_orientation == US_PANEL_ORIENTATION::PORTRAIT) {
-    if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft1") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_tft1_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("2222") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_tft2_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    }
-    if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft3") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_tft3_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft4") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_tft4_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else {
-      SPDLOG_ERROR("Could not determin selected TFT file when comparing checksums! Selected TFT for nspanel {}::{} is {}", this->_id, this->_name, this->_get_nspanel_setting_with_default("selected_tft", "tft1"));
-    }
-  } else if (this->_is_us_panel && this->_us_panel_orientation == US_PANEL_ORIENTATION::LANDSCAPE_RIGHT) {
-    if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft1") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_horizontal_mirrored_tft1_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft2") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_horizontal_mirrored_tft2_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    }
-    if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft3") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_horizontal_mirrored_tft3_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else if (this->_get_nspanel_setting_with_default("selected_tft", "tft1").compare("tft4") == 0) {
-      auto file_checksum = MqttManagerConfig::get_us_horizontal_mirrored_tft4_checksum();
-      if (file_checksum) {
-        return this->_current_tft_md5_checksum.compare(*file_checksum) != 0;
-      } else {
-        SPDLOG_ERROR("Checksum for selected TFT file does not exist!");
-        return false;
-      }
-    } else {
-      SPDLOG_ERROR("Could not determin selected TFT file when comparing checksums! Selected TFT for nspanel {}::{} is {}", this->_id, this->_name, this->_get_nspanel_setting_with_default("selected_tft", "tft1"));
-    }
-  } else {
-    SPDLOG_ERROR("Unsupported NSPanel orientation for NSPanel {}::{}", this->_id, this->_name);
-  }
+  SPDLOG_DEBUG("NSPanel {}::{} has no {} terminal TFT to compare with, none has been uploaded.", this->_id, this->_name, this->_us_layout ? "US" : "EU");
   return false;
 }
 
@@ -1505,9 +1382,6 @@ void NSPanel::firmware_update(bool force) {
 
 bool NSPanel::gui_update_needs_firmware_first() {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
-  if (!this->_lvgl_mode) {
-    return false;
-  }
   bool registered_without_lvgl_look = this->_features_known && !this->_panel_reports_lvgl_look;
   bool reports_no_display_mode = this->_status_report_seen && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_UNKNOWN;
   return registered_without_lvgl_look || reports_no_display_mode;
@@ -1515,9 +1389,22 @@ bool NSPanel::gui_update_needs_firmware_first() {
 
 bool NSPanel::shows_legacy_screen() {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+  if (!this->_panel_reports_no_hmi) {
+    return false;
+  }
   // Only where the terminal TFT that the button installs is staged for the panel's layout.
-  return this->_lvgl_mode && this->_panel_reports_no_hmi && this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION &&
-         MqttManagerConfig::get_terminal_tft_checksum(this->_is_us_panel).has_value();
+  auto staged = MqttManagerConfig::get_terminal_tft_checksum(this->_us_layout);
+  if (!staged) {
+    return false;
+  }
+  // The firmware shows its legacy screen and reports DISPLAY_MODE_NEXTION when NSPM's HMI TFT sent its banner. When the
+  // banner is missed during the firmware's short wait, the panel lands in TERMINAL_IDLE with a blank screen instead.
+  // That is the legacy TFT too, unless the TFT is any terminal TFT the manager knows (then it is a healthy terminal panel
+  // whose LVGL UI is off or failed to start, even when the layout has changed since and a newer one is staged).
+  if (this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_NEXTION) {
+    return true;
+  }
+  return this->_reported_display_mode == NSPanelStatusReport_NSPanelDisplayMode_DISPLAY_MODE_TERMINAL_IDLE && !MqttManagerConfig::is_known_terminal_tft_md5(this->_current_tft_md5_checksum);
 }
 
 void NSPanel::tft_update() {
@@ -1822,7 +1709,7 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
       // Once per manager run: the panel may have been reflashed or replaced while the manager was not running.
       // Not on every reconnect, as each command is a flash write and a repaint on the panel.
       std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
-      if (this->_lvgl_mode && !this->_lvgl_look_sent) {
+      if (!this->_lvgl_look_sent) {
         this->_send_lvgl_look(true, true);
       }
     }

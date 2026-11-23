@@ -774,12 +774,9 @@ components:
       - detail
     DisplayModeEnum:
       enum:
-      - nextion
       - lvgl
       type: string
-      description: |-
-        * `nextion` - nextion
-        * `lvgl` - lvgl
+      description: '* `lvgl` - lvgl'
     EnergyPowerSourceEnum:
       enum:
       - home_assistant_energy
@@ -1181,9 +1178,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/DisplayModeEnum'
           description: |-
-            Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.
+            Which TFT the manager serves this panel, and so which UI it runs. Read-only: always lvgl (the terminal TFT). Sending lvgl changes nothing; sending nextion is a 400, as NSPM's Nextion pages were removed.
 
-            * `nextion` - nextion
             * `lvgl` - lvgl
         lvgl_theme:
           nullable: true
@@ -1263,9 +1259,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/DisplayModeEnum'
           description: |-
-            Which TFT the manager serves this panel, and so which UI it runs. Only LVGL on the terminal TFT can be chosen; NSPM's Nextion pages were removed.
+            Which TFT the manager serves this panel, and so which UI it runs. Read-only: always lvgl (the terminal TFT). Sending lvgl changes nothing; sending nextion is a 400, as NSPM's Nextion pages were removed.
 
-            * `nextion` - nextion
             * `lvgl` - lvgl
         lvgl_theme:
           nullable: true
