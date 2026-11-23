@@ -87,6 +87,6 @@ COPY --from=react-builder /ui/react-components/dist/ /usr/src/app/nspanelmanager
 COPY --from=react-builder /ui/react-components/templates/ /usr/src/app/nspanelmanager/web/react-components/templates/
 COPY nginx/sites-enabled/ /etc/nginx/sites-enabled/
 COPY nginx/sites-templates/ /etc/nginx/sites-templates/
-COPY "HMI_files/" /usr/src/app/nspanelmanager/HMI_files/
+COPY "HMI_files/terminal/" /usr/src/app/nspanelmanager/HMI_files/terminal/
 COPY --from=build /MQTTManager/build /MQTTManager/build
 CMD ["/bin/bash", "./run_uwsgi.sh"]

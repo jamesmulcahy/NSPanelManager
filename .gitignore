@@ -44,4 +44,3 @@ firmware/NSPanelManagerFirmware/CMakeLists.txt
 # MacOS
 .DS_Store
 docker/MQTTManager/tests/last_run.log
-docker/HMI_files/tft_automation/last_pictures_run.log
