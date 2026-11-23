@@ -72,16 +72,13 @@ The terminal TFT is chosen by layout, from the panel type and `us_panel_orientat
 | EU | Landscape | `terminal_eu` | false |
 | US, vertical | Portrait | `terminal_us` | true |
 | US, horizontal | Landscape | `terminal_eu` (on US hardware) | false |
-| US, horizontal (mirrored) | Landscape, **not supported** | `terminal_eu` | false |
 
 A US panel mounted sideways runs the EU terminal TFT with the landscape layout, as the firmware's QEMU
 `eu-on-us` terminal does. The settings page says so, and changing the panel type or orientation switches the
 layout as soon as you save; press Update GUI to install the matching TFT.
 
-**Mirrored is not supported.** Mirrored panels were served a separate Nextion TFT with the landscape image
-turned 180 degrees. The firmware has no rotate or mirror path, so a mirrored panel gets the plain landscape
-layout and draws it upside down, with touch inverted too. The settings page still lists the option. Mount the
-panel in the supported sideways orientation instead; rotation in the firmware is an open follow-up. The EU
+**Mirrored was removed.** The old "US Horizontal (Mirrored)" option is gone and migration 0077 turned any panel
+that used it into plain horizontal. The firmware has no rotate or mirror path. The EU
 terminal TFT has not been run on a real EU panel here, and the fleet is all US portrait, so landscape is
 covered by QEMU only.
 
@@ -94,7 +91,7 @@ by MQTTManager through `NSPanel::_get_nspanel_setting_with_default`).
 |---|---|---|---|
 | `lvgl_theme` | `auto`, `dark`, `grey`, `ocean`, `dusk`, `aurora`, `peaks`, `vesuvius`, `parthenon` | absent | LVGL palette. Absent: the manager never sends one |
 | `lvgl_background` | `none`, `ocean`, `dusk`, `aurora`, `peaks`, `vesuvius`, `parthenon` | absent | LVGL page background. Absent: never sent |
-| `us_panel_orientation` | `vertical`, `horizontal`, `horizontal_mirrored` | `vertical` | Picks the layout (above) |
+| `us_panel_orientation` | `vertical`, `horizontal` | `vertical` | Picks the layout (above) |
 
 `light` is not offered: the firmware takes it as `grey`. "Absent means unmanaged": saving the panel settings
 form must not reset a look set on the panel, so the form's first option for both pickers is "Keep the panel's
@@ -298,7 +295,7 @@ Assistant ingress), cannot load it; the page then says "Screenshot unavailable".
 - **Global defaults** for theme and background (Settings rows `lvgl_theme`, `lvgl_background`, with a per-panel
   "Use global" choice, as `screensaver_mode` does). Needs the React settings page (`/rest/v2/settings`) and an
   `MQTT_MANAGER_SETTING` entry for each.
-- **Rotation for mirrored panels** in the firmware (draw and touch turned 180 degrees), or a warning in the UI.
+- **Rotation** in the firmware (draw and touch turned 180 degrees), which would bring back a mirrored option.
 - **Screenshot proxy** in MQTTManager (`GET /nspanel/<mac>/screenshot` relaying to the panel's IP), for HTTPS
   ingress and for browsers that cannot reach the panel subnets.
 - **Drop the `lvgl_*` commands** once the fleet's firmware reads the config fields. Panels listing the

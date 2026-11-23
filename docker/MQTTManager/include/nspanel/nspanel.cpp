@@ -156,8 +156,6 @@ void NSPanel::reload_config(const char *reason) {
       this->_us_panel_orientation = US_PANEL_ORIENTATION::PORTRAIT;
     } else if (us_panel_orientation.compare("horizontal") == 0) {
       this->_us_panel_orientation = US_PANEL_ORIENTATION::LANDSCAPE_LEFT;
-    } else if (us_panel_orientation.compare("horizontal_mirrored") == 0) {
-      this->_us_panel_orientation = US_PANEL_ORIENTATION::LANDSCAPE_RIGHT;
     } else {
       this->_us_panel_orientation = US_PANEL_ORIENTATION::PORTRAIT;
       SPDLOG_ERROR("Error while processing US panel orientation, unknown orientation '{}'. Defaulting to vertical/portrait.", us_panel_orientation);

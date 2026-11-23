@@ -1397,16 +1397,6 @@ TEST_F(NSPanelTest, a_sideways_us_panel_is_sent_as_not_a_us_panel) {
   EXPECT_EQ(config->use_fahrenheit(), MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT));
 }
 
-TEST_F(NSPanelTest, a_mirrored_sideways_us_panel_is_sent_as_not_a_us_panel) {
-  set_panel_setting("is_us_panel", "True");
-  set_panel_setting("us_panel_orientation", "horizontal_mirrored");
-  load_panel();
-
-  auto config = last_published_config();
-  ASSERT_TRUE(config.has_value());
-  EXPECT_FALSE(config->is_us_panel());
-}
-
 TEST_F(NSPanelTest, an_upright_us_panel_is_sent_as_a_us_panel) {
   set_panel_setting("is_us_panel", "True");
   set_panel_setting("us_panel_orientation", "vertical");
@@ -1460,7 +1450,7 @@ TEST_F(NSPanelTest, a_sideways_us_panel_is_compared_with_the_eu_terminal_tft) {
   StagedTerminalTfts staged;
   ASSERT_NE(staged.us_md5, staged.eu_md5);
   set_panel_setting("is_us_panel", "True");
-  set_panel_setting("us_panel_orientation", "horizontal_mirrored");
+  set_panel_setting("us_panel_orientation", "horizontal");
   load_panel();
   auto report_tft = [&](const std::string &md5) {
     NSPanelStatusReport report;

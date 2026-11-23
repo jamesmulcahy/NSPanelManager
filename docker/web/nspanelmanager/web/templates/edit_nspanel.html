@@ -124,7 +124,6 @@
               <option value="eu" {% if settings.is_us_panel == 'False' %}selected{% endif %}>EU</option>
               <option value="us_vertical" {% if settings.is_us_panel == 'True' and settings.us_panel_orientation == 'vertical' %}selected{% endif %}>US Vertical</option>
               <option value="us_horizontal" {% if settings.is_us_panel == 'True' and settings.us_panel_orientation == 'horizontal' %}selected{% endif %}>US Horizontal</option>
-              <option value="us_horizontal_mirrored" {% if settings.is_us_panel == 'True' and settings.us_panel_orientation == 'horizontal_mirrored' %}selected{% endif %}>US Horizontal (Mirrored)</option>
             </select>
             <span class="inline-flex items-center px-3 text-sm border border-neutral rounded-e-0 rounded-s-md peer-focus/room_id:border-accent">
               <svg class="w-4 h-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

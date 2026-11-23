@@ -249,7 +249,6 @@ private:
   bool _us_layout = false;
   enum US_PANEL_ORIENTATION {
     LANDSCAPE_LEFT,
-    LANDSCAPE_RIGHT,
     PORTRAIT
   };
   US_PANEL_ORIENTATION _us_panel_orientation;
