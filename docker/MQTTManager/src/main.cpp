@@ -82,6 +82,16 @@ int main(int argc, char *argv[]) {
   return RUN_ALL_TESTS();
 #endif
 
+  // When a config change is made in the web interface the Django application
+  // will send a SIGUSR1 signal to the MQTTManager so that the manager
+  // know that it needs to reload the config.
+  sem_init(&reload_requests, 0, 0);
+  struct sigaction sigUsr1Handler;
+  sigUsr1Handler.sa_handler = sigusr1_handler;
+  sigemptyset(&sigUsr1Handler.sa_mask);
+  sigUsr1Handler.sa_flags = 0;
+  sigaction(SIGUSR1, &sigUsr1Handler, NULL);
+
   SPDLOG_INFO("Starting MQTTManager.");
 
   std::filesystem::path log_partition_path = "/dev/shm/";
@@ -133,17 +143,6 @@ int main(int argc, char *argv[]) {
     spdlog::set_level(spdlog::level::debug);
   }
 
-  // When a config change is made in the web interface the Django application
-  // will send a SIGUSR1 signal to the MQTTManager so that the manager
-  // know that it needs to reload the config.
-  sem_init(&reload_requests, 0, 0);
-  std::thread(reload_config_thread).detach();
-  struct sigaction sigUsr1Handler;
-  sigUsr1Handler.sa_handler = sigusr1_handler;
-  sigemptyset(&sigUsr1Handler.sa_mask);
-  sigUsr1Handler.sa_flags = 0;
-  sigaction(SIGUSR1, &sigUsr1Handler, NULL);
-
   // Ignore SIGPIPE signals to prevent crashes when writing/reading to a closed socket.
   signal(SIGPIPE, SIG_IGN);
 
@@ -184,6 +183,10 @@ int main(int argc, char *argv[]) {
   SPDLOG_INFO("Entities loaded, connect to MQTT and start listening for commands.");
   MQTT_Manager::init(); // Initialize MQTT manager to handle everything to do with MQTT
   CommandManager::init();
+
+  // Start serving reload requests only now that the initial load is done. Requests posted during
+  // startup were counted by the semaphore and result in a single reload here.
+  std::thread(reload_config_thread).detach();
 
   // Wait for threads to exit
   if (home_assistant_manager_thread.joinable()) {
