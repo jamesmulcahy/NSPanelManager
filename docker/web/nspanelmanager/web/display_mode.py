@@ -5,8 +5,7 @@ LVGL on the nspanel-terminal TFT is the only display mode: the Nextion HMI UI wa
 terminal TFT. Migration 0076 rewrote the old "display_mode" rows to "lvgl"; a stale "nextion" row (a rollback to an
 older manager can write one) is ignored.
 
-The terminal TFT is chosen by layout. A US panel mounted sideways ("us_panel_orientation" horizontal or
-horizontal_mirrored) uses the landscape layout, which is what the EU terminal TFT draws: it gets the EU TFT, and the
+The terminal TFT is chosen by layout. A US panel mounted sideways ("us_panel_orientation" horizontal) uses the landscape layout, which is what the EU terminal TFT draws: it gets the EU TFT, and the
 firmware is told is_us_panel=false (see lvgl_is_us_layout), as QEMU's "eu-on-us" does.
 """
 
@@ -51,7 +50,7 @@ def lvgl_is_us_layout(panel_id) -> bool:
     """
     if get_nspanel_setting_with_default(panel_id, "is_us_panel", "False") != "True":
         return False
-    return get_nspanel_setting_with_default(panel_id, "us_panel_orientation", "vertical") not in ("horizontal", "horizontal_mirrored")
+    return get_nspanel_setting_with_default(panel_id, "us_panel_orientation", "vertical") != "horizontal"
 
 
 def terminal_tft_type(panel_id) -> str:

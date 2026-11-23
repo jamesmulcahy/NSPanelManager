@@ -137,7 +137,6 @@ class TFTTests(FileTestCase):
             ({"is_us_panel": "True", "orientation": "vertical"}, b"terminal_us"),
             # A US panel mounted sideways draws the landscape layout, as an EU panel does.
             ({"is_us_panel": "True", "orientation": "horizontal"}, b"terminal_eu"),
-            ({"is_us_panel": "True", "orientation": "horizontal_mirrored"}, b"terminal_eu"),
         ]
         for config, expected in cases:
             with self.subTest(config=config):

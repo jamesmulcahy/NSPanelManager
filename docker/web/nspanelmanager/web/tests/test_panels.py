@@ -212,7 +212,6 @@ class PanelSettingsFormTests(NSPMTestCase):
             "eu": ("False", None),
             "us_vertical": ("True", "vertical"),
             "us_horizontal": ("True", "horizontal"),
-            "us_horizontal_mirrored": ("True", "horizontal_mirrored"),
         }
         for panel_type, expected in cases.items():
             with self.subTest(panel_type=panel_type):

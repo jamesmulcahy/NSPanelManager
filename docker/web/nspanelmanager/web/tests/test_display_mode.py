@@ -75,9 +75,8 @@ class TerminalTftTests(DisplayModeTestCase):
             ({"is_us_panel": "True", "orientation": "vertical"}, US_TERMINAL),
             # A US panel mounted sideways draws the landscape layout: it gets the EU terminal TFT.
             ({"is_us_panel": "True", "orientation": "horizontal"}, EU_TERMINAL),
-            ({"is_us_panel": "True", "orientation": "horizontal_mirrored"}, EU_TERMINAL),
             # An EU panel ignores a leftover orientation.
-            ({"is_us_panel": "False", "orientation": "horizontal_mirrored"}, EU_TERMINAL),
+            ({"is_us_panel": "False", "orientation": "horizontal"}, EU_TERMINAL),
         ]
         for config, expected in cases:
             with self.subTest(config=config):
@@ -169,6 +168,30 @@ class DisplayModeMigrationTests(DisplayModeTestCase):
         self.migrate()
         self.assertEqual(NSPanelSettings.objects.filter(name="display_mode").count(), 1)
         migration = importlib.import_module("web.migrations.0076_display_mode_lvgl")
+        self.assertIs(migration.Migration.operations[0].reverse_code, RunPython.noop)
+
+
+class MirroredMigrationTests(DisplayModeTestCase):
+    """Migration 0077 turns the removed horizontal_mirrored orientation into horizontal."""
+
+    def test_mirrored_becomes_horizontal_and_the_rest_is_untouched(self):
+        import importlib
+
+        from django.apps import apps
+
+        sideways = self.make_panel(self.room, accepted=True)
+        upright = self.make_panel(self.room, accepted=True)
+        set_nspanel_setting_value(self.panel.id, "us_panel_orientation", "horizontal_mirrored")
+        set_nspanel_setting_value(sideways.id, "us_panel_orientation", "horizontal")
+        set_nspanel_setting_value(upright.id, "us_panel_orientation", "vertical")
+
+        migration = importlib.import_module("web.migrations.0077_remove_horizontal_mirrored")
+        migration.mirrored_to_horizontal(apps, None)
+        migration.mirrored_to_horizontal(apps, None)
+
+        self.assertEqual(get_nspanel_setting_with_default(self.panel.id, "us_panel_orientation", None), "horizontal")
+        self.assertEqual(get_nspanel_setting_with_default(sideways.id, "us_panel_orientation", None), "horizontal")
+        self.assertEqual(get_nspanel_setting_with_default(upright.id, "us_panel_orientation", None), "vertical")
         self.assertIs(migration.Migration.operations[0].reverse_code, RunPython.noop)
 
 
