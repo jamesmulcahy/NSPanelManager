@@ -7,7 +7,8 @@
 >
 > The fork's work lives on the `fork` branch, with the matching firmware in
 > [jamesmulcahy/NSPanelManager-firmware](https://github.com/jamesmulcahy/NSPanelManager-firmware).
-> The Nextion pages are still supported today but are being dropped soon: **LVGL is the path forward.**
+> The Nextion pages are gone: **LVGL is the only UI.** Panels still on NSPM's old TFT show a "Display update needed"
+> screen until you press Update GUI (see [docs/LVGL_PANEL_MODE.md](docs/LVGL_PANEL_MODE.md)).
 
 The fork's focus is **low latency and reliability**. It replaces the Nextion pages with a UI drawn by the panel
 itself (LVGL), and builds more on top of it: screensaver cards, themes, timers, media players, and Home

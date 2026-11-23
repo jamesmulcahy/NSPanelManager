@@ -1,110 +1,141 @@
-# LVGL panel mode
+# Display
 
-Panel firmware with LVGL (firmware branch `test/lvgl-qemu-terminal`, `firmware_espidf/docs/LVGL.md`)
-draws every page itself when the display runs an
-[nspanel-terminal](https://github.com/ptaru/nspanel-terminal) TFT, and streams the pixels to it. On
-NSPM's own Nextion TFT nothing changes. The firmware follows the TFT: install the terminal TFT and the
-panel runs LVGL; install NSPM's TFT and it runs the Nextion pages again.
+Every panel draws its UI with LVGL. The panel firmware renders each page itself and streams the pixels to an
+[nspanel-terminal](https://github.com/ptaru/nspanel-terminal) TFT on the display (firmware
+`firmware_espidf/docs/LVGL.md`). There is one display mode and nothing to choose: the manager serves each
+panel the terminal TFT for its layout, and a panel's look (theme and background) is a per-panel setting.
 
-Until now the manager knew nothing about this. A panel was moved by hand: upload the terminal TFT
-over a background slot (US "TFT 4"), point the panel at that slot, run a GUI update, and send
-`lvgl_theme` / `lvgl_background` over MQTT. This document makes that a first-class panel setting.
+NSPM's Nextion HMI pages, with their per-theme TFTs and background slots, were removed in the Nextion removal
+(`NEXTION_REMOVAL_PLAN.md`; the last manager and firmware that still had them are tagged `last-nextion`). The
+Nextion *display* is still what the panel has: its serial driver and the TFT upload path stay, and the terminal
+TFT is installed through them.
 
-## Summary of decisions
+## Summary
 
-| Topic | Decision |
+| Topic | How it works |
 |---|---|
-| Mode | Per-panel `display_mode` setting: `nextion` (default) or `lvgl` |
+| Display mode | LVGL on the terminal TFT, always. The `display_mode` setting is read-only: REST v2 reports `lvgl`, accepts `lvgl` and rejects `nextion` with a 400 that says why. Migration `0076` wrote `display_mode=lvgl` for every panel; a stale `nextion` row (a rollback to an older manager can write one) is ignored |
+| Terminal TFTs | One per layout: US portrait (`terminal_us`) and landscape (`terminal_eu`). The image bundles both; an upload replaces the bundled file for its layout |
+| Layout | From the panel type and orientation: US vertical gets the US layout, every other panel gets landscape (see "Orientation") |
 | Look | Per-panel `lvgl_theme` and `lvgl_background`; empty means "leave whatever the panel has" |
-| Terminal TFTs | Two new files, one per layout (US portrait, EU landscape), stored under `/data`, separate from the four background slots |
-| Which TFT is served | `lvgl` panels get the terminal TFT for their layout; `nextion` panels get their `selected_tft` slot as before. `selected_tft` is kept while in LVGL mode, so rollback is "switch back and update the GUI" |
-| Detecting the TFT | md5 against every file the manager has staged or has ever been given (new `TftUpload` table), now; plus a firmware-reported `display_mode` in `NSPanelStatusReport`, which wins when present |
-| Pushing the look | Both: new `NSPanelConfig` fields (sent today, used by firmware once it reads them) and the existing `lvgl_theme` / `lvgl_background` commands (work with today's firmware) |
-| Screenshot | The settings page shows `http://<panel>/screenshot` straight from the panel, like the existing "open panel web page" link |
-| Global defaults | Designed, not built (see "Later") |
-| A look chosen on the panel | The firmware reports it as an `NSPanelMQTTManagerCommand` (`lvgl_look`, field 11); MQTTManager saves it as the panel's `lvgl_theme` / `lvgl_background` settings and confirms it with a config push. See "A look chosen on the panel" |
+| Detecting the TFT | md5 of the TFT the panel reports against the files the manager has staged or been given (`TftUpload`), plus the firmware-reported `display_mode`, which wins when present |
+| Legacy screen | A panel on NSPM's old HMI TFT, with new firmware, shows "Display update needed" until its GUI is updated (see "Panels still on the HMI TFT") |
+| Screenshot | The settings page shows `http://<panel>/screenshot` straight from the panel |
+
+## Panels still on the HMI TFT
+
+A panel that was running NSPM's own Nextion TFT (the old default) needs the terminal TFT. Firmware from the
+Nextion removal onwards cannot draw anything on the old TFT, so it shows a **legacy screen** and waits: the
+HMI TFT's own loading page, with the main line "Display update needed" and a second line with what the panel
+knows (panel name, IP address, "Update GUI in NSPanel Manager"; shortened to fit, blank until the panel has
+a network). MQTT, relays, the physical buttons, the temperature sensor and firmware updates keep working
+throughout, and the `tft_update` command still installs a TFT.
+
+Installing is **manual**; the manager never sends it by itself:
+
+1. The panel registers with the feature `no_hmi` and reports `DISPLAY_MODE_NEXTION` (the legacy screen). If
+   the firmware misses the TFT's banner during its short wait it lands in `TERMINAL_IDLE` with a blank
+   screen instead; the manager treats that as the legacy screen too, unless the panel's TFT md5 is a terminal
+   TFT it knows.
+2. The manager flags the panel on the panel list and the panel page with the warning **"Shows the legacy
+   screen — press Update GUI"**, with the button next to it. This needs the terminal TFT for the panel's
+   layout to be staged, which the bundled files guarantee.
+3. Press **Update GUI** (the same `tft_update` flow as any GUI update). The panel flashes the terminal TFT,
+   reboots, detects the receiver and starts LVGL with the look it is sent.
+
+Safety gates and edge cases:
+
+- **Firmware first.** A GUI update is refused for a panel whose `register_request` lacks the `lvgl_look`
+  feature, or that reports no `display_mode`: such firmware predates LVGL, and the terminal TFT would leave it
+  on the waiting page for good. The panel shows "Update the firmware first"; the firmware update brings it to
+  the point above.
+- **A panel that has the staged TFT but still reports a legacy display** gets a warning to check that the
+  uploaded TFT is an nspanel-terminal TFT.
+- **`TERMINAL_IDLE` on a known terminal TFT** means LVGL is not running (it failed to start), so the display
+  only shows the TFT's waiting page. A firmware update fixes it.
+- **Rolling back the manager** to `last-nextion` keeps every panel in LVGL mode, because the migration wrote
+  `display_mode=lvgl` rather than deleting rows, so the old manager serves the terminal TFT and does not offer
+  the HMI TFT as a GUI update. Rolling back a panel's firmware to `last-nextion` is fine on the terminal TFT.
+- **Old manager, new firmware, HMI TFT**: legacy screen. A `last-nextion` manager ignores `no_hmi`, so press
+  Update GUI yourself; if the panel was set to `nextion` there, set it to LVGL first, or the update
+  reinstalls the HMI TFT (still the legacy screen). Upstream NSPM is not supported with this firmware: the panel
+  stays controllable over MQTT, nothing more.
+- The `nspm-mcp` `upload_gui` and the TFT upload dialog take only the terminal types (`terminal_us`,
+  `terminal_eu`); the old slot types are rejected.
+
+## Orientation and layout
+
+The terminal TFT is chosen by layout, from the panel type and `us_panel_orientation`:
+
+| Panel | Layout | TFT served | `is_us_panel` sent to the firmware |
+|---|---|---|---|
+| EU | Landscape | `terminal_eu` | false |
+| US, vertical | Portrait | `terminal_us` | true |
+| US, horizontal | Landscape | `terminal_eu` (on US hardware) | false |
+| US, horizontal (mirrored) | Landscape, **not supported** | `terminal_eu` | false |
+
+A US panel mounted sideways runs the EU terminal TFT with the landscape layout, as the firmware's QEMU
+`eu-on-us` terminal does. The settings page says so, and changing the panel type or orientation switches the
+layout as soon as you save; press Update GUI to install the matching TFT.
+
+**Mirrored is not supported.** Mirrored panels were served a separate Nextion TFT with the landscape image
+turned 180 degrees. The firmware has no rotate or mirror path, so a mirrored panel gets the plain landscape
+layout and draws it upside down, with touch inverted too. The settings page still lists the option. Mount the
+panel in the supported sideways orientation instead; rotation in the firmware is an open follow-up. The EU
+terminal TFT has not been run on a real EU panel here, and the fleet is all US portrait, so landscape is
+covered by QEMU only.
 
 ## Data model
 
-The panel's settings already live in `NSPanelSettings` (name/value rows, read by Django through
-`settings_helper` and by MQTTManager through `NSPanel::_get_nspanel_setting_with_default`). The new
-settings follow that convention, so MQTTManager reads them with no schema change on its side:
+The panel's settings live in `NSPanelSettings` (name/value rows, read by Django through `settings_helper` and
+by MQTTManager through `NSPanel::_get_nspanel_setting_with_default`).
 
 | Setting | Values | Default (absent) | Meaning |
 |---|---|---|---|
-| `display_mode` | `nextion`, `lvgl` | `nextion` | Which TFT the manager serves this panel, and so which UI it runs |
 | `lvgl_theme` | `auto`, `dark`, `grey`, `ocean`, `dusk`, `aurora`, `peaks`, `vesuvius`, `parthenon` | absent | LVGL palette. Absent: the manager never sends one |
 | `lvgl_background` | `none`, `ocean`, `dusk`, `aurora`, `peaks`, `vesuvius`, `parthenon` | absent | LVGL page background. Absent: never sent |
+| `us_panel_orientation` | `vertical`, `horizontal`, `horizontal_mirrored` | `vertical` | Picks the layout (above) |
 
-`light` is not offered: the firmware takes it as `grey`.
+`light` is not offered: the firmware takes it as `grey`. "Absent means unmanaged": saving the panel settings
+form must not reset a look set on the panel, so the form's first option for both pickers is "Keep the panel's
+own".
 
-"Absent means unmanaged" matters for the first upgrade: Office, Kitchen, Lounge and Master Bathroom
-already have a look set by hand over MQTT, and saving the panel settings form must not reset it. The
-form's first option for both pickers is "Keep the panel's own".
-
-`display_mode` is kept even in `nextion` mode, and `selected_tft` is kept in `lvgl` mode. Each mode
-remembers its own choice, so switching is reversible.
-
-One new model, `TftUpload` (migration `0073`), records every TFT the manager has been given:
-
-| Field | |
-|---|---|
-| `md5` | Of the uploaded file |
-| `kind` | `nextion` (a background slot) or `terminal` |
-| `target` | The upload type: `eu1` .. `us4_horizontal_mirrored`, `terminal_us`, `terminal_eu` |
-| `uploaded_at` | |
-
-It exists for detection (next section): once a slot is overwritten, the md5 of what a panel still
-runs would otherwise be unknown. MQTTManager does not use it.
+`TftUpload` records every TFT the manager has been given (`md5`, `kind`, `target`, `uploaded_at`). It exists
+for detection: once an upload is replaced, the md5 of what a panel still runs would otherwise be unknown.
+Rows with `kind` `nextion` are uploads of NSPM's old HMI TFTs; they stay, so such a panel reads "NSPM TFT slot 1
+(US), an older upload" rather than "Unknown".
 
 ## Detecting which TFT a panel runs
 
 A panel reports `md5_tft_gui` in its status report and `md5_tft_file` at registration (stored on
-`NSPanel.md5_tft_file`). The firmware sets this to the checksum of the TFT it last flashed, as given
-by `checksum_tft_file/<id>`.
+`NSPanel.md5_tft_file`): the checksum of the TFT it last flashed. Django classifies it as:
 
-**Now (no firmware change): md5 lookup.** Django classifies a panel's md5 as:
+1. the terminal TFT currently staged for either layout (an upload, else the bundled file; the bundled one is
+   labelled "bundled"), or
+2. a file once uploaded (`TftUpload`), labelled "an older upload", or
+3. unknown (a TFT flashed before the manager kept a history).
 
-1. the file currently staged in a slot or terminal location (computed from the files themselves), or
-2. a file once uploaded (`TftUpload`), so a panel that was flashed with an earlier terminal build
-   still reads "terminal TFT (older upload)", or
-3. unknown (for example a TFT flashed before the manager kept a history, or one the manager shipped
-   in the image, which is never "uploaded").
-
-MQTTManager compares the panel's md5 with the file the panel's mode should run, exactly as it does
-today for the slots, so an `lvgl` panel on a Nextion TFT, or the other way round, gets the existing
+MQTTManager compares the panel's md5 with the terminal TFT for its layout, and a difference gives the
 "GUI update available" warning.
 
-md5 alone cannot tell whether LVGL is actually drawing: the panel may run the terminal TFT with
-`lvgl_ui` switched off (the TFT then shows its own "waiting" page), or run firmware without LVGL at
-all, which would leave the terminal TFT on its waiting page for good.
-
-**Next (firmware change): a reported mode.** `NSPanelStatusReport` gains
+md5 alone cannot tell whether LVGL is drawing, so `NSPanelStatusReport` carries the firmware's own answer:
 
 ```proto
 enum NSPanelDisplayMode {
   DISPLAY_MODE_UNKNOWN = 0;  // Older firmware: the field is not sent
-  DISPLAY_MODE_NEXTION = 1;  // NSPM's Nextion pages
+  DISPLAY_MODE_NEXTION = 1;  // The legacy screen: NSPM's old HMI TFT is installed
   DISPLAY_MODE_LVGL = 2;     // LVGL draws through a terminal TFT
-  DISPLAY_MODE_TERMINAL_IDLE = 3; // Terminal TFT, but LVGL is off (lvgl_ui false): the display shows the TFT's waiting page
+  DISPLAY_MODE_TERMINAL_IDLE = 3; // Terminal TFT, but LVGL is not running: the display shows the TFT's waiting page
 }
 NSPanelDisplayMode display_mode = 16;
-string lvgl_theme = 17;       // As applied, after "light" -> "grey"; empty outside LVGL mode
+string lvgl_theme = 17;       // As applied, after "light" -> "grey"; empty outside LVGL
 string lvgl_background = 18;
 ```
 
-When `display_mode` is not `UNKNOWN`, MQTTManager adds the warnings md5 cannot give: an `lvgl` panel
-whose TFT is up to date but which reports `NEXTION` (the uploaded "terminal" TFT is not one), and any
-panel reporting `TERMINAL_IDLE` (the display is stuck on the waiting page). A disagreement md5 can see,
-such as a `nextion` panel still on the terminal TFT, already shows as "GUI update available". The
-reported mode, theme and background are in the panel's websocket status (`display_mode`,
-`lvgl_theme`, `lvgl_background`, next to `display_mode_setting`), and the settings page shows the mode.
-
-Why both: md5 works for every panel in the field today and is what decides whether to offer a GUI
-update. The reported mode is the only thing that proves LVGL is drawing, and it is cheap for the
-firmware (it already logs the decision in `LvglUi::init()`). The proto change is in this branch, so
-the manager handles the field the day firmware sends it; older firmware never sends it, and the
-manager reads `0` as "not reported".
+`DISPLAY_MODE_NEXTION` keeps its name on the wire for compatibility; it now means "legacy HMI TFT". Older
+firmware never sends the field and the manager reads `0` as "not reported". The reported mode, theme and
+background are in the panel's websocket status (`display_mode`, `lvgl_theme`, `lvgl_background`), and the
+settings page shows the mode.
 
 ## Pushing the theme and background
 
@@ -133,13 +164,12 @@ When the fleet runs firmware that reads the config fields, the commands become r
 harmless (with the firmware change below they are no-ops when nothing changed); they can be dropped a
 release or two later, the same way the name-based command topic is being phased out.
 
-The kill switch `lvgl_ui` is not a manager setting. The way back to the Nextion pages is to switch the
-panel to `nextion` and update its GUI, which leaves no hidden state on the panel. `lvgl_ui` stays an
-emergency tool for a panel whose terminal TFT is broken and cannot be reflashed.
+The firmware's old `lvgl_ui` kill switch is not a manager setting, and current firmware ignores a saved
+`lvgl_ui: false`: with no Nextion pages to fall back to, switching LVGL off would only blank the screen.
 
 ## A look chosen on the panel
 
-LVGL firmware (`feat/lvgl-look-picker`, `firmware_espidf/docs/LVGL.md`, "The look") has a look
+LVGL firmware (`firmware_espidf/docs/LVGL.md`, "The look") has a look
 picker in the swipe-down menu: eight background + palette combinations (Ocean, Dusk, Aurora, Peaks, Vesuvius and Parthenon
 with `theme: auto`; Dark and Grey with `background: none`). A pick must become the panel's configured
 look, so the settings page shows it and the next config push does not undo it.
@@ -199,10 +229,10 @@ reporting again, at most every 10 s. Cases (new firmware, new manager):
 | Firmware | Manager | Behaviour |
 |---|---|---|
 | New | New | As above |
-| New | `feat/lvgl-panel-mode` (fields 49/50 and commands, no report) | Picks work and survive reboots. The report is published to a topic nobody reads. The panel stays unconfirmed, so configs carrying the manager's look are ignored; a command (sent when the look is changed in the manager, and once per manager start) replaces the pick. Leaving the panel on "Keep the panel's own" keeps picks |
+| New | A manager with fields 49/50 and commands but no report | Picks work and survive reboots. The report is published to a topic nobody reads. The panel stays unconfirmed, so configs carrying the manager's look are ignored; a command (sent when the look is changed in the manager, and once per manager start) replaces the pick. Leaving the panel on "Keep the panel's own" keeps picks |
 | New | Upstream NSPM (no 49/50) | Picks work and survive reboots; the config's empty fields never replace them; no log noise |
-| Old (no `features`) | New | Exactly as before: never reports; the manager keeps sending commands as `feat/lvgl-panel-mode` does |
-| NSPM's Nextion TFT, any firmware | Any | No menu item and no page (`LookPage` returns unless LVGL is the UI). Config fields are still stored for when the panel moves to LVGL |
+| Old (no `features`) | New | Exactly as before: never reports; the manager keeps sending commands as before |
+| Legacy screen (the panel still runs NSPM's old HMI TFT) | Any | No menu item and no page, because LVGL is not drawing. The look is stored and applied once the terminal TFT is installed |
 
 Payload sizes: the report is under 60 bytes; `NSPanelConfig` grows by two short strings (~20 bytes);
 the firmware's MQTT buffer is 4 KB.
@@ -211,139 +241,67 @@ the firmware's MQTT buffer is 4 KB.
 
 ### Files
 
-Terminal TFTs get their own upload types, separate from the four background slots:
-
 | Upload type | Stored at | Served to |
 |---|---|---|
-| `terminal_us` | `/data/tft/terminal/us/gui.tft` | `lvgl` panels with `is_us_panel` true |
-| `terminal_eu` | `/data/tft/terminal/eu/gui.tft` | `lvgl` panels with `is_us_panel` false |
+| `terminal_us` | `/data/tft/terminal/us/gui.tft` | US vertical panels |
+| `terminal_eu` | `/data/tft/terminal/eu/gui.tft` | Every other panel |
 
-Per layout, not per orientation: the firmware chooses its LVGL layout and terminal receiver from
-`is_us_panel` alone (`LvglRenderer::_config_event_handler`, `NextionTerminal::options_for`). The US
-layout uses the US receiver (320x480, `terminal_us_state2.py`), the EU layout uses nspanel-terminal's
-`terminal-eu.tft` (454x320). LVGL ignores `us_panel_orientation`, so a US panel set to a horizontal
-orientation still gets the portrait US layout; the settings page says so.
-
-Under `/data` rather than next to the slots (`HMI_files/tft_automation/...` inside the image), so an
-upload survives an image update. `/data` is the volume that already holds the database.
+Uploads live under `/data`, the volume that already holds the database, so they survive an image update.
 
 **Bundled terminal TFTs.** The image ships one terminal TFT per layout, in `HMI_files/terminal/{us,eu}/gui.tft`
 (provenance, checksums and how the US file is built: `HMI_files/terminal/README.md`). A layout with no upload
 is served its bundled file (`display_mode.staged_terminal_tft_file()`; MQTTManager falls back the same way when
-it computes the checksum), so a new install can put a panel in LVGL mode without uploading anything, and a
-lost upload falls back to a working TFT. An upload replaces the bundled file for its layout. The settings page
-names a panel running the bundled file "Terminal TFT (US), bundled".
+it computes the checksum), so a new install needs no upload and a removed upload falls back to a working TFT.
+An upload replaces the bundled file for its layout. The settings page names a panel running the bundled file
+"Terminal TFT (US), bundled". These are the only HMI-directory files left in the image.
 
-The upload modal lists the two new types under "Terminal TFT (LVGL mode)". `nspm-mcp`'s `upload_gui`
-and any script that posts `tft_file_type` keep working; they gain two values.
+The TFT upload dialog lists the two types under "Terminal TFT".
 
-### Switching a panel
+### Installing and updating
 
-1. Upload the terminal TFT for the panel's layout (once).
-2. On the panel's settings page choose **Display: LVGL (terminal TFT)**, optionally a theme and a
-   background, and save.
-3. The manager now serves the terminal TFT for that panel; the panel's status shows "GUI update
-   available". Press **Update GUI** (the existing button and flow, `tft_update` command).
-4. The panel flashes the TFT, reboots, detects the terminal receiver and starts LVGL with the look it
-   was sent.
-
-The settings page does not start the GUI update by itself: a TFT update takes minutes, blanks the
-display, and the user may want to set several panels first. It says that an update is needed.
-
-### Rollback
-
-Choose **Display: Nextion (NSPM TFT)**, save, and update the GUI. The panel's `selected_tft` slot
-was never changed, so it gets the background it had before. The firmware follows the TFT back to the
-Nextion pages.
-
-If the terminal TFT will not start (the display sits on its waiting page), the panel still takes
-MQTT and TFT updates (LVGL.md), so the same rollback works.
-
-### Migrating the existing installation
-
-Lounge, Office, Kitchen and Master Bathroom run the terminal TFT from the US "TFT 4" slot
-(md5 `ee73878729a0757704a86d136ddcdf33`).
-
-1. Upload that same file as `terminal_us`. The md5 is unchanged, so these panels need no reflash.
-2. Set each of them to `lvgl` and set their `selected_tft` back to `tft1` (NSPM's TFT), so a later
-   rollback lands on a real Nextion TFT. Their status shows no GUI update pending.
-3. Re-upload NSPM's US TFT 4 into the US TFT 4 slot, or leave the slot unused.
+A new panel needs no display setup: flash the firmware, add the panel, and press **Update GUI** if the panel
+asks for one (a fresh Sonoff display, or any panel on a different TFT). The settings page's **Display** card
+shows what the panel runs now ("Terminal TFT (US), bundled", "Unknown TFT (...)"), the mode the firmware reports,
+and a note when the display image is not the one its layout needs. The settings page does not start a GUI update
+by itself: it takes minutes and blanks the display, and you may want to set several panels first.
 
 ## Settings page
 
 A **Display** card on `/nspanel/<id>`:
 
-- **Display mode**: Nextion (NSPM TFT) / LVGL (terminal TFT). The background-slot picker and its
-  preview belong to Nextion mode and are hidden in LVGL mode.
-- **Theme** and **Background** pickers (LVGL mode only), each with "Keep the panel's own" first.
-- **Running now**: what the panel's last registered md5 is ("Terminal TFT (US, staged)", "NSPM TFT
-  slot 1 (US)", "Terminal TFT (older upload)", "Unknown"), and the reported display mode when the
-  firmware sends one.
-- Notes when they apply: the terminal TFT for this layout has not been uploaded; LVGL ignores the
-  US horizontal orientations; a GUI update is needed after changing the mode.
-- **Screen preview** (LVGL mode only): `<img src="http://<panel-ip>/screenshot?format=png">` with a
-  Refresh button. The IP comes from the panel's websocket status, which the page already receives.
+- **Running now**: the panel's last registered md5 as a label, and the reported display mode when the
+  firmware sends one ("LVGL", "legacy screen (its GUI needs updating)", "terminal TFT with LVGL off").
+- **Theme** and **Background** pickers, each with "Keep the panel's own" first.
+- Notes when they apply: no terminal TFT is available for this layout; a sideways US panel runs the landscape
+  layout; the display image does not match the layout, so press Update GUI.
+- **Screen preview**: `<img src="http://<panel-ip>/screenshot?format=png">` with a Refresh button. The IP comes
+  from the panel's websocket status. A panel on the legacy screen has no screenshot (the firmware answers 409).
 
-The screenshot is loaded by the browser from the panel, as the existing "open the panel's web page"
-link does, rather than proxied by Django: Django does not know panel IPs (MQTTManager does, at
-runtime) and the panel's server has no auth either way. Limits: a browser on another subnet than the
-panel, or a manager page served over HTTPS (Home Assistant ingress), cannot load it; the page then
-shows "Screenshot unavailable". A proxy through MQTTManager (which knows the IP) is the fix if that
-matters; see "Later".
+The screenshot is loaded by the browser from the panel, like the "open the panel's web page" link, rather than
+proxied by Django: Django does not know panel IPs (MQTTManager does, at runtime) and the panel's server has no
+auth either way. A browser on another subnet than the panel, or a manager page served over HTTPS (Home
+Assistant ingress), cannot load it; the page then says "Screenshot unavailable".
 
 ## Backwards compatibility
 
-- Panels without the new settings behave exactly as before: `display_mode` defaults to `nextion`,
-  the slot logic is unchanged, nothing new is sent except two empty config fields.
-- Older firmware ignores the new `NSPanelConfig` fields (protobuf unknown fields) and never sends the
-  new status fields (they read as `UNKNOWN` / empty).
-- Firmware without LVGL that receives `lvgl_*` commands logs `Unknown command` and carries on. The
-  manager only sends them to `lvgl` panels, so this only happens if a panel is put in LVGL mode
-  before its firmware supports it, which is a real risk: that panel's display then sits on the
-  terminal TFT's waiting page until it is switched back. Until the firmware reports
-  `display_mode`, the manager cannot tell; the settings page warns that LVGL mode needs LVGL firmware.
-- `checksum_tft_file/<id>` and `download_tft/<id>` keep their URLs and answer for whichever TFT the
-  panel's mode selects, so firmware needs no change to fetch the terminal TFT.
-
-## Firmware follow-up (branch `test/lvgl-qemu-terminal`)
-
-Items 1-4 are done in firmware `feat/lvgl-look-picker` (with the look picker); 5 and 6 are open.
-
-1. **Protobuf.** Regenerate `lib/ProtoBuf/protobuf_nspanel.pb-c.{c,h}` from this branch's
-   `docker/protobuf/protobuf_nspanel.proto` (or copy `protobuf_firmware/`). New fields:
-   `NSPanelConfig.lvgl_theme` (49), `NSPanelConfig.lvgl_background` (50),
-   `NSPanelStatusReport.display_mode` (16), `.lvgl_theme` (17), `.lvgl_background` (18).
-2. **Apply the look from the config.** In the config event handler (next to
-   `LvglRenderer::_config_event_handler`, or in `LvglUi`): for each of `lvgl_theme` and
-   `lvgl_background`, if the config's string is non-empty and differs from `ConfigManager`'s, store
-   it, `ConfigManager::save_config()` once, then `LvglUi::set_look()` once. Empty: leave the saved
-   value. Keep saving to NVS so the boot screen uses the look before the config arrives.
-3. **Make the commands idempotent.** In `UpdateManager` `lvgl_theme` / `lvgl_background`: compare
-   with the saved value first, and skip the NVS write and `set_look()` when unchanged (and treat
-   `light` as `grey` before comparing).
-4. **Report the mode.** In `StatusUpdateManager`, set `display_mode`: `LVGL` when
-   `LvglUi::active()`; `TERMINAL_IDLE` when the display is a terminal receiver
-   (`NextionTerminal::is_receiver()` on the boot identity) but `ConfigManager::lvgl_ui` is false;
-   `NEXTION` otherwise (NSPM flag received). Set `lvgl_theme` / `lvgl_background` to the applied
-   values (`grey` for `light`) in LVGL mode, empty otherwise. `LvglUi::init()` already makes this
-   decision; keep its result in a static the status task can read.
-5. **Screenshot CORS (optional).** Add `Access-Control-Allow-Origin: *` to `/screenshot` responses
-   (including 409/503) so the settings page can `fetch()` it and tell "Nextion pages" (409) from "busy"
-   (503) and "unreachable"; with a plain `<img>` it can only tell success from failure.
-6. **Orientation (optional, product decision).** LVGL ignores `us_panel_orientation`. If horizontal
-   US panels should run LVGL in landscape, the layout choice has to take orientation into account,
-   and the manager would then key terminal TFTs by layout rather than by `is_us_panel`.
+- Older firmware ignores the `NSPanelConfig` look fields (protobuf unknown fields) and never sends the status
+  fields (they read as `UNKNOWN` / empty).
+- Firmware that predates LVGL cannot run the terminal TFT; the `lvgl_look` gate above stops the manager from
+  installing it there.
+- `checksum_tft_file/<id>` and `download_tft/<id>` keep their URLs and answer with the panel's terminal TFT, so
+  firmware needs no change to fetch it.
+- The protobuf keeps its HMI-shaped fields (Nextion colours, font glyphs, 4/8/12 page types) until the layout
+  protocol is replaced; LVGL decodes them.
 
 ## Later
 
-- **Global defaults** for theme and background (Settings rows `lvgl_theme`, `lvgl_background`, with
-  a per-panel "Use global" choice, as `screensaver_mode` does). Needs the React settings page
-  (`/rest/v2/settings`) and an `MQTT_MANAGER_SETTING` entry for each; per-panel covers today's need.
-- **Screenshot proxy** in MQTTManager (`GET /nspanel/<mac>/screenshot` relaying to the panel's IP),
-  for HTTPS/ingress and for browsers that cannot reach the panel subnets.
-- **A "switch and update" action** that saves the mode and starts the GUI update in one step, once
-  the reported `display_mode` lets the manager confirm the result.
-- **Drop the `lvgl_*` commands** once the fleet's firmware reads the config fields. Panels listing
-  the `lvgl_look` feature already get none.
-- **Live settings page.** The page shows the look as of when it was loaded; it could follow the
-  websocket status (which carries the reported look) and update its pickers.
+- **Global defaults** for theme and background (Settings rows `lvgl_theme`, `lvgl_background`, with a per-panel
+  "Use global" choice, as `screensaver_mode` does). Needs the React settings page (`/rest/v2/settings`) and an
+  `MQTT_MANAGER_SETTING` entry for each.
+- **Rotation for mirrored panels** in the firmware (draw and touch turned 180 degrees), or a warning in the UI.
+- **Screenshot proxy** in MQTTManager (`GET /nspanel/<mac>/screenshot` relaying to the panel's IP), for HTTPS
+  ingress and for browsers that cannot reach the panel subnets.
+- **Drop the `lvgl_*` commands** once the fleet's firmware reads the config fields. Panels listing the
+  `lvgl_look` feature already get none.
+- **Live settings page.** The page shows the look as of when it was loaded; it could follow the websocket
+  status and update its pickers.
