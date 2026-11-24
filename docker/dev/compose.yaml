@@ -20,8 +20,6 @@ services:
     build:
       context: ..
       target: devel
-      args:
-        WEB_UI_REF: "${NSPM_DEV_WEB_UI_REF:-main}"
     image: nspanelmanager-dev
     depends_on:
       - mosquitto

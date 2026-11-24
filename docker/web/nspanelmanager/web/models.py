@@ -84,7 +84,6 @@ class NSPanel(models.Model):
     class NSPanelModel(models.TextChoices):
         SONOFF = "sonoff"
         CUSTOM = "custom"
-        WEB = "web"
 
     mac_address = models.CharField(max_length=17)
     friendly_name = models.CharField(max_length=100)

@@ -63,13 +63,6 @@ server {
         proxy_set_header Host $http_host;
     }
 
-    location /webapp {
-        alias /var/www/html/webapp;
-        
-        # Crucial for React Router/Vite: fallback to index.html
-        try_files $uri $uri/ /webapp/index.html;
-    }
-
     # Finally, send all non-media requests to the Django server.
     location / {
         uwsgi_pass  django;

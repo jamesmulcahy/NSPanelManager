@@ -89,9 +89,7 @@ std::shared_ptr<NSPanel> NSPanel::create_from_discovery_request(nlohmann::json r
         panel_data.model = "sonoff";
       } else if (nspanel_model.compare("custom") == 0) {
         panel_data.model = "custom";
-      } else if (nspanel_model.compare("web") == 0) {
-        panel_data.model = "web";
-      } else {
+  }      } else {
         SPDLOG_WARN("Failed to parse panel model for NSPanel {}. Got value '{}'. Will assume sonoff.", panel_data.friendly_name, panel_data.model);
         panel_data.model = "sonoff";
       }
@@ -143,8 +141,6 @@ void NSPanel::reload_config(const char *reason) {
       this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
     } else if (panel_settings.model.compare("custom") == 0) {
       this->_model = MQTT_MANAGER_NSPANEL_MODEL::CUSTOM;
-    } else if (panel_settings.model.compare("web") == 0) {
-      this->_model = MQTT_MANAGER_NSPANEL_MODEL::WEB;
     } else {
       SPDLOG_ERROR("Failed to prase panel model for NSPanel {}::{}. Got value '{}'. Will assume sonoff.", panel_settings.id, panel_settings.friendly_name, panel_settings.model);
       this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
@@ -1056,9 +1052,7 @@ void NSPanel::send_websocket_status_update() {
     });
   }
 
-  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::WEB) {
-    status_data["model"] = "web";
-  } else if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF) {
+  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF) {
     status_data["model"] = "sonoff";
   } else if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
     status_data["model"] = "custom";
@@ -1221,9 +1215,6 @@ void NSPanel::_reload_lvgl_settings() {
 
 void NSPanel::_send_lvgl_look(bool theme, bool background) {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
-  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::WEB) {
-    return;
-  }
   if (this->_panel_reports_lvgl_look) {
     // Its firmware takes the look from NSPanelConfig, which every reload sends. A command as well would be a second
     // flash write, and one that can overtake a look chosen on the panel that the manager has not seen yet.
@@ -1484,8 +1475,6 @@ NSPanelMetricsSnapshot NSPanel::get_metrics_snapshot() {
   std::string model = "sonoff";
   if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
     model = "custom";
-  } else if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::WEB) {
-    model = "web";
   }
   return NSPanelMetricsSnapshot{
       .id = this->_id,
@@ -1591,8 +1580,6 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
         this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
       } else if (nspanel_model.compare("custom") == 0) {
         this->_model = MQTT_MANAGER_NSPANEL_MODEL::CUSTOM;
-      } else if (nspanel_model.compare("web") == 0) {
-        this->_model = MQTT_MANAGER_NSPANEL_MODEL::WEB;
       } else {
         SPDLOG_WARN("Failed to parse panel model for NSPanel {}. Got value '{}'. Will assume sonoff.", register_request_payload.at("friendly_name").get<std::string>(), nspanel_model);
         this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
@@ -1652,10 +1639,7 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
     case MQTT_MANAGER_NSPANEL_MODEL::CUSTOM:
       panel_settings.model = "custom";
       break;
-    case MQTT_MANAGER_NSPANEL_MODEL::WEB:
-      panel_settings.model = "web";
-      break;
-    default:
+  }    default:
       SPDLOG_ERROR("Unknown key for this->_mode. Will assume sonoff model for panel {}::{}", this->_id, this->_name);
       panel_settings.model = "sonoff";
       break;

@@ -141,17 +141,15 @@ std::vector<prometheus::MetricFamily> PanelMetricsCollector::Collect() const {
               1);
 
     // has_*_update() log an error when the staged checksum is missing, so only ask where there is one to compare with.
-    if (panel.model != "web") {
-      size_t model_index = panel.model == "custom" ? 1 : 0;
-      if (md5_known(panel.md5_firmware) && have_firmware[model_index]) {
-        add_gauge(update_pending, with("type", "firmware"), nspanel->has_firmware_update() ? 1 : 0);
-      }
-      if (md5_known(panel.md5_littlefs) && have_littlefs[model_index]) {
-        add_gauge(update_pending, with("type", "littlefs"), nspanel->has_littlefs_update() ? 1 : 0);
-      }
-      if (md5_known(panel.md5_tft)) {
-        add_gauge(update_pending, with("type", "tft"), nspanel->has_tft_update() ? 1 : 0);
-      }
+    size_t model_index = panel.model == "custom" ? 1 : 0;
+    if (md5_known(panel.md5_firmware) && have_firmware[model_index]) {
+      add_gauge(update_pending, with("type", "firmware"), nspanel->has_firmware_update() ? 1 : 0);
+    }
+    if (md5_known(panel.md5_littlefs) && have_littlefs[model_index]) {
+      add_gauge(update_pending, with("type", "littlefs"), nspanel->has_littlefs_update() ? 1 : 0);
+    }
+    if (md5_known(panel.md5_tft)) {
+      add_gauge(update_pending, with("type", "tft"), nspanel->has_tft_update() ? 1 : 0);
     }
 
     if (panel.status_report_received && panel.state != MQTT_MANAGER_NSPANEL_STATE::OFFLINE) {

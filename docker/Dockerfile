@@ -1,19 +1,3 @@
-FROM --platform=$BUILDPLATFORM node:20-alpine AS ui-builder
-# Branch, tag or full commit hash of NSPanelManager-Web-UI to build, e.g. --build-arg WEB_UI_REF=devel.
-ARG WEB_UI_REF=main
-WORKDIR /ui-app
-
-# Fetch the UI repo at WEB_UI_REF with BuildKit's git source. BuildKit resolves the ref to a commit
-# and caches by it, so the UI build below reruns when the ref moves and is reused otherwise. This
-# goes over git, not the GitHub REST API, so it is not subject to the API's unauthenticated rate
-# limit (60 an hour per IP, shared by CI runners), which failed builds with "403" on load of the
-# cache key.
-ADD https://github.com/NSPManager/NSPanelManager-Web-UI.git#${WEB_UI_REF} .
-
-# Install dependencies and build
-RUN npm install
-RUN npm run build
-
 # Builds the React components into dist/ and templates/scripts.html, which are not committed.
 # Only the package files are copied before npm ci, so editing the source reuses the dependency layer.
 # Node 22 matches the CI workflows (Vite 8 needs ^22.12). The output is the same for any build
@@ -66,7 +50,6 @@ COPY web/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 EXPOSE 8000
-COPY --from=ui-builder /ui-app/dist /var/www/html/webapp
 
 # Development image, built with --target devel (see docker-build_and_run_dev.sh). It has the
 # tools to build MQTTManager but no source: web/, MQTTManager/, HMI_files/ and the nginx

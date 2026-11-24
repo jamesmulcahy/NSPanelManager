@@ -38,7 +38,7 @@ export interface INSPanelStatusData {
   accepted: boolean;
   denied: boolean;
   default_room_id: number;
-  model: "web" | "sonoff" | "custom" | "unknown";
+  model: "sonoff" | "custom" | "unknown";
   state: "online" | "offline" | "updating_fw" | "updating_fs" | "updating_tft" | "waiting" | "awaiting_accept" | "rebooting" | "unknown";
 }
 
