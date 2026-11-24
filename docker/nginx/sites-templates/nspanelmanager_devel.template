@@ -51,13 +51,6 @@ server {
         proxy_set_header Host $http_host;
     }
 
-    location /webapp {
-        alias /var/www/html/webapp;
-        
-        # Crucial for React Router/Vite: fallback to index.html
-        try_files $uri $uri/ /webapp/index.html;
-    }
-
     location /{
         proxy_pass http://django;
         proxy_http_version 1.1;

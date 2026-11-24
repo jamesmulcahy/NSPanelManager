@@ -23,7 +23,7 @@ up)
   # buildx releases fail with "http: invalid Host header" there).
   # The image is the devel target of ../Dockerfile, the same one docker-build_and_run_dev.sh
   # builds, so the two share their cached layers.
-  DOCKER_BUILDKIT=1 docker build --target devel --build-arg WEB_UI_REF="${NSPM_DEV_WEB_UI_REF:-main}" -t nspanelmanager-dev .. &&
+  DOCKER_BUILDKIT=1 docker build --target devel -t nspanelmanager-dev .. &&
     compose up -d || exit 1
   echo
   echo "NSPanelManager: http://localhost:${NSPM_DEV_PORT:-8010}"
