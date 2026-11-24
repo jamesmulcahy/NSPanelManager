@@ -1639,7 +1639,7 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
     case MQTT_MANAGER_NSPANEL_MODEL::CUSTOM:
       panel_settings.model = "custom";
       break;
-  }    default:
+    default:
       SPDLOG_ERROR("Unknown key for this->_mode. Will assume sonoff model for panel {}::{}", this->_id, this->_name);
       panel_settings.model = "sonoff";
       break;
