@@ -89,7 +89,7 @@ std::shared_ptr<NSPanel> NSPanel::create_from_discovery_request(nlohmann::json r
         panel_data.model = "sonoff";
       } else if (nspanel_model.compare("custom") == 0) {
         panel_data.model = "custom";
-  }      } else {
+      } else {
         SPDLOG_WARN("Failed to parse panel model for NSPanel {}. Got value '{}'. Will assume sonoff.", panel_data.friendly_name, panel_data.model);
         panel_data.model = "sonoff";
       }
