@@ -50,3 +50,16 @@ class SettingsPageFeatureTests(NSPMTestCase):
         # The thermostat limits, and the thermostat modes that need them, go with the temperature sensor.
         self.assertContains(response, 'id="button1_thermostat_mode_controls" class="hidden" data-hidden-by-feature="no_temperature"')
         self.assertContains(response, '<option data-hidden-by-feature="no_temperature" value="4"', count=2)
+
+
+class StoredFeaturesTests(NSPMTestCase):
+    def test_features_are_stored_on_the_panel_row_and_default_to_none(self):
+        panel = self.make_panel(self.make_room())
+        self.assertEqual(panel.features, "")
+
+        panel.features = '["no_tft", "no_relays"]'
+        panel.model = "waveshare_p4"
+        panel.save()
+        panel.refresh_from_db()
+
+        self.assertEqual((panel.model, panel.features), ("waveshare_p4", '["no_tft", "no_relays"]'))

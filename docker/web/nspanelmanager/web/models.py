@@ -90,6 +90,9 @@ class NSPanel(models.Model):
     friendly_name = models.CharField(max_length=100)
     version = models.CharField(max_length=15, default="")
     model = models.CharField(max_length=32, choices=NSPanelModel.choices)
+    # The features the panel last registered with, a JSON array of strings ("" = none). Written by MQTTManager, so that they
+    # are known after a manager restart (panels only send them in a register_request).
+    features = models.TextField(default="", blank=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     button1_mode = models.IntegerField(default=0)
     button1_detached_mode_entity = models.ForeignKey("Entity", on_delete=models.SET_NULL, blank=True, null=True, related_name="+")

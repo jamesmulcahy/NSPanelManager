@@ -135,6 +135,22 @@ void NSPanel::reload_config(const char *reason) {
     this->_settings = panel_settings;
     this->_has_registered_to_manager = panel_settings.accepted; // We managed to get the object in above statement and did not throw, ie. has been registered in manager and has an ID in DB.
     this->_mac = panel_settings.mac_address;
+    {
+      // The features of the last register_request, kept in the database because panels do not register again when only
+      // the manager restarts. Only seeds what has_feature() reads: a register_request seen since start is newer.
+      std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+      if (!this->_features_known) {
+        this->_features.clear();
+        nlohmann::json stored = nlohmann::json::parse(panel_settings.features, nullptr, false); // Malformed or empty: none.
+        if (stored.is_array()) {
+          for (const auto &feature : stored) {
+            if (feature.is_string()) {
+              this->_features.push_back(feature.get<std::string>());
+            }
+          }
+        }
+      }
+    }
     if (auto model = nspanel_model_from_id(panel_settings.model)) {
       this->_model = *model;
     } else {
@@ -1629,6 +1645,7 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
     }
     panel_settings.mac_address = this->_mac;
     panel_settings.model = std::string(nspanel_model_id(this->_model));
+    panel_settings.features = nlohmann::json(features).dump();
     panel_settings.version = register_request_payload.at("version").get<std::string>();
     panel_settings.md5_data_file = this->_current_littlefs_md5_checksum;
     panel_settings.md5_firmware = this->_current_firmware_md5_checksum;

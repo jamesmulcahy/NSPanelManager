@@ -2222,6 +2222,63 @@ TEST_F(NSPanelTest, panel_without_relays_gets_no_relay_discovery) {
   EXPECT_FALSE(std::any_of(after.begin(), after.end(), is_relay_config));
 }
 
+// Panels do not register again when only the manager restarts, so the features of the last register_request are
+// read from the panel's row: a restarted manager must not republish what the board lacks.
+TEST_F(NSPanelTest, features_stored_on_the_row_are_known_before_any_register_request) {
+  update_row([](auto &settings) {
+    settings.model = "waveshare_p4";
+    settings.features = R"(["lvgl_look","no_tft","no_temperature","no_relays"])";
+  });
+  auto is_unwanted_config = [](const MQTT_Manager::TestPublishedMessage &message) {
+    return message.topic.starts_with("homeassistant/") && (message.topic.find("_temperature/config") != std::string::npos || message.topic.find("_relay1/config") != std::string::npos ||
+                                                           message.topic.find("_relay2/config") != std::string::npos);
+  };
+  MQTT_Manager::test_take_published_messages();
+
+  load_panel();
+
+  EXPECT_TRUE(panel->has_feature("no_temperature"));
+  EXPECT_TRUE(panel->has_feature("no_relays"));
+  EXPECT_TRUE(panel->has_feature("no_tft"));
+  EXPECT_FALSE(panel->has_tft_update());
+  auto published = MQTT_Manager::test_take_published_messages();
+  EXPECT_FALSE(std::any_of(published.begin(), published.end(), is_unwanted_config));
+  // Other entities are still discovered, so the check above is not vacuous.
+  EXPECT_TRUE(std::any_of(published.begin(), published.end(), [](auto &message) { return message.topic.starts_with("homeassistant/"); }));
+}
+
+TEST_F(NSPanelTest, malformed_or_empty_stored_features_mean_none) {
+  for (const std::string stored : {"", "not json", "{\"no_tft\":true}", "[1, null]"}) {
+    update_row([&](auto &settings) {
+      settings.features = stored;
+    });
+    load_panel();
+    EXPECT_FALSE(panel->has_feature("no_tft")) << stored;
+    panel.reset();
+  }
+}
+
+TEST_F(NSPanelTest, registering_stores_the_features_on_the_row) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_tft"}), "waveshare_p4");
+
+  EXPECT_EQ(nlohmann::json::parse(database_manager::database.get<database_manager::NSPanel>(row->id).features), nlohmann::json::array({"lvgl_look", "no_tft"}));
+}
+
+TEST_F(NSPanelTest, a_register_request_that_differs_from_the_stored_features_runs_discovery_again) {
+  update_row([](auto &settings) {
+    settings.features = R"(["lvgl_look"])";
+  });
+  load_panel();
+  MQTT_Manager::test_take_published_messages();
+
+  register_panel(nlohmann::json::array({"lvgl_look", "no_relays"}));
+
+  auto published = MQTT_Manager::test_take_published_messages();
+  EXPECT_TRUE(std::any_of(published.begin(), published.end(), [](auto &message) { return message.topic.starts_with("homeassistant/"); }));
+  EXPECT_TRUE(panel->has_feature("no_relays"));
+}
+
 TEST_F(NSPanelTest, panel_with_relays_and_a_temperature_sensor_keeps_its_discovery_when_it_registers) {
   load_panel();
   nspm_test::mqtt_published_to("none");
