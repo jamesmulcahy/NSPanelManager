@@ -7,24 +7,28 @@ new image brings them back.
 
 They are the CI build of the fork's panel firmware:
 
-- Firmware: [jamesmulcahy/NSPanelManager-firmware@`8b9273332076b1b07855cc4fb3bdfaacb57776e0`](https://github.com/jamesmulcahy/NSPanelManager-firmware/commit/8b9273332076b1b07855cc4fb3bdfaacb57776e0)
-- Built by: [Build firmware run 43774503255](https://github.com/jamesmulcahy/NSPanelManager-firmware/actions/runs/43774503255), push to `fork`, finished 2026-11-15T23:28:36Z
-- The head of `fork` was `824acfaa`, which changes nothing under `firmware_espidf/`, so this is the firmware as of `824acfaa` too.
-- Fetched: 2026-11-16T01:05:29Z
+- Firmware: [jamesmulcahy/NSPanelManager-firmware@`37496de540740a11c1cbff77cdcb6189bbc424f3`](https://github.com/jamesmulcahy/NSPanelManager-firmware/commit/37496de540740a11c1cbff77cdcb6189bbc424f3)
+- Built by: [Build firmware run 46160670962](https://github.com/jamesmulcahy/NSPanelManager-firmware/actions/runs/46160670962), push to `fork`, finished 2026-11-28T15:42:26Z
+- This is the head of `fork`.
+- Fetched: 2026-11-28T15:44:29Z
 
-`sonoff` is the `original_sonoff` build (ESP32), `custom` the `custom_pcb` build (ESP32-S3).
-`data_file.bin` is the build's `littlefs.bin`. `merged_flash.bin` is made from the same run's
-bootloader (at 0x1000 on the ESP32, 0x0 on the ESP32-S3), partition table (0x8000), app (ota_0) and
-LittleFS image (spiffs partition), for `esptool.py write_flash 0x0 merged_flash.bin`.
+`sonoff` is the `original_sonoff` build (ESP32), `waveshare_p4` the `custom_pcb` build (ESP32-P4).
+`merged_flash.bin` is made from the same run's bootloader (at 0x1000 on the ESP32, 0x2000 on the
+ESP32-P4), partition table (0x8000) and app (ota_0), for `esptool.py write_flash 0x0 merged_flash.bin`;
+the firmware formats its spiffs partition on first boot.
+
+The firmware has served its web UI from the app image since NSPanelManager-firmware `b314a06`, so
+builds no longer make a LittleFS image. `sonoff/data_file.bin` is the last one built (firmware
+`8b927332`, run 43774503255), kept for panels still on older firmware: newer firmware reports
+`md5_littlefs` as `embedded` and never downloads it. `waveshare_p4` ships no `data_file.bin`.
 
 | File | Bytes | MD5 | SHA-256 |
 |---|---|---|---|
-| `sonoff/firmware.bin` | 1621184 | `9b4ed9c32f689fbc9aefafa41ea7e648` | `23d9aa9d7f7250a61f1a4a55fd64ccdcca12adad49f126952c852703db83d9cf` |
 | `sonoff/data_file.bin` | 585728 | `e5eb598007754c98d3cce88b20357876` | `773956f950ef26d3687b7bc453cec98227cfd03d161410aa2e19b003702ca8b7` |
-| `sonoff/merged_flash.bin` | 4190208 | `6c9017c023a70105b3e255f142f96ed7` | `d0185b77594559ca381cfd82b78818e64bbdbb816490f75c5b9d431e2f21630d` |
-| `custom/firmware.bin` | 1555008 | `82c610b69a81f55a14013391d7a6423d` | `3479fe8ba98d962960de36c53b8254f80d7eabbc37aaba9a12719cc77d92be45` |
-| `custom/data_file.bin` | 585728 | `3eaf020528db4cfddb90db7e582584fc` | `a906e934b884d20dbb0bc42d58df16eddcd8e028c311db77050c57ce70d3326a` |
-| `custom/merged_flash.bin` | 4190208 | `b9878e343d2728713f4cadaafcf8595e` | `be321a8eaf61e7aed8f3ae8881911aefcc356a190827f5cbba99d23153729233` |
+| `sonoff/firmware.bin` | 1575968 | `7365d8bdbfdfdbfe2440d1b0212046a8` | `aa47ec8cc039e680d50f78f0cc290e65727f2f5b8d39d1665b84aa63097f6454` |
+| `sonoff/merged_flash.bin` | 1641504 | `c1330ab8245da1e93582b490db680e7f` | `fa85fb7d779b59cdc19eb7ff35a739b1946e52316fa5a4cbb202d75ba95f1481` |
+| `waveshare_p4/firmware.bin` | 1778832 | `9aca596f4a9265227e349a621f7c01d2` | `350b790a32396f32fca2a5e36c200aba55bbbcc45ef21e6039a1e92ab7a70138` |
+| `waveshare_p4/merged_flash.bin` | 1844368 | `0c7e995008148c52d2fcda535b2d7a92` | `61a35a590b75bd96f882cbb016701390d5f146d5e504fd0e86dd2c04beaaf54c` |
 
 ## Refresh
 
@@ -42,18 +46,16 @@ the checksums below, so run the Django tests before committing.
 
 ```md5
 e5eb598007754c98d3cce88b20357876  sonoff/data_file.bin
-9b4ed9c32f689fbc9aefafa41ea7e648  sonoff/firmware.bin
-6c9017c023a70105b3e255f142f96ed7  sonoff/merged_flash.bin
-3eaf020528db4cfddb90db7e582584fc  custom/data_file.bin
-82c610b69a81f55a14013391d7a6423d  custom/firmware.bin
-b9878e343d2728713f4cadaafcf8595e  custom/merged_flash.bin
+7365d8bdbfdfdbfe2440d1b0212046a8  sonoff/firmware.bin
+c1330ab8245da1e93582b490db680e7f  sonoff/merged_flash.bin
+9aca596f4a9265227e349a621f7c01d2  waveshare_p4/firmware.bin
+0c7e995008148c52d2fcda535b2d7a92  waveshare_p4/merged_flash.bin
 ```
 
 ```sha256
 773956f950ef26d3687b7bc453cec98227cfd03d161410aa2e19b003702ca8b7  sonoff/data_file.bin
-23d9aa9d7f7250a61f1a4a55fd64ccdcca12adad49f126952c852703db83d9cf  sonoff/firmware.bin
-d0185b77594559ca381cfd82b78818e64bbdbb816490f75c5b9d431e2f21630d  sonoff/merged_flash.bin
-a906e934b884d20dbb0bc42d58df16eddcd8e028c311db77050c57ce70d3326a  custom/data_file.bin
-3479fe8ba98d962960de36c53b8254f80d7eabbc37aaba9a12719cc77d92be45  custom/firmware.bin
-be321a8eaf61e7aed8f3ae8881911aefcc356a190827f5cbba99d23153729233  custom/merged_flash.bin
+aa47ec8cc039e680d50f78f0cc290e65727f2f5b8d39d1665b84aa63097f6454  sonoff/firmware.bin
+fa85fb7d779b59cdc19eb7ff35a739b1946e52316fa5a4cbb202d75ba95f1481  sonoff/merged_flash.bin
+350b790a32396f32fca2a5e36c200aba55bbbcc45ef21e6039a1e92ab7a70138  waveshare_p4/firmware.bin
+61a35a590b75bd96f882cbb016701390d5f146d5e504fd0e86dd2c04beaaf54c  waveshare_p4/merged_flash.bin
 ```
