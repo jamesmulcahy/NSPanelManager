@@ -34,10 +34,8 @@ from .models import FirmwareUpload
 
 logger = logging.getLogger(__name__)
 
-# Each model's ota_0/ota_1 app slot size (board_models.py), and the Sonoff partition table's spiffs
-# partition, which holds LittleFS.
+# Each model's ota_0/ota_1 app slot size (board_models.py).
 APP_SLOT_BYTES = board_models.APP_SLOT_BYTES
-LITTLEFS_PARTITION_BYTES = 0x8F000
 
 # The models, the chip each one's image is for (esp_image_header_t.chip_id) and each one's board in the release:
 # board_models.py.

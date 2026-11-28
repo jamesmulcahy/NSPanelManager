@@ -12,9 +12,8 @@
 #   firmware/<model>/merged_flash.bin  bootloader + partition table + app, for a serial flash
 # where <model> is sonoff (original_sonoff, ESP32) or waveshare_p4 (custom_pcb, ESP32-P4).
 # The firmware has served its web UI from the app image since NSPanelManager-firmware b314a06, so
-# builds have no LittleFS image: sonoff/data_file.bin is kept as it is, the last one built, for
-# panels still on firmware older than that (newer firmware reports md5_littlefs "embedded" and
-# never downloads it). waveshare_p4 has never run such firmware and ships no data_file.bin.
+# builds have no LittleFS image and no data_file.bin ships: the firmware reports md5_littlefs
+# "embedded" and never downloads one.
 #
 # Then run the Django tests (web.tests.test_default_firmware checks the files against
 # PROVENANCE.md) and commit the result.
@@ -59,11 +58,6 @@ fi
 
 # The artifacts are untrusted data: they get their own empty directory and are only read by
 # python3 -I, run from outside it.
-if [ ! -f "${DEST}/sonoff/data_file.bin" ]; then
-  echo "${DEST}/sonoff/data_file.bin is missing; restore it from git before refreshing." >&2
-  exit 1
-fi
-
 WORK="$(mktemp -d)"
 trap 'rm -rf "${WORK}"' EXIT
 mkdir "${WORK}/dl"
@@ -114,11 +108,13 @@ print(f"{dest}: app {len(app)}/{app_size} B")
 done
 
 # custom is the retired ESP32-S3 board's slot: nothing builds it any more, and PROVENANCE.md
-# below records only sonoff and waveshare_p4.
+# below records only sonoff and waveshare_p4. data_file.bin is the LittleFS image of firmware
+# from before b314a06.
 rm -rf "${DEST}/custom"
+rm -f "${DEST}/sonoff/data_file.bin" "${DEST}/waveshare_p4/data_file.bin"
 
 shipped() {
-  (cd "${DEST}" && ls sonoff/firmware.bin sonoff/data_file.bin sonoff/merged_flash.bin waveshare_p4/firmware.bin waveshare_p4/merged_flash.bin)
+  (cd "${DEST}" && ls sonoff/firmware.bin sonoff/merged_flash.bin waveshare_p4/firmware.bin waveshare_p4/merged_flash.bin)
 }
 
 file_table() {
@@ -158,9 +154,8 @@ ESP32-P4), partition table (0x8000) and app (ota_0), for \`esptool.py write_flas
 the firmware formats its spiffs partition on first boot.
 
 The firmware has served its web UI from the app image since NSPanelManager-firmware \`b314a06\`, so
-builds no longer make a LittleFS image. \`sonoff/data_file.bin\` is the last one built (firmware
-\`8b927332\`, run 43774503255), kept for panels still on older firmware: newer firmware reports
-\`md5_littlefs\` as \`embedded\` and never downloads it. \`waveshare_p4\` ships no \`data_file.bin\`.
+builds no longer make a LittleFS image and no \`data_file.bin\` ships: the firmware reports
+\`md5_littlefs\` as \`embedded\` and never downloads one.
 
 | File | Bytes | MD5 | SHA-256 |
 |---|---|---|---|
