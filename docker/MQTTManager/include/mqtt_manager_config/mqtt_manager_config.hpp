@@ -1,6 +1,7 @@
 #ifndef MQTTMANAGER_CONFIG_HPP
 #define MQTTMANAGER_CONFIG_HPP
 #include "light/light.hpp"
+#include "nspanel/nspanel_model.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/signals2.hpp>
@@ -147,10 +148,9 @@ public:
   static void update_firmware_checksum();
   static void update_tft_checksums();
 
-  static std::expected<std::string, bool> get_firmware_sonoff_checksum();
-  static std::expected<std::string, bool> get_firmware_custom_checksum();
-  static std::expected<std::string, bool> get_littlefs_sonoff_checksum();
-  static std::expected<std::string, bool> get_littlefs_custom_checksum();
+  // The staged firmware.bin / data_file.bin of a model's slot. Unexpected when there is none.
+  static std::expected<std::string, bool> get_firmware_checksum(MQTT_MANAGER_NSPANEL_MODEL model);
+  static std::expected<std::string, bool> get_littlefs_checksum(MQTT_MANAGER_NSPANEL_MODEL model);
   // The terminal TFT for the US (portrait) or EU (landscape) LVGL layout. Unexpected when it has not been uploaded.
   static std::expected<std::string, bool> get_terminal_tft_checksum(bool us_layout);
   // Whether an md5 is one of the terminal TFTs the manager knows: the staged US or EU one, the ones the image ships,
@@ -187,10 +187,9 @@ private:
 
   static std::optional<std::string> _get_file_md5_checksum(std::string file_path);
   static inline std::mutex _md5_checksum_files_mutex;
-  static inline std::string _md5_checksum_firmware_sonoff;
-  static inline std::string _md5_checksum_firmware_custom;
-  static inline std::string _md5_checksum_littlefs_sonoff;
-  static inline std::string _md5_checksum_littlefs_custom;
+  // Keyed by model id.
+  static inline std::unordered_map<std::string, std::string> _md5_checksum_firmware;
+  static inline std::unordered_map<std::string, std::string> _md5_checksum_littlefs;
   static inline std::string _md5_checksum_bundled_terminal_us;
   static inline std::string _md5_checksum_bundled_terminal_eu;
   static inline std::string _md5_checksum_terminal_us;

@@ -3,6 +3,7 @@ import { type ClassNamesConfig, type GroupBase } from "react-select";
 import { useEntityStatesStore, type INSPanelStatusData, type INSPanelWarningData } from "../../stores/EntityStore.ts";
 import { useRef, useState, useEffect, forwardRef } from "react";
 import { Notify } from "../NSPanelToastContainer.tsx";
+import { hasFeature, isKnownModel } from "../../lib/panelModels.ts";
 import { useStompStore } from "../../stores/StompStore.tsx";
 import { motion, useMotionValue, useSpring, useMotionTemplate } from "framer-motion";
 import { Icon } from "@mdi/react";
@@ -346,7 +347,7 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
             <div>
               <div className="my-1">
                 {(() => {
-                  if (status.model != "sonoff" && status.model != "custom") return null;
+                  if (!isKnownModel(status.model)) return null;
                   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
                     return (
                       <span className="icon-text text-sm text-base-content/50">
@@ -386,26 +387,34 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
               </div>
               <div className="my-1">
                 {(() => {
-                  if (status.model != "sonoff" && status.model != "custom") return null;
+                  if (!isKnownModel(status.model)) return null;
+                  const show_temperature = !hasFeature(status, "no_temperature");
+                  if (!show_temperature && !status.has_humidity && !status.has_pressure) return null;
                   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
                     return (
                       <div className="flex items-center justify-start text-base-content/50">
-                        <div className="icon-text">
-                          <Icon path={mdiThermometer} className="w-4 h-4 inline-block me-1"></Icon>-
-                          <span id="temperature-${nspanel_id}" className="text-sm">
-                            -
-                          </span>
-                        </div>
-                        {status.model == "custom" && (
+                        {show_temperature && (
+                          <div className="icon-text">
+                            <Icon path={mdiThermometer} className="w-4 h-4 inline-block me-1"></Icon>-
+                            <span id="temperature-${nspanel_id}" className="text-sm">
+                              -
+                            </span>
+                          </div>
+                        )}
+                        {status.has_humidity && (
                           <>
-                            <span className="mx-1">|</span>
+                            {show_temperature && <span className="mx-1">|</span>}
                             <div className="icon-text text-base-content/50">
                               <Icon path={mdiWaterPercent} className="w-4 h-4 inline-block me-1"></Icon>-
                               <span id="humidity-${nspanel_id}" className="text-sm">
                                 -
                               </span>
                             </div>
-                            <span className="mx-1">|</span>
+                          </>
+                        )}
+                        {status.has_pressure && (
+                          <>
+                            {(show_temperature || status.has_humidity) && <span className="mx-1">|</span>}
                             <div className="icon-text text-base-content/50">
                               <Icon path={mdiGauge} className="w-4 h-4 inline-block me-1"></Icon>-
                               <span id="pressure-${nspanel_id}" className="text-sm">
@@ -419,23 +428,29 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
                   } else {
                     return (
                       <div className="flex items-center justify-start">
-                        <div className="icon-text">
-                          <Icon path={mdiThermometer} className="w-4 h-4 inline-block me-1"></Icon>
-                          <span id="temperature-${nspanel_id}" className="text-sm">
-                            {status.temperature ? status.temperature.toFixed(1) : "?"}
-                            {status.temperature_unit}
-                          </span>
-                        </div>
-                        {status.model == "custom" && (
+                        {show_temperature && (
+                          <div className="icon-text">
+                            <Icon path={mdiThermometer} className="w-4 h-4 inline-block me-1"></Icon>
+                            <span id="temperature-${nspanel_id}" className="text-sm">
+                              {status.temperature ? status.temperature.toFixed(1) : "?"}
+                              {status.temperature_unit}
+                            </span>
+                          </div>
+                        )}
+                        {status.has_humidity && (
                           <>
-                            <span className="mx-1">|</span>
+                            {show_temperature && <span className="mx-1">|</span>}
                             <div className="icon-text">
                               <Icon path={mdiWaterPercent} className="w-4 h-4 inline-block me-1"></Icon>
                               <span id="humidity-${nspanel_id}" className="text-sm">
                                 {(status.humidity && `${status.humidity.toFixed(1)}%`) || "-"}
                               </span>
                             </div>
-                            <span className="mx-1">|</span>
+                          </>
+                        )}
+                        {status.has_pressure && (
+                          <>
+                            {(show_temperature || status.has_humidity) && <span className="mx-1">|</span>}
                             <div className="icon-text">
                               <Icon path={mdiGauge} className="w-4 h-4 inline-block me-1"></Icon>
                               <span id="pressure-${nspanel_id}" className="text-sm">
@@ -452,7 +467,7 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
               </div>
               <div className="my-1">
                 {(() => {
-                  if (status.model != "sonoff" && status.model != "custom") return null;
+                  if (!isKnownModel(status.model)) return null;
                   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
                     return (
                       <div className="icon-text text-base-content/50">
@@ -493,7 +508,7 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
               style={{ anchorName: `--anchor-nspanel-actions-${status.id}` }}
               ref={popoverRef}
             >
-              {status.model === "sonoff" || status.model === "custom" ? (
+              {isKnownModel(status.model) ? (
                 <>
                   <li>
                     <button
@@ -542,23 +557,25 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
                       Update firmware
                     </a>
                   </li>
-                  <li>
-                    <a
-                      onClick={() => {
-                        if (status.state !== "offline") {
-                          useStompStore.getState().send(`nspanel/${status.mac}/command`, "gui_update");
-                          Notify({ message: `Sent GUI update command to ${status.name}.`, level: "success", duration: 2000 });
-                          popoverRef.current?.hidePopover();
-                        }
-                      }}
-                      id="screen-update-{{ nspanel.data.id }}"
-                      className={`block px-4 py-2 cursor-pointer group ${status.state === "offline" ? "line-through" : ""}`}
-                      aria-disabled={status.state === "offline"}
-                    >
-                      <Icon path={mdiTableArrowUp} className="w-4 h-4 inline-block me-1 group-hover:text-success"></Icon>
-                      Update GUI
-                    </a>
-                  </li>
+                  {!hasFeature(status, "no_tft") && (
+                    <li>
+                      <a
+                        onClick={() => {
+                          if (status.state !== "offline") {
+                            useStompStore.getState().send(`nspanel/${status.mac}/command`, "gui_update");
+                            Notify({ message: `Sent GUI update command to ${status.name}.`, level: "success", duration: 2000 });
+                            popoverRef.current?.hidePopover();
+                          }
+                        }}
+                        id="screen-update-{{ nspanel.data.id }}"
+                        className={`block px-4 py-2 cursor-pointer group ${status.state === "offline" ? "line-through" : ""}`}
+                        aria-disabled={status.state === "offline"}
+                      >
+                        <Icon path={mdiTableArrowUp} className="w-4 h-4 inline-block me-1 group-hover:text-success"></Icon>
+                        Update GUI
+                      </a>
+                    </li>
+                  )}
                   <li className="border-t border-base-content"></li>
                 </>
               ) : null}

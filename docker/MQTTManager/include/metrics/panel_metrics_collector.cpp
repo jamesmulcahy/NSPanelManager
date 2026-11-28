@@ -117,9 +117,6 @@ std::vector<prometheus::MetricFamily> PanelMetricsCollector::Collect() const {
   // Panels report temperature in the unit the manager is configured for.
   const bool fahrenheit = MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT);
 
-  auto have = [](const std::expected<std::string, bool> &checksum) { return checksum.has_value(); };
-  const bool have_firmware[2] = {have(MqttManagerConfig::get_firmware_sonoff_checksum()), have(MqttManagerConfig::get_firmware_custom_checksum())};
-  const bool have_littlefs[2] = {have(MqttManagerConfig::get_littlefs_sonoff_checksum()), have(MqttManagerConfig::get_littlefs_custom_checksum())};
 
   for (const std::shared_ptr<NSPanel> &nspanel : EntityManager::get_all_nspanels()) {
     NSPanelMetricsSnapshot panel = nspanel->get_metrics_snapshot();
@@ -141,11 +138,11 @@ std::vector<prometheus::MetricFamily> PanelMetricsCollector::Collect() const {
               1);
 
     // has_*_update() log an error when the staged checksum is missing, so only ask where there is one to compare with.
-    size_t model_index = panel.model == "custom" ? 1 : 0;
-    if (md5_known(panel.md5_firmware) && have_firmware[model_index]) {
+    const MQTT_MANAGER_NSPANEL_MODEL model = nspanel_model_from_id(panel.model).value_or(MQTT_MANAGER_NSPANEL_MODEL::SONOFF);
+    if (md5_known(panel.md5_firmware) && MqttManagerConfig::get_firmware_checksum(model).has_value()) {
       add_gauge(update_pending, with("type", "firmware"), nspanel->has_firmware_update() ? 1 : 0);
     }
-    if (md5_known(panel.md5_littlefs) && have_littlefs[model_index]) {
+    if (md5_known(panel.md5_littlefs) && MqttManagerConfig::get_littlefs_checksum(model).has_value()) {
       add_gauge(update_pending, with("type", "littlefs"), nspanel->has_littlefs_update() ? 1 : 0);
     }
     if (md5_known(panel.md5_tft)) {
@@ -172,14 +169,15 @@ std::vector<prometheus::MetricFamily> PanelMetricsCollector::Collect() const {
     add_gauge(panels_by_state, {{"state", PanelMetricsCollector::state_label(state)}}, static_cast<double>(count));
   }
 
-  const std::vector<std::tuple<const char *, const char *, std::expected<std::string, bool>>> staged_images = {
-      {"firmware", "sonoff", MqttManagerConfig::get_firmware_sonoff_checksum()},
-      {"firmware", "custom", MqttManagerConfig::get_firmware_custom_checksum()},
-      {"littlefs", "sonoff", MqttManagerConfig::get_littlefs_sonoff_checksum()},
-      {"littlefs", "custom", MqttManagerConfig::get_littlefs_custom_checksum()},
-      {"tft", "terminal_us", MqttManagerConfig::get_terminal_tft_checksum(true)},
-      {"tft", "terminal_eu", MqttManagerConfig::get_terminal_tft_checksum(false)},
-  };
+  std::vector<std::tuple<std::string, std::string, std::expected<std::string, bool>>> staged_images;
+  for (const NSPanelModelInfo &info : NSPANEL_MODELS) {
+    staged_images.emplace_back("firmware", std::string(info.id), MqttManagerConfig::get_firmware_checksum(info.model));
+  }
+  for (const NSPanelModelInfo &info : NSPANEL_MODELS) {
+    staged_images.emplace_back("littlefs", std::string(info.id), MqttManagerConfig::get_littlefs_checksum(info.model));
+  }
+  staged_images.emplace_back("tft", "terminal_us", MqttManagerConfig::get_terminal_tft_checksum(true));
+  staged_images.emplace_back("tft", "terminal_eu", MqttManagerConfig::get_terminal_tft_checksum(false));
   for (const auto &[type, variant, checksum] : staged_images) {
     if (checksum.has_value()) {
       add_gauge(staged_image_info, {{"type", type}, {"variant", variant}, {"md5", *checksum}}, 1);

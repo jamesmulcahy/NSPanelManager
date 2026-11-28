@@ -49,6 +49,7 @@ struct NSPanel {
   std::string md5_tft_file;
   bool denied;
   bool accepted;
+  std::string features; // The features of the last register_request, a JSON array of strings. Empty: none.
 };
 
 struct NSPanelRelayGroupBinding {
@@ -161,7 +162,8 @@ static inline auto make_database() {
                                                                               sqlite_orm::make_column("md5_firmware", &NSPanel::md5_firmware),
                                                                               sqlite_orm::make_column("md5_tft_file", &NSPanel::md5_tft_file),
                                                                               sqlite_orm::make_column("denied", &NSPanel::denied),
-                                                                              sqlite_orm::make_column("accepted", &NSPanel::accepted)),
+                                                                              sqlite_orm::make_column("accepted", &NSPanel::accepted),
+                                                                              sqlite_orm::make_column("features", &NSPanel::features)),
                                                        sqlite_orm::make_table("web_relaygroupbinding",
                                                                               sqlite_orm::make_column("id", &NSPanelRelayGroupBinding::id, sqlite_orm::primary_key().autoincrement()),
                                                                               sqlite_orm::make_column("relay_num", &NSPanelRelayGroupBinding::relay_num),

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { useStompStore } from "./StompStore";
 import { Notify } from "../components/NSPanelToastContainer";
+import { type PanelModel } from "../lib/panelModels";
 
 export interface IRoomData {
   id: number;
@@ -38,7 +39,12 @@ export interface INSPanelStatusData {
   accepted: boolean;
   denied: boolean;
   default_room_id: number;
-  model: "sonoff" | "custom" | "unknown";
+  model: PanelModel | "unknown";
+  // What the panel registered with ("lvgl_look", "no_tft", ...). Absent from a manager that predates it.
+  features?: string[];
+  has_humidity?: boolean;
+  has_pressure?: boolean;
+  has_temperature?: boolean;
   state: "online" | "offline" | "updating_fw" | "updating_fs" | "updating_tft" | "waiting" | "awaiting_accept" | "rebooting" | "unknown";
 }
 

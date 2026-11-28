@@ -704,11 +704,11 @@ components:
     BoardEnum:
       enum:
       - sonoff
-      - custom
+      - waveshare_p4
       type: string
       description: |-
         * `sonoff` - sonoff
-        * `custom` - custom
+        * `waveshare_p4` - waveshare_p4
     BoardImage:
       type: object
       properties:
@@ -724,11 +724,11 @@ components:
       properties:
         sonoff:
           $ref: '#/components/schemas/BoardImage'
-        custom:
+        waveshare_p4:
           $ref: '#/components/schemas/BoardImage'
       required:
-      - custom
       - sonoff
+      - waveshare_p4
     CodeEnum:
       enum:
       - bad_release
@@ -898,7 +898,7 @@ components:
             The board a verification failure is about.
 
             * `sonoff` - sonoff
-            * `custom` - custom
+            * `waveshare_p4` - waveshare_p4
       required:
       - code
       - message
@@ -2527,11 +2527,11 @@ components:
       properties:
         sonoff:
           $ref: '#/components/schemas/StagedChange'
-        custom:
+        waveshare_p4:
           $ref: '#/components/schemas/StagedChange'
       required:
-      - custom
       - sonoff
+      - waveshare_p4
     StageRequestRequest:
       type: object
       properties:
@@ -2558,11 +2558,11 @@ components:
       properties:
         sonoff:
           $ref: '#/components/schemas/StagedBoard'
-        custom:
+        waveshare_p4:
           $ref: '#/components/schemas/StagedBoard'
       required:
-      - custom
       - sonoff
+      - waveshare_p4
     StagedBoard:
       type: object
       properties:
@@ -2624,11 +2624,11 @@ components:
       properties:
         sonoff:
           type: boolean
-        custom:
+        waveshare_p4:
           type: boolean
       required:
-      - custom
       - sonoff
+      - waveshare_p4
     ValidationError:
       type: object
       description: 'A 400 for a malformed body: {"detail": message}, or messages by

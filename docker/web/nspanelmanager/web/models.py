@@ -84,11 +84,15 @@ class NSPanel(models.Model):
     class NSPanelModel(models.TextChoices):
         SONOFF = "sonoff"
         CUSTOM = "custom"
+        WAVESHARE_P4 = "waveshare_p4"
 
     mac_address = models.CharField(max_length=17)
     friendly_name = models.CharField(max_length=100)
     version = models.CharField(max_length=15, default="")
     model = models.CharField(max_length=32, choices=NSPanelModel.choices)
+    # The features the panel last registered with, a JSON array of strings ("" = none). Written by MQTTManager, so that they
+    # are known after a manager restart (panels only send them in a register_request).
+    features = models.TextField(default="", blank=True)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     button1_mode = models.IntegerField(default=0)
     button1_detached_mode_entity = models.ForeignKey("Entity", on_delete=models.SET_NULL, blank=True, null=True, related_name="+")
@@ -184,7 +188,7 @@ class FirmwareUpload(models.Model):
         BUNDLED = "bundled"  # Shipped in the manager image
 
     md5 = models.CharField(max_length=32, db_index=True)
-    model = models.CharField(max_length=16)  # "sonoff" or "custom"
+    model = models.CharField(max_length=16)  # A model id from board_models.MODELS
     source = models.CharField(max_length=16, choices=Source.choices)
     repo = models.CharField(max_length=200, blank=True, default="")
     tag = models.CharField(max_length=100, blank=True, default="")

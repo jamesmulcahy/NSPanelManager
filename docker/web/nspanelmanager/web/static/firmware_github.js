@@ -1,10 +1,11 @@
 // "Firmware from GitHub" modal (templates/modals.html): shows the staged and the available firmware per board,
 // and stages a GitHub release through /rest/v2/firmware and /rest/v2/firmware/stage.
 (function () {
-  const BOARDS = [
-    ["sonoff", "Sonoff original NSPanel"],
-    ["custom", "Custom board"],
-  ];
+  // [model id, label] for each model that is built, from the models in board_models.py.
+  function boards() {
+    const data = document.getElementById("fwgh_boards");
+    return (data && JSON.parse(data.textContent)) || [];
+  }
 
   function el(id) {
     return document.getElementById(id);
@@ -65,7 +66,7 @@
     el("fwgh_release").textContent = data.release || "";
     const body = el("fwgh_table_body");
     body.replaceChildren();
-    for (const [board, label] of BOARDS) {
+    for (const [board, label] of boards()) {
       const staged = (data.staged || {})[board] || {};
       const available = data.resolved && data.resolved.boards ? data.resolved.boards[board] : null;
       const upToDate = data.up_to_date ? data.up_to_date[board] : null;
@@ -118,7 +119,7 @@
       return;
     }
     box.appendChild(node("div", "font-medium", `Staged ${result.tag || ""}${result.commit ? ` (${short(result.commit)})` : ""}`));
-    for (const [board, label] of BOARDS) {
+    for (const [board, label] of boards()) {
       const change = (result.boards || {})[board];
       if (!change) continue;
       const line = node("div", "text-xs font-mono break-all");

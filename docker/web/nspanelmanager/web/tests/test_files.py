@@ -15,7 +15,16 @@ from web.settings_helper import set_nspanel_setting_value
 
 from .harness import NSPMTestCase
 
-FIRMWARE = bytes(range(256)) * 4  # 1 KiB with a recognisable pattern
+
+def esp_image(chip_id, size=1024):
+    """An app image as far as the upload checks go: the 0xE9 magic and the chip id (bytes 12-13), then a recognisable pattern."""
+    header = bytearray(16)
+    header[0] = 0xE9
+    header[12:14] = chip_id.to_bytes(2, "little")
+    return bytes(header) + (bytes(range(256)) * (size // 256 + 1))[: size - 16]
+
+
+FIRMWARE = esp_image(0x0000)  # A Sonoff (ESP32) image, 1 KiB
 
 
 def md5(data):
@@ -45,24 +54,81 @@ class FirmwareTests(FileTestCase):
         self.assertManagerReloaded(times=1)
 
     def test_models_are_stored_separately(self):
-        self.upload("save_new_firmware", "firmware", b"sonoff", model="sonoff")
-        self.upload("save_new_firmware", "firmware", b"custom", model="custom")
+        sonoff, custom, p4 = esp_image(0x0000, 64), esp_image(0x0009, 64), esp_image(0x0012, 64)
+        self.upload("save_new_firmware", "firmware", sonoff, model="sonoff")
+        self.upload("save_new_firmware", "firmware", custom, model="custom")
+        self.upload("save_new_firmware", "firmware", p4, model="waveshare_p4")
 
-        self.assertEqual(self.client.get(reverse("download_firmware"), {"model": "custom"}).content, b"custom")
-        self.assertEqual(self.client.get(reverse("download_firmware"), {"model": "sonoff"}).content, b"sonoff")
-        self.assertEqual(self.client.get(reverse("checksum_firmware"), {"model": "custom"}).content.decode(), md5(b"custom"))
+        self.assertEqual(self.client.get(reverse("download_firmware"), {"model": "custom"}).content, custom)
+        self.assertEqual(self.client.get(reverse("download_firmware"), {"model": "sonoff"}).content, sonoff)
+        self.assertEqual(self.client.get(reverse("download_firmware"), {"model": "waveshare_p4"}).content, p4)
+        self.assertEqual(self.client.get(reverse("checksum_firmware"), {"model": "custom"}).content.decode(), md5(custom))
+        self.assertEqual(self.client.get(reverse("checksum_firmware"), {"model": "waveshare_p4"}).content.decode(), md5(p4))
 
     def test_upload_replaces_previous_image(self):
-        self.upload("save_new_firmware", "firmware", b"old", model="sonoff")
-        self.upload("save_new_firmware", "firmware", b"new", model="sonoff")
+        self.upload("save_new_firmware", "firmware", esp_image(0x0000, 64), model="sonoff")
+        self.upload("save_new_firmware", "firmware", esp_image(0x0000, 128), model="sonoff")
 
-        self.assertEqual(self.client.get(reverse("download_firmware")).content, b"new")
+        self.assertEqual(self.client.get(reverse("download_firmware")).content, esp_image(0x0000, 128))
 
     def test_upload_without_model_is_ignored(self):
         self.upload("save_new_firmware", "firmware", FIRMWARE)
 
         self.assertManagerNotReloaded()
         self.assertRejected(self.client.get(reverse("download_firmware")))
+
+    def test_upload_for_the_matching_chip_is_accepted(self):
+        for model, chip_id in (("sonoff", 0x0000), ("custom", 0x0009), ("waveshare_p4", 0x0012)):
+            with self.subTest(model=model):
+                image = esp_image(chip_id)
+                response = self.upload("save_new_firmware", "firmware", image, model=model)
+
+                self.assertRedirects(response, "/", fetch_redirect_response=False)
+                self.assertEqual(self.client.get(reverse("download_firmware"), {"model": model}).content, image)
+
+    def test_upload_for_another_chip_is_rejected_naming_both(self):
+        self.upload("save_new_firmware", "firmware", esp_image(0x0012, 64), model="waveshare_p4")
+        self.assertManagerReloaded(times=1)
+
+        # What the staged custom slot holds today: an ESP32-S3 image, sent to the Waveshare P4 slot.
+        response = self.upload("save_new_firmware", "firmware", esp_image(0x0009, 128), model="waveshare_p4")
+
+        self.assertEqual(response.status_code, 400)
+        body = response.content.decode()
+        self.assertIn("ESP32-S3", body)
+        self.assertIn("ESP32-P4", body)
+        self.assertIn("0x0009", body)
+        self.assertIn("0x0012", body)
+        self.assertIn("waveshare_p4", body)
+        # The staged image is untouched and the manager was not told to reload.
+        self.assertEqual(self.client.get(reverse("download_firmware"), {"model": "waveshare_p4"}).content, esp_image(0x0012, 64))
+        self.assertManagerReloaded(times=1)
+
+    def test_sonoff_slot_rejects_an_esp32_s3_image(self):
+        response = self.upload("save_new_firmware", "firmware", esp_image(0x0009), model="sonoff")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertRejected(self.client.get(reverse("download_firmware")))
+
+    def test_upload_that_is_not_an_esp_image_is_rejected(self):
+        for name, data in (("wrong magic", b"\x00" * 64), ("too short", b"\xe9\x00"), ("empty", b"")):
+            with self.subTest(name=name):
+                response = self.upload("save_new_firmware", "firmware", data, model="sonoff")
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("0xE9", response.content.decode())
+        self.assertManagerNotReloaded()
+
+    def test_upload_for_an_unknown_model_is_rejected(self):
+        for url_name, field in (("save_new_firmware", "firmware"), ("save_new_data_file", "data_file"), ("save_new_merged_flash", "bin")):
+            with self.subTest(url_name=url_name):
+                self.assertEqual(self.upload(url_name, field, FIRMWARE, model="../../etc").status_code, 400)
+        self.assertManagerNotReloaded()
+
+    def test_merged_flash_is_not_checked_for_a_chip(self):
+        response = self.upload("save_new_merged_flash", "bin", b"\x00" * 64, model="waveshare_p4")
+
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
 
     def test_unknown_model_is_rejected(self):
         for url_name in ("download_firmware", "checksum_firmware", "download_data_file", "checksum_data_file"):

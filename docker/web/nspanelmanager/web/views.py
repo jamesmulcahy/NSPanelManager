@@ -22,7 +22,7 @@ from web.settings_helper import (
     set_setting_value,
 )
 
-from . import display_mode
+from . import board_models, display_mode
 from .apps import send_mqttmanager_reload_command, start_mqtt_manager
 from .github_firmware import FirmwareError, StageLock
 from .models import (
@@ -54,6 +54,8 @@ def get_base_data(request):
     """Get data that is used on ALL rendered views."""
     data = {
         "ingress_path": request.headers["X-Ingress-Path"] if "X-Ingress-Path" in request.headers else "",
+        "board_models": board_models.MODELS,
+        "firmware_boards": [[model.id, model.label] for model in board_models.MODELS if model.release_board],
         "enabled_themes": {
             "default": "Default",
             "light": "Light",
@@ -433,22 +435,29 @@ def save_new_firmware(request):
         if "model" not in request.POST:
             print("Missing 'model' parameter")
             return redirect("/")
+        model = request.POST["model"]
+        if model not in board_models.MODEL_IDS:
+            return HttpResponse("ERROR! Unknown model!", status=400)
 
         fs = FileSystemStorage()
         uploaded_file = request.FILES["firmware"]
+        # The slot decides which chip the image must be for: a mismatch would be flashed over the air and brick the panel.
+        error = board_models.app_image_error(model, uploaded_file.read(16))
+        uploaded_file.seek(0)
+        if error:
+            return HttpResponse(f"ERROR! Refusing firmware for the {model} slot: {error}.", status=400, content_type="text/plain")
         try:
             # Not while a stage from GitHub is replacing the same files.
             with StageLock(time.monotonic() + 10):
                 # Delete old firmware file:
-                fs.delete(f"firmware/{request.POST['model']}/firmware.bin")
-                fs.save(f"firmware/{request.POST['model']}/firmware.bin", uploaded_file)
-                if request.POST["model"] in ("sonoff", "custom"):
-                    # Remembered so that a panel still running this file can be named after the file is replaced.
-                    FirmwareUpload.objects.create(
-                        md5=get_file_md5sum(f"firmware/{request.POST['model']}/firmware.bin"),
-                        model=request.POST["model"],
-                        source=FirmwareUpload.Source.UPLOAD,
-                    )
+                fs.delete(f"firmware/{model}/firmware.bin")
+                fs.save(f"firmware/{model}/firmware.bin", uploaded_file)
+                # Remembered so that a panel still running this file can be named after the file is replaced.
+                FirmwareUpload.objects.create(
+                    md5=get_file_md5sum(f"firmware/{model}/firmware.bin"),
+                    model=model,
+                    source=FirmwareUpload.Source.UPLOAD,
+                )
         except FirmwareError:
             logger.warning("Firmware upload dropped: a stage from GitHub held the firmware lock for 10 s")
             return redirect("/")
@@ -463,6 +472,8 @@ def save_new_data_file(request):
         if "model" not in request.POST:
             print("Missing 'model' parameter")
             return redirect("/")
+        if request.POST["model"] not in board_models.MODEL_IDS:
+            return HttpResponse("ERROR! Unknown model!", status=400)
 
         fs = FileSystemStorage()
         # Delete old firmware file:
@@ -480,6 +491,8 @@ def save_new_merged_flash(request):
         if "model" not in request.POST:
             print("Missing 'model' parameter")
             return redirect("/")
+        if request.POST["model"] not in board_models.MODEL_IDS:
+            return HttpResponse("ERROR! Unknown model!", status=400)
 
         fs = FileSystemStorage()
         # Delete old firmware file:
@@ -521,7 +534,7 @@ def save_new_tft_file(request):
 def download_firmware(request):
     if "model" in request.GET:
         model = request.GET["model"]
-        if model != "sonoff" and model != "custom":
+        if model not in board_models.MODEL_IDS:
             return HttpResponse("ERROR! Unknown model!", status=400)
     else:
         # As model was not specified, default to sonoff as that was the original model
@@ -551,7 +564,7 @@ def download_firmware(request):
 def download_data_file(request):
     if "model" in request.GET:
         model = request.GET["model"]
-        if model != "sonoff" and model != "custom":
+        if model not in board_models.MODEL_IDS:
             return HttpResponse("ERROR! Unknown model!", status=400)
     else:
         # As model was not specified, default to sonoff as that was the original model
@@ -600,7 +613,7 @@ def checksum_response(md5sum):
 def checksum_firmware(request):
     if "model" in request.GET:
         model = request.GET["model"]
-        if model != "sonoff" and model != "custom":
+        if model not in board_models.MODEL_IDS:
             return HttpResponse("ERROR! Unknown model!", status=400)
     else:
         # As model was not specified, default to sonoff as that was the original model
@@ -612,7 +625,7 @@ def checksum_firmware(request):
 def checksum_data_file(request):
     if "model" in request.GET:
         model = request.GET["model"]
-        if model != "sonoff" and model != "custom":
+        if model not in board_models.MODEL_IDS:
             return HttpResponse("ERROR! Unknown model!", status=400)
     else:
         # As model was not specified, default to sonoff as that was the original model

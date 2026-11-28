@@ -28,7 +28,7 @@ from .harness import NSPMTestCase
 REPO = FIRMWARE_GITHUB_REPO_DEFAULT
 TAG = "build-545a9e4d"
 COMMIT = "545a9e4d" + "0" * 32
-BOARDS = {"sonoff": "original_sonoff", "custom": "custom_pcb"}
+BOARDS = {"sonoff": "original_sonoff", "waveshare_p4": "custom_pcb"}
 GET_URL = "/rest/v2/firmware"
 STAGE_URL = "/rest/v2/firmware/stage"
 
@@ -91,7 +91,7 @@ class FakeGitHub:
 
     def add_release(self, tag=TAG, images=None, build_overrides=None, digests=None, asset_overrides=None, latest=True, repo=REPO):
         """Serve release `tag`: images is {model: bytes}. Returns the images."""
-        images = images or {"sonoff": make_image("sonoff", 1), "custom": make_image("custom", 2)}
+        images = images or {"sonoff": make_image("sonoff", 1), "waveshare_p4": make_image("waveshare_p4", 2)}
         build = {
             "schema": 1,
             "commit": COMMIT,
@@ -137,7 +137,7 @@ class FirmwareGithubTestCase(NSPMTestCase):
         self.github = FakeGitHub()
         self.patch_session_get(self.github)
 
-        self.old = {"sonoff": make_image("sonoff", 0xA1), "custom": make_image("custom", 0xA2)}
+        self.old = {"sonoff": make_image("sonoff", 0xA1), "waveshare_p4": make_image("waveshare_p4", 0xA2)}
         for model, data in self.old.items():
             os.makedirs(os.path.join(self.media, "firmware", model))
             with open(self.path(model), "wb") as f:
@@ -201,7 +201,7 @@ class StageTests(FirmwareGithubTestCase):
         images = self.github.add_release()
         body = self.stage().json()
         self.assertIsNone(body["boards"]["sonoff"]["before_md5"])
-        self.assertEqual(self.staged("custom"), images["custom"])
+        self.assertEqual(self.staged("waveshare_p4"), images["waveshare_p4"])
 
     def test_same_release_again_changes_nothing(self):
         images = self.github.add_release()
@@ -219,12 +219,12 @@ class StageTests(FirmwareGithubTestCase):
 
     def test_only_the_changed_board_is_replaced(self):
         images = self.github.add_release()
-        with open(self.path("custom"), "wb") as f:
-            f.write(images["custom"])
+        with open(self.path("waveshare_p4"), "wb") as f:
+            f.write(images["waveshare_p4"])
         body = self.stage().json()
-        self.assertFalse(body["boards"]["custom"]["changed"])
+        self.assertFalse(body["boards"]["waveshare_p4"]["changed"])
         self.assertTrue(body["boards"]["sonoff"]["changed"])
-        self.assertEqual(FirmwareUpload.objects.filter(model="custom").count(), 0)
+        self.assertEqual(FirmwareUpload.objects.filter(model="waveshare_p4").count(), 0)
         self.assertManagerReloaded(times=1)
 
     def test_explicit_tag(self):
@@ -255,23 +255,23 @@ class RejectionTests(FirmwareGithubTestCase):
         self.assertUntouched()
 
     def test_wrong_chip_id_for_a_board(self):
-        # The custom board's image is fine; the Sonoff one is an ESP32-S3 image. Neither may be staged.
-        self.github.add_release(images={"sonoff": make_image("sonoff", 1, chip_id=0x0009), "custom": make_image("custom", 2)})
+        # The P4 board's image is fine; the Sonoff one is an ESP32-S3 image. Neither may be staged.
+        self.github.add_release(images={"sonoff": make_image("sonoff", 1, chip_id=0x0009), "waveshare_p4": make_image("waveshare_p4", 2)})
         self.assertRejected422(self.stage(), "sonoff", "chip id")
 
     def test_wrong_chip_id_on_the_second_board_leaves_the_first_untouched(self):
-        self.github.add_release(images={"sonoff": make_image("sonoff", 1), "custom": make_image("custom", 2, chip_id=0x0000)})
-        self.assertRejected422(self.stage(), "custom", "chip id")
+        self.github.add_release(images={"sonoff": make_image("sonoff", 1), "waveshare_p4": make_image("waveshare_p4", 2, chip_id=0x0000)})
+        self.assertRejected422(self.stage(), "waveshare_p4", "chip id")
 
     def test_not_an_esp_image(self):
         bad = bytearray(make_image("sonoff", 1))
         bad[0] = 0x7F
-        self.github.add_release(images={"sonoff": bytes(bad), "custom": make_image("custom", 2)})
+        self.github.add_release(images={"sonoff": bytes(bad), "waveshare_p4": make_image("waveshare_p4", 2)})
         self.assertRejected422(self.stage(), "sonoff", "0xE9")
 
     def test_oversized_image(self):
         big = make_image("sonoff", 1, size=APP_SLOT_BYTES + 1)
-        self.github.add_release(images={"sonoff": big, "custom": make_image("custom", 2)})
+        self.github.add_release(images={"sonoff": big, "waveshare_p4": make_image("waveshare_p4", 2)})
         self.assertRejected422(self.stage(), "sonoff", "app slot")
 
     def test_oversized_image_is_not_read_beyond_the_cap(self):
@@ -295,7 +295,7 @@ class RejectionTests(FirmwareGithubTestCase):
 
     def test_size_mismatch(self):
         images = self.github.add_release()
-        self.github.add_release(images={"sonoff": images["sonoff"] + b"\x00", "custom": images["custom"]}, build_overrides=None)
+        self.github.add_release(images={"sonoff": images["sonoff"] + b"\x00", "waveshare_p4": images["waveshare_p4"]}, build_overrides=None)
         # build.json now describes the longer image; serve the original (shorter) one instead.
         cdn = f"https://release-assets.githubusercontent.com/{TAG}/firmware-original_sonoff.bin"
         self.github.routes[cdn] = lambda: FakeResponse(200, images["sonoff"])
@@ -311,7 +311,7 @@ class RejectionTests(FirmwareGithubTestCase):
 
     def test_sha256_mismatch_with_github_digest(self):
         self.github.add_release(digests={"firmware-custom_pcb.bin": "sha256:" + "0" * 64})
-        self.assertRejected422(self.stage(), "custom", "digest")
+        self.assertRejected422(self.stage(), "waveshare_p4", "digest")
 
     def test_missing_digest_is_fine(self):
         self.github.add_release(digests={"firmware-custom_pcb.bin": None})
@@ -319,11 +319,11 @@ class RejectionTests(FirmwareGithubTestCase):
         self.assertEqual(self.stage().status_code, 200)
 
     def test_md5_mismatch(self):
-        images = {"sonoff": make_image("sonoff", 1), "custom": make_image("custom", 2)}
-        entry = {"asset": "firmware-custom_pcb.bin", "size": len(images["custom"]), "md5": "0" * 32, "sha256": sha256(images["custom"])}
+        images = {"sonoff": make_image("sonoff", 1), "waveshare_p4": make_image("waveshare_p4", 2)}
+        entry = {"asset": "firmware-custom_pcb.bin", "size": len(images["waveshare_p4"]), "md5": "0" * 32, "sha256": sha256(images["waveshare_p4"])}
         sonoff = {"asset": "firmware-original_sonoff.bin", "size": len(images["sonoff"]), "md5": md5(images["sonoff"]), "sha256": sha256(images["sonoff"])}
         self.github.add_release(images=images, build_overrides={"images": {"original_sonoff": sonoff, "custom_pcb": entry}})
-        self.assertRejected422(self.stage(), "custom", "md5")
+        self.assertRejected422(self.stage(), "waveshare_p4", "md5")
 
 
 class ReleaseErrorTests(FirmwareGithubTestCase):
@@ -461,7 +461,7 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
     def test_download_failing_midway_leaves_old_files_and_no_temp_files(self):
         images = self.github.add_release()
         cdn = f"https://release-assets.githubusercontent.com/{TAG}/firmware-custom_pcb.bin"
-        self.github.routes[cdn] = lambda: FakeResponse(200, images["custom"], fail_after=2000)
+        self.github.routes[cdn] = lambda: FakeResponse(200, images["waveshare_p4"], fail_after=2000)
         response = self.stage()
         self.assertEqual((response.status_code, self.error_of(response)["code"]), (502, "download_failed"))
         self.assertUntouched()
@@ -543,7 +543,7 @@ class DownloadSafetyTests(FirmwareGithubTestCase):
                 held.append(True)
             finally:
                 os.close(fd)
-            return FakeResponse(200, images["custom"])
+            return FakeResponse(200, images["waveshare_p4"])
 
         self.github.routes[image_url] = while_downloading
         with mock.patch("web.github_firmware.fcntl.flock", wraps=fcntl.flock) as flock:
@@ -667,8 +667,8 @@ class LockWaitTests(FirmwareGithubTestCase):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         self.hold_lock()
-        data = make_image("custom", 7)
-        response = self.run_with_fake_clock(lambda: self.client.post("/save_new_firmware", {"model": "custom", "firmware": SimpleUploadedFile("firmware.bin", data)}))
+        data = make_image("waveshare_p4", 7)
+        response = self.run_with_fake_clock(lambda: self.client.post("/save_new_firmware", {"model": "waveshare_p4", "firmware": SimpleUploadedFile("firmware.bin", data)}))
         self.assertEqual((response.status_code, response["Location"]), (302, "/"))
         self.assertUntouched()
 
@@ -737,23 +737,23 @@ class StatusTests(FirmwareGithubTestCase):
         resolved = body["resolved"]
         self.assertEqual((resolved["tag"], resolved["commit"], resolved["built_at"]), (TAG, COMMIT, "2026-11-19T12:00:00Z"))
         self.assertEqual(resolved["html_url"], f"https://github.com/{REPO}/releases/tag/{TAG}")
-        self.assertEqual(resolved["boards"]["custom"], {"md5": md5(images["custom"]), "size": len(images["custom"])})
-        self.assertEqual(body["up_to_date"], {"sonoff": False, "custom": False})
+        self.assertEqual(resolved["boards"]["waveshare_p4"], {"md5": md5(images["waveshare_p4"]), "size": len(images["waveshare_p4"])})
+        self.assertEqual(body["up_to_date"], {"sonoff": False, "waveshare_p4": False})
         self.assertEqual(body["staged"]["sonoff"], {"md5": md5(self.old["sonoff"]), "source": None, "tag": None, "commit": None, "staged_at": None})
 
     def test_up_to_date_after_staging(self):
         self.github.add_release()
         self.stage()
         body = self.client.get(GET_URL).json()
-        self.assertEqual(body["up_to_date"], {"sonoff": True, "custom": True})
+        self.assertEqual(body["up_to_date"], {"sonoff": True, "waveshare_p4": True})
         staged = body["staged"]["sonoff"]
         self.assertEqual((staged["source"], staged["tag"], staged["commit"]), ("github", TAG, COMMIT))
         self.assertIsNotNone(staged["staged_at"])
 
     def test_staged_with_no_file(self):
-        os.remove(self.path("custom"))
+        os.remove(self.path("waveshare_p4"))
         self.github.add_release()
-        self.assertIsNone(self.client.get(GET_URL).json()["staged"]["custom"]["md5"])
+        self.assertIsNone(self.client.get(GET_URL).json()["staged"]["waveshare_p4"]["md5"])
 
     def test_get_with_release_param_echoes_it(self):
         self.github.add_release(tag="build-33333333", latest=False)
@@ -825,11 +825,11 @@ class ManualUploadTests(FirmwareGithubTestCase):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         self.github.add_release()
-        data = make_image("custom", 7)
-        response = self.client.post("/save_new_firmware", {"model": "custom", "firmware": SimpleUploadedFile("firmware.bin", data)})
+        data = make_image("waveshare_p4", 7)
+        response = self.client.post("/save_new_firmware", {"model": "waveshare_p4", "firmware": SimpleUploadedFile("firmware.bin", data)})
         self.assertEqual(response.status_code, 302)
         row = FirmwareUpload.objects.get()
-        self.assertEqual((row.md5, row.model, row.source, row.tag), (md5(data), "custom", "upload", ""))
+        self.assertEqual((row.md5, row.model, row.source, row.tag), (md5(data), "waveshare_p4", "upload", ""))
         self.assertManagerReloaded(times=1)
-        staged = self.client.get(GET_URL).json()["staged"]["custom"]
+        staged = self.client.get(GET_URL).json()["staged"]["waveshare_p4"]
         self.assertEqual((staged["md5"], staged["source"], staged["tag"]), (md5(data), "upload", None))

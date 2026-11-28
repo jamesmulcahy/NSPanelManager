@@ -2,7 +2,7 @@
 Fetching panel firmware from a GitHub release, and staging it as the firmware the manager serves.
 
 The release layout is the one the firmware repo's build workflow publishes (FIRMWARE_GITHUB_PLAN.md, C1): a
-tag per build, with the app images firmware-original_sonoff.bin and firmware-custom_pcb.bin and a build.json
+tag per build, with the app images firmware-original_sonoff.bin and firmware-custom_pcb.bin (the Waveshare ESP32-P4 board) and a build.json
 that records each image's size, md5 and sha256.
 
 This decides what gets flashed onto panels, so nothing is staged until both boards' images have been
@@ -28,6 +28,7 @@ import requests
 from django.core.files.storage import FileSystemStorage
 from django.db import transaction
 
+from . import board_models
 from .apps import send_mqttmanager_reload_command
 from .models import FirmwareUpload
 
@@ -38,13 +39,11 @@ logger = logging.getLogger(__name__)
 APP_SLOT_BYTES = 0x1B0000
 LITTLEFS_PARTITION_BYTES = 0x8F000
 
-# esp_image_header_t.chip_id: the original Sonoff board is an ESP32, the custom PCB an ESP32-S3.
-CHIP_IDS = {"sonoff": 0x0000, "custom": 0x0009}
-
-ESP_IMAGE_MAGIC = 0xE9
-
-# Manager model -> the board's name in the release.
-BOARDS = {"sonoff": "original_sonoff", "custom": "custom_pcb"}
+# The models, the chip each one's image is for (esp_image_header_t.chip_id) and each one's board in the release:
+# board_models.py.
+ESP_IMAGE_MAGIC = board_models.ESP_IMAGE_MAGIC
+CHIP_IDS = board_models.CHIP_IDS
+BOARDS = board_models.BOARDS
 
 API_HOST = "api.github.com"
 # Where a download may redirect to: release assets are served from GitHub's own domains.
