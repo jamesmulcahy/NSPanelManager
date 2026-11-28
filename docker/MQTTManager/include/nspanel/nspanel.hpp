@@ -1,5 +1,6 @@
 #ifndef MQTT_MANAGER_NSPANEL
 #define MQTT_MANAGER_NSPANEL
+#include "nspanel/nspanel_model.hpp"
 #include "protobuf_nspanel.pb.h"
 #include "websocket_server/websocket_server.hpp"
 #include <atomic>
@@ -14,6 +15,7 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
+#include <vector>
 
 // What panels whose web UI is part of the firmware image report as their LittleFS md5 (status report `md5_littlefs`,
 // register request `md5_data_file`). There is no LittleFS image to update on them, so the firmware md5 alone says what they run.
@@ -34,11 +36,6 @@ enum MQTT_MANAGER_NSPANEL_STATE {
   REBOOTING,
 };
 
-enum MQTT_MANAGER_NSPANEL_MODEL {
-  SONOFF,
-  CUSTOM,
-};
-
 /**
  * A copy of what the manager knows about a panel, taken at once for /prometheus/metrics and /prometheus/targets.
  */
@@ -47,7 +44,7 @@ struct NSPanelMetricsSnapshot {
   std::string name;
   std::string mac;
   std::string ip_address;
-  std::string model; // sonoff, custom or web
+  std::string model; // A model id from NSPANEL_MODELS
   MQTT_MANAGER_NSPANEL_STATE state;
   bool registered;   // Has registered to the manager (has an NSPM id).
   int16_t rssi;
@@ -193,6 +190,12 @@ public:
   bool shows_legacy_screen();
 
   /**
+   * True when the panel's last register_request listed this feature ("no_tft", "no_temperature", "no_buttons", "no_relays", ...).
+   * The negative features are absent from firmware that predates them, so those panels keep today's behaviour.
+   */
+  bool has_feature(const std::string &feature);
+
+  /**
    * Register NSPanel to manager.
    */
   bool register_to_manager(const nlohmann::json &register_request_payload);
@@ -292,6 +295,10 @@ private:
   // The panel's last register_request listed the "no_hmi" feature: its firmware has no HMI pages. With the display
   // reporting DISPLAY_MODE_NEXTION it shows the legacy screen until the terminal TFT is installed (a GUI update).
   bool _panel_reports_no_hmi = false;
+  // Every feature the panel's last register_request listed, as sent. Guarded by _lvgl_mutex.
+  std::vector<std::string> _features;
+  // The features that decide what HA discovery publishes changed: reload_config() runs it again.
+  std::atomic<bool> _ha_discovery_stale = false;
   // Guards the LVGL look members above: reloads, registrations and reports run on different threads.
   std::recursive_mutex _lvgl_mutex;
   // What the panel reports in its status report. UNKNOWN from firmware that does not report it.

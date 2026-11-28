@@ -85,12 +85,10 @@ std::shared_ptr<NSPanel> NSPanel::create_from_discovery_request(nlohmann::json r
     panel_data.friendly_name = request_data.at("friendly_name").get<std::string>();
     if (request_data.contains("model")) {
       std::string nspanel_model = request_data.at("model").get<std::string>();
-      if (nspanel_model.compare("sonoff") == 0) {
-        panel_data.model = "sonoff";
-      } else if (nspanel_model.compare("custom") == 0) {
-        panel_data.model = "custom";
+      if (nspanel_model_from_id(nspanel_model)) {
+        panel_data.model = nspanel_model;
       } else {
-        SPDLOG_WARN("Failed to parse panel model for NSPanel {}. Got value '{}'. Will assume sonoff.", panel_data.friendly_name, panel_data.model);
+        SPDLOG_WARN("Failed to parse panel model for NSPanel {}. Got value '{}'. Will assume sonoff.", panel_data.friendly_name, nspanel_model);
         panel_data.model = "sonoff";
       }
     } else {
@@ -137,10 +135,8 @@ void NSPanel::reload_config(const char *reason) {
     this->_settings = panel_settings;
     this->_has_registered_to_manager = panel_settings.accepted; // We managed to get the object in above statement and did not throw, ie. has been registered in manager and has an ID in DB.
     this->_mac = panel_settings.mac_address;
-    if (panel_settings.model.compare("sonoff") == 0) {
-      this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
-    } else if (panel_settings.model.compare("custom") == 0) {
-      this->_model = MQTT_MANAGER_NSPANEL_MODEL::CUSTOM;
+    if (auto model = nspanel_model_from_id(panel_settings.model)) {
+      this->_model = *model;
     } else {
       SPDLOG_ERROR("Failed to prase panel model for NSPanel {}::{}. Got value '{}'. Will assume sonoff.", panel_settings.id, panel_settings.friendly_name, panel_settings.model);
       this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
@@ -268,6 +264,11 @@ void NSPanel::reload_config(const char *reason) {
       MQTT_Manager::subscribe(this->_mqtt_status_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_status_report_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
       MQTT_Manager::subscribe(this->_mqtt_buzzer_mute_command_topic, boost::bind(&NSPanel::mqtt_callback, this, _1, _2));
+    }
+
+    // The register_request listed other features (no_temperature, no_relays) than before, so what is discovered changes.
+    if (this->_ha_discovery_stale.exchange(false)) {
+      reregister_to_ha_mqtt_discovery = true;
     }
 
     if (name_changed || reregister_to_ha_mqtt_discovery) {
@@ -1052,26 +1053,30 @@ void NSPanel::send_websocket_status_update() {
     });
   }
 
-  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF) {
-    status_data["model"] = "sonoff";
-  } else if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
-    status_data["model"] = "custom";
-  } else {
-    status_data["model"] = "unknown";
+  status_data["model"] = std::string(nspanel_model_id(this->_model));
+  status_data["features"] = nlohmann::json::array();
+  {
+    std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+    for (const std::string &feature : this->_features) {
+      status_data["features"].push_back(feature);
+    }
   }
+  status_data["has_humidity"] = this->_has_humidity;
+  status_data["has_pressure"] = this->_has_pressure;
+  status_data["has_temperature"] = this->_has_temperature;
 
   // Check if NSPanel has firmware, littlefs or tft file updates available and set appropriate warning.
-  // Only check for models that actually have firmware, littlefs and TFT.
-  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF || this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
-    if (this->_current_firmware_md5_checksum.empty() || this->_current_littlefs_md5_checksum.empty()) {
-      status_data["warnings"].push_back(nlohmann::json{
-          {"level", "warning"},
-          {"text", "Manager has no checksum for installed firmware on panel. If this doesn't go away within 5 minutes, try performing a firmware update."}});
-    } else if (this->has_firmware_update() || this->has_littlefs_update()) {
-      status_data["warnings"].push_back(nlohmann::json{
-          {"level", "info"},
-          {"text", "Firmware update available. Perform firmware update to ensure optimal compatibility with manager and latest features and bug fixes."}});
-    }
+  // Every known model has firmware and littlefs; the TFT warnings below are skipped for panels without a Nextion display.
+  if (this->_current_firmware_md5_checksum.empty() || this->_current_littlefs_md5_checksum.empty()) {
+    status_data["warnings"].push_back(nlohmann::json{
+        {"level", "warning"},
+        {"text", "Manager has no checksum for installed firmware on panel. If this doesn't go away within 5 minutes, try performing a firmware update."}});
+  } else if (this->has_firmware_update() || this->has_littlefs_update()) {
+    status_data["warnings"].push_back(nlohmann::json{
+        {"level", "info"},
+        {"text", "Firmware update available. Perform firmware update to ensure optimal compatibility with manager and latest features and bug fixes."}});
+  }
+  if (!this->has_feature("no_tft")) {
     if (this->shows_legacy_screen()) {
       // No HMI in the firmware: nothing is installed automatically, so say what to press.
       status_data["warnings"].push_back(nlohmann::json{
@@ -1145,52 +1150,24 @@ void NSPanel::send_websocket_status_update() {
 }
 
 bool NSPanel::has_firmware_update() {
-  std::string file_checksum = "";
-  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF) {
-    auto result = MqttManagerConfig::get_firmware_sonoff_checksum();
-    if (result) {
-      file_checksum = *result;
-    } else {
-      SPDLOG_ERROR("Failed to get checksum for sonoff firmware!");
-      return false;
-    }
-  } else if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
-    auto result = MqttManagerConfig::get_firmware_custom_checksum();
-    if (result) {
-      file_checksum = *result;
-    } else {
-      SPDLOG_ERROR("Failed to get checksum for custom firmware!");
-      return false;
-    }
+  auto result = MqttManagerConfig::get_firmware_checksum(this->_model);
+  if (!result) {
+    SPDLOG_ERROR("Failed to get checksum for {} firmware!", nspanel_model_id(this->_model));
+    return false;
   }
-
-  return this->_current_firmware_md5_checksum.compare(file_checksum) != 0;
+  return this->_current_firmware_md5_checksum.compare(*result) != 0;
 }
 
 bool NSPanel::has_littlefs_update() {
   if (this->_current_littlefs_md5_checksum == NSPM_WEB_UI_EMBEDDED) {
     return false;
   }
-  std::string file_checksum = "";
-  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::SONOFF) {
-    auto result = MqttManagerConfig::get_littlefs_sonoff_checksum();
-    if (result) {
-      file_checksum = *result;
-    } else {
-      SPDLOG_ERROR("Failed to get checksum for sonoff LittleFS!");
-      return false;
-    }
-  } else if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
-    auto result = MqttManagerConfig::get_littlefs_custom_checksum();
-    if (result) {
-      file_checksum = *result;
-    } else {
-      SPDLOG_ERROR("Failed to get checksum for custom LittleFS!");
-      return false;
-    }
+  auto result = MqttManagerConfig::get_littlefs_checksum(this->_model);
+  if (!result) {
+    SPDLOG_ERROR("Failed to get checksum for {} LittleFS!", nspanel_model_id(this->_model));
+    return false;
   }
-
-  return this->_current_littlefs_md5_checksum.compare(file_checksum) != 0;
+  return this->_current_littlefs_md5_checksum.compare(*result) != 0;
 }
 
 void NSPanel::_reload_lvgl_settings() {
@@ -1276,6 +1253,9 @@ void NSPanel::_handle_lvgl_look_report(const std::string &theme, const std::stri
 }
 
 bool NSPanel::has_tft_update() {
+  if (this->has_feature("no_tft")) {
+    return false;
+  }
   // Every panel runs the terminal TFT for its layout (the US layout, or the landscape layout that the EU TFT draws).
   auto file_checksum = MqttManagerConfig::get_terminal_tft_checksum(this->_us_layout);
   if (file_checksum) {
@@ -1376,6 +1356,11 @@ bool NSPanel::gui_update_needs_firmware_first() {
   return registered_without_lvgl_look || reports_no_display_mode;
 }
 
+bool NSPanel::has_feature(const std::string &feature) {
+  std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
+  return std::find(this->_features.begin(), this->_features.end(), feature) != this->_features.end();
+}
+
 bool NSPanel::shows_legacy_screen() {
   std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
   if (!this->_panel_reports_no_hmi) {
@@ -1397,6 +1382,10 @@ bool NSPanel::shows_legacy_screen() {
 }
 
 void NSPanel::tft_update() {
+  if (this->has_feature("no_tft")) {
+    SPDLOG_WARN("Refusing GUI update of nspanel {}::{}: it has no TFT display (no_tft).", this->_id, this->_name);
+    return;
+  }
   if (this->gui_update_needs_firmware_first()) {
     SPDLOG_WARN("Refusing GUI update of nspanel {}::{}: its firmware does not list the lvgl_look feature, so it predates LVGL and the terminal TFT would leave it on the waiting page. Update the firmware first.", this->_id, this->_name);
     return;
@@ -1472,10 +1461,7 @@ ManagerMetrics::PanelLabels NSPanel::_metrics_labels() {
 
 NSPanelMetricsSnapshot NSPanel::get_metrics_snapshot() {
   // Read the same way as send_websocket_status_update() and get_websocket_json_representation().
-  std::string model = "sonoff";
-  if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
-    model = "custom";
-  }
+  std::string model(nspanel_model_id(this->_model));
   return NSPanelMetricsSnapshot{
       .id = this->_id,
       .name = this->_name,
@@ -1550,8 +1536,12 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
     // Features the firmware lists (absent from older firmware). Before reload_config() below, which may send the look.
     bool reports_lvgl_look = false;
     bool reports_no_hmi = false;
+    std::vector<std::string> features;
     if (register_request_payload.contains("features") && register_request_payload.at("features").is_array()) {
       for (const auto &feature : register_request_payload.at("features")) {
+        if (feature.is_string()) {
+          features.push_back(feature.get<std::string>());
+        }
         if (feature.is_string() && feature.get<std::string>() == "lvgl_look") {
           reports_lvgl_look = true;
         } else if (feature.is_string() && feature.get<std::string>() == "no_hmi") {
@@ -1563,6 +1553,14 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
       std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
       this->_panel_reports_lvgl_look = reports_lvgl_look;
       this->_panel_reports_no_hmi = reports_no_hmi;
+      // What HA discovery publishes depends on these two. reload_config() rediscovers when they changed.
+      auto discovery_features = [](const std::vector<std::string> &list) {
+        return std::make_pair(std::find(list.begin(), list.end(), "no_temperature") != list.end(), std::find(list.begin(), list.end(), "no_relays") != list.end());
+      };
+      if (discovery_features(this->_features) != discovery_features(features)) {
+        this->_ha_discovery_stale = true;
+      }
+      this->_features = features;
       this->_features_known = true;
     }
 
@@ -1576,10 +1574,8 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
       this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
     } else {
       std::string nspanel_model = register_request_payload.at("model").get<std::string>();
-      if (nspanel_model.compare("sonoff") == 0) {
-        this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
-      } else if (nspanel_model.compare("custom") == 0) {
-        this->_model = MQTT_MANAGER_NSPANEL_MODEL::CUSTOM;
+      if (auto model = nspanel_model_from_id(nspanel_model)) {
+        this->_model = *model;
       } else {
         SPDLOG_WARN("Failed to parse panel model for NSPanel {}. Got value '{}'. Will assume sonoff.", register_request_payload.at("friendly_name").get<std::string>(), nspanel_model);
         this->_model = MQTT_MANAGER_NSPANEL_MODEL::SONOFF;
@@ -1632,18 +1628,7 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
       panel_settings.friendly_name = register_request_payload.at("friendly_name").get<std::string>();
     }
     panel_settings.mac_address = this->_mac;
-    switch (this->_model) {
-    case MQTT_MANAGER_NSPANEL_MODEL::SONOFF:
-      panel_settings.model = "sonoff";
-      break;
-    case MQTT_MANAGER_NSPANEL_MODEL::CUSTOM:
-      panel_settings.model = "custom";
-      break;
-    default:
-      SPDLOG_ERROR("Unknown key for this->_mode. Will assume sonoff model for panel {}::{}", this->_id, this->_name);
-      panel_settings.model = "sonoff";
-      break;
-    }
+    panel_settings.model = std::string(nspanel_model_id(this->_model));
     panel_settings.version = register_request_payload.at("version").get<std::string>();
     panel_settings.md5_data_file = this->_current_littlefs_md5_checksum;
     panel_settings.md5_firmware = this->_current_firmware_md5_checksum;
@@ -1718,20 +1703,24 @@ void NSPanel::register_to_home_assistant() {
   base_json["availability"]["topic"] = this->_mqtt_status_topic;
   base_json["availability"]["value_template"] = "{{ value_json.state }}";
 
-  // Register temperature sensor
-  nlohmann::json temperature_sensor_data = nlohmann::json(base_json);
-  temperature_sensor_data["device_class"] = "temperature";
-  if (MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT)) {
-    temperature_sensor_data["unit_of_measurement"] = "°F";
+  // Register temperature sensor. A panel without one gets none, and the config an earlier registration left is cleared.
+  if (this->has_feature("no_temperature")) {
+    MQTT_Manager::clear_retain(this->_mqtt_sensor_temperature_topic);
   } else {
-    temperature_sensor_data["unit_of_measurement"] = "°C";
+    nlohmann::json temperature_sensor_data = nlohmann::json(base_json);
+    temperature_sensor_data["device_class"] = "temperature";
+    if (MqttManagerConfig::get_setting_with_default<bool>(MQTT_MANAGER_SETTING::USE_FAHRENHEIT)) {
+      temperature_sensor_data["unit_of_measurement"] = "°F";
+    } else {
+      temperature_sensor_data["unit_of_measurement"] = "°C";
+    }
+    temperature_sensor_data["name"] = "Temperature";
+    temperature_sensor_data["state_topic"] = this->_mqtt_temperature_topic;
+    temperature_sensor_data["unique_id"] = fmt::format("{}_temperature", this->_name);
+    std::string temperature_sensor_data_str = temperature_sensor_data.dump();
+    SPDLOG_DEBUG("Registring temp sensor for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
+    MQTT_Manager::publish(this->_mqtt_sensor_temperature_topic, temperature_sensor_data_str, true);
   }
-  temperature_sensor_data["name"] = "Temperature";
-  temperature_sensor_data["state_topic"] = this->_mqtt_temperature_topic;
-  temperature_sensor_data["unique_id"] = fmt::format("{}_temperature", this->_name);
-  std::string temperature_sensor_data_str = temperature_sensor_data.dump();
-  SPDLOG_DEBUG("Registring temp sensor for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
-  MQTT_Manager::publish(this->_mqtt_sensor_temperature_topic, temperature_sensor_data_str, true);
 
   // Register humidity sensor
   if (this->_model == MQTT_MANAGER_NSPANEL_MODEL::CUSTOM) {
@@ -1756,68 +1745,76 @@ void NSPanel::register_to_home_assistant() {
     MQTT_Manager::publish(this->_mqtt_sensor_pressure_topic, pressure_sensor_data_str, true);
   }
 
-  // Register relay1
-  if (this->_register_relay1_as_light == NSPanelSettings::RelayRegisterType::NSPanelSettings_RelayRegisterType_SWITCH) {
-    nlohmann::json relay1_data = nlohmann::json(base_json);
-    relay1_data["device_class"] = "switch";
-    relay1_data["name"] = "Relay 1";
-    relay1_data["state_topic"] = this->_mqtt_relay1_state_topic;
-    relay1_data["command_topic"] = this->_mqtt_relay1_command_topic;
-    relay1_data["state_on"] = "1";
-    relay1_data["state_off"] = "0";
-    relay1_data["payload_on"] = "1";
-    relay1_data["payload_off"] = "0";
-    relay1_data["unique_id"] = fmt::format("{}_relay1", this->_mqtt_register_mac);
-    std::string relay1_data_str = relay1_data.dump();
+  // Register relays. A panel without any gets none, and the configs an earlier registration left are cleared.
+  if (this->has_feature("no_relays")) {
     MQTT_Manager::clear_retain(this->_mqtt_light_relay1_topic);
-    SPDLOG_DEBUG("Registring relay1 as relay for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
-    MQTT_Manager::publish(this->_mqtt_switch_relay1_topic, relay1_data_str, true);
-  } else {
-    nlohmann::json relay1_data = nlohmann::json(base_json);
-    relay1_data["device_class"] = "light";
-    relay1_data["name"] = "Relay 1";
-    relay1_data["state_topic"] = this->_mqtt_relay1_state_topic;
-    relay1_data["command_topic"] = this->_mqtt_relay1_command_topic;
-    // relay1_data["state_template"] = "{% if value == 1 %}on{% else %}off{% endif %}";
-    relay1_data["payload_on"] = "1";
-    relay1_data["payload_off"] = "0";
-    relay1_data["unique_id"] = fmt::format("{}_relay1", this->_mqtt_register_mac);
-    std::string relay1_data_str = relay1_data.dump();
-    MQTT_Manager::clear_retain(this->_mqtt_switch_relay1_topic);
-    SPDLOG_DEBUG("Registring relay1 as light for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
-    MQTT_Manager::publish(this->_mqtt_light_relay1_topic, relay1_data_str, true);
-  }
-
-  // Register relay2
-  if (this->_register_relay2_as_light == NSPanelSettings::RelayRegisterType::NSPanelSettings_RelayRegisterType_SWITCH) {
-    nlohmann::json relay2_data = nlohmann::json(base_json);
-    relay2_data["device_class"] = "switch";
-    relay2_data["name"] = "Relay 2";
-    relay2_data["state_topic"] = this->_mqtt_relay2_state_topic;
-    relay2_data["command_topic"] = this->_mqtt_relay2_command_topic;
-    relay2_data["state_on"] = "1";
-    relay2_data["state_off"] = "0";
-    relay2_data["payload_on"] = "1";
-    relay2_data["payload_off"] = "0";
-    relay2_data["unique_id"] = fmt::format("{}_relay2", this->_mqtt_register_mac);
-    std::string relay2_data_str = relay2_data.dump();
     MQTT_Manager::clear_retain(this->_mqtt_light_relay2_topic);
-    SPDLOG_DEBUG("Registring relay2 as relay for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
-    MQTT_Manager::publish(this->_mqtt_switch_relay2_topic, relay2_data_str, true);
-  } else {
-    nlohmann::json relay2_data = nlohmann::json(base_json);
-    relay2_data["device_class"] = "light";
-    relay2_data["name"] = "Relay 2";
-    relay2_data["state_topic"] = this->_mqtt_relay2_state_topic;
-    relay2_data["command_topic"] = this->_mqtt_relay2_command_topic;
-    // relay2_data["state_template"] = "{% if value == 1 %}on{% else %}off{% endif %}";
-    relay2_data["payload_on"] = "1";
-    relay2_data["payload_off"] = "0";
-    relay2_data["unique_id"] = fmt::format("{}_relay2", this->_mqtt_register_mac);
-    std::string relay2_data_str = relay2_data.dump();
+    MQTT_Manager::clear_retain(this->_mqtt_switch_relay1_topic);
     MQTT_Manager::clear_retain(this->_mqtt_switch_relay2_topic);
-    SPDLOG_DEBUG("Registring relay2 as light for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
-    MQTT_Manager::publish(this->_mqtt_light_relay2_topic, relay2_data_str, true);
+  } else {
+    // Register relay1
+    if (this->_register_relay1_as_light == NSPanelSettings::RelayRegisterType::NSPanelSettings_RelayRegisterType_SWITCH) {
+      nlohmann::json relay1_data = nlohmann::json(base_json);
+      relay1_data["device_class"] = "switch";
+      relay1_data["name"] = "Relay 1";
+      relay1_data["state_topic"] = this->_mqtt_relay1_state_topic;
+      relay1_data["command_topic"] = this->_mqtt_relay1_command_topic;
+      relay1_data["state_on"] = "1";
+      relay1_data["state_off"] = "0";
+      relay1_data["payload_on"] = "1";
+      relay1_data["payload_off"] = "0";
+      relay1_data["unique_id"] = fmt::format("{}_relay1", this->_mqtt_register_mac);
+      std::string relay1_data_str = relay1_data.dump();
+      MQTT_Manager::clear_retain(this->_mqtt_light_relay1_topic);
+      SPDLOG_DEBUG("Registring relay1 as relay for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
+      MQTT_Manager::publish(this->_mqtt_switch_relay1_topic, relay1_data_str, true);
+    } else {
+      nlohmann::json relay1_data = nlohmann::json(base_json);
+      relay1_data["device_class"] = "light";
+      relay1_data["name"] = "Relay 1";
+      relay1_data["state_topic"] = this->_mqtt_relay1_state_topic;
+      relay1_data["command_topic"] = this->_mqtt_relay1_command_topic;
+      // relay1_data["state_template"] = "{% if value == 1 %}on{% else %}off{% endif %}";
+      relay1_data["payload_on"] = "1";
+      relay1_data["payload_off"] = "0";
+      relay1_data["unique_id"] = fmt::format("{}_relay1", this->_mqtt_register_mac);
+      std::string relay1_data_str = relay1_data.dump();
+      MQTT_Manager::clear_retain(this->_mqtt_switch_relay1_topic);
+      SPDLOG_DEBUG("Registring relay1 as light for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
+      MQTT_Manager::publish(this->_mqtt_light_relay1_topic, relay1_data_str, true);
+    }
+
+    // Register relay2
+    if (this->_register_relay2_as_light == NSPanelSettings::RelayRegisterType::NSPanelSettings_RelayRegisterType_SWITCH) {
+      nlohmann::json relay2_data = nlohmann::json(base_json);
+      relay2_data["device_class"] = "switch";
+      relay2_data["name"] = "Relay 2";
+      relay2_data["state_topic"] = this->_mqtt_relay2_state_topic;
+      relay2_data["command_topic"] = this->_mqtt_relay2_command_topic;
+      relay2_data["state_on"] = "1";
+      relay2_data["state_off"] = "0";
+      relay2_data["payload_on"] = "1";
+      relay2_data["payload_off"] = "0";
+      relay2_data["unique_id"] = fmt::format("{}_relay2", this->_mqtt_register_mac);
+      std::string relay2_data_str = relay2_data.dump();
+      MQTT_Manager::clear_retain(this->_mqtt_light_relay2_topic);
+      SPDLOG_DEBUG("Registring relay2 as relay for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
+      MQTT_Manager::publish(this->_mqtt_switch_relay2_topic, relay2_data_str, true);
+    } else {
+      nlohmann::json relay2_data = nlohmann::json(base_json);
+      relay2_data["device_class"] = "light";
+      relay2_data["name"] = "Relay 2";
+      relay2_data["state_topic"] = this->_mqtt_relay2_state_topic;
+      relay2_data["command_topic"] = this->_mqtt_relay2_command_topic;
+      // relay2_data["state_template"] = "{% if value == 1 %}on{% else %}off{% endif %}";
+      relay2_data["payload_on"] = "1";
+      relay2_data["payload_off"] = "0";
+      relay2_data["unique_id"] = fmt::format("{}_relay2", this->_mqtt_register_mac);
+      std::string relay2_data_str = relay2_data.dump();
+      MQTT_Manager::clear_retain(this->_mqtt_switch_relay2_topic);
+      SPDLOG_DEBUG("Registring relay2 as light for NSPanel {}::{} to Home Assistant.", this->_id, this->_name);
+      MQTT_Manager::publish(this->_mqtt_light_relay2_topic, relay2_data_str, true);
+    }
   }
 
   // Register screen switch

@@ -140,8 +140,8 @@ protected:
     return commands;
   }
 
-  bool register_panel(nlohmann::json features = nullptr) {
-    nlohmann::json request = {{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
+  bool register_panel(nlohmann::json features = nullptr, const std::string &model = "sonoff") {
+    nlohmann::json request = {{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", model}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
     if (!features.is_null()) {
       request["features"] = features;
     }
@@ -2093,4 +2093,150 @@ TEST(MetricsSampleOutput, print_metrics) {
   // Not a check: prints what /prometheus/metrics serves after the other tests, for review.
   std::cout << "--- sample /prometheus/metrics ---\n"
             << Metrics::serialize() << "--- end ---" << std::endl;
+}
+
+TEST(NSPanelModelTest, known_models_map_to_their_slot_ids) {
+  EXPECT_EQ(nspanel_model_from_id("sonoff"), MQTT_MANAGER_NSPANEL_MODEL::SONOFF);
+  EXPECT_EQ(nspanel_model_from_id("custom"), MQTT_MANAGER_NSPANEL_MODEL::CUSTOM);
+  EXPECT_EQ(nspanel_model_from_id("waveshare_p4"), MQTT_MANAGER_NSPANEL_MODEL::WAVESHARE_P4);
+  EXPECT_FALSE(nspanel_model_from_id("esp32_s9").has_value());
+  for (const NSPanelModelInfo &info : NSPANEL_MODELS) {
+    EXPECT_EQ(nspanel_model_from_id(nspanel_model_id(info.model)), info.model);
+  }
+}
+
+TEST_F(NSPanelTest, waveshare_p4_model_is_parsed_and_stored) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}), "waveshare_p4");
+
+  EXPECT_EQ(panel->get_model(), MQTT_MANAGER_NSPANEL_MODEL::WAVESHARE_P4);
+  EXPECT_EQ(database_manager::database.get<database_manager::NSPanel>(row->id).model, "waveshare_p4");
+}
+
+TEST_F(NSPanelTest, custom_model_is_still_parsed) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}), "custom");
+
+  EXPECT_EQ(panel->get_model(), MQTT_MANAGER_NSPANEL_MODEL::CUSTOM);
+  EXPECT_EQ(database_manager::database.get<database_manager::NSPanel>(row->id).model, "custom");
+}
+
+TEST_F(NSPanelTest, unknown_model_falls_back_to_sonoff) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}), "esp32_s9");
+
+  EXPECT_EQ(panel->get_model(), MQTT_MANAGER_NSPANEL_MODEL::SONOFF);
+  EXPECT_EQ(database_manager::database.get<database_manager::NSPanel>(row->id).model, "sonoff");
+}
+
+TEST_F(NSPanelTest, stored_waveshare_p4_model_is_loaded) {
+  update_row([](auto &settings) {
+    settings.model = "waveshare_p4";
+  });
+  load_panel();
+
+  EXPECT_EQ(panel->get_model(), MQTT_MANAGER_NSPANEL_MODEL::WAVESHARE_P4);
+}
+
+TEST_F(NSPanelTest, registered_features_are_kept_as_sent) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_tft", "no_temperature", "no_buttons", "no_relays"}), "waveshare_p4");
+
+  EXPECT_TRUE(panel->has_feature("lvgl_look"));
+  EXPECT_TRUE(panel->has_feature("no_tft"));
+  EXPECT_TRUE(panel->has_feature("no_temperature"));
+  EXPECT_TRUE(panel->has_feature("no_buttons"));
+  EXPECT_TRUE(panel->has_feature("no_relays"));
+  EXPECT_FALSE(panel->has_feature("no_hmi"));
+
+  // A later registration replaces the list (a firmware update that drops a feature).
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  EXPECT_FALSE(panel->has_feature("no_tft"));
+}
+
+TEST_F(NSPanelTest, panel_without_the_negative_features_has_them_all) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+
+  EXPECT_FALSE(panel->has_feature("no_tft"));
+  EXPECT_FALSE(panel->has_feature("no_temperature"));
+  EXPECT_FALSE(panel->has_feature("no_buttons"));
+  EXPECT_FALSE(panel->has_feature("no_relays"));
+}
+
+TEST_F(NSPanelTest, panel_without_a_tft_has_no_tft_update) {
+  StagedTerminalTfts staged;
+  set_panel_setting("is_us_panel", "True");
+  load_panel();
+  NSPanelStatusReport report;
+  report.set_md5_tft_gui("0123456789abcdef0123456789abcdef");
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report.SerializeAsString());
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+  EXPECT_TRUE(panel->has_tft_update()); // Control: a panel with a display is behind.
+
+  register_panel(nlohmann::json::array({"lvgl_look", "no_tft"}), "waveshare_p4");
+  EXPECT_FALSE(panel->has_tft_update());
+}
+
+TEST_F(NSPanelTest, panel_without_a_tft_refuses_a_gui_update) {
+  load_panel();
+  register_panel(nlohmann::json::array({"lvgl_look", "no_tft"}), "waveshare_p4");
+  commands_sent();
+
+  panel->tft_update();
+
+  for (auto &command : commands_sent()) {
+    EXPECT_NE(command["command"], "tft_update");
+  }
+}
+
+TEST_F(NSPanelTest, panel_without_a_temperature_sensor_clears_its_temperature_discovery) {
+  const std::string topic = "homeassistant/sensor/nspanelmanager/c0_49_ef_00_01_01_temperature/config";
+  load_panel();
+  auto first = nspm_test::mqtt_published_to(topic);
+  ASSERT_FALSE(first.empty());
+  EXPECT_FALSE(first.back().payload.empty());
+
+  register_panel(nlohmann::json::array({"lvgl_look", "no_temperature"}), "waveshare_p4");
+
+  auto messages = nspm_test::mqtt_published_to(topic);
+  ASSERT_FALSE(messages.empty());
+  for (auto &message : messages) {
+    EXPECT_TRUE(message.payload.empty());
+  }
+}
+
+TEST_F(NSPanelTest, panel_without_relays_clears_its_relay_discovery) {
+  const std::vector<std::string> topics = {
+      "homeassistant/light/nspanelmanager/c0_49_ef_00_01_01_relay1/config",
+      "homeassistant/light/nspanelmanager/c0_49_ef_00_01_01_relay2/config",
+      "homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_relay1/config",
+      "homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_relay2/config",
+  };
+  load_panel();
+  MQTT_Manager::test_take_published_messages();
+
+  register_panel(nlohmann::json::array({"lvgl_look", "no_relays"}), "waveshare_p4");
+
+  auto messages = MQTT_Manager::test_take_published_messages();
+  for (const std::string &topic : topics) {
+    bool seen = false;
+    for (auto &message : messages) {
+      if (message.topic == topic) {
+        seen = true;
+        EXPECT_TRUE(message.payload.empty()) << topic;
+      }
+    }
+    EXPECT_TRUE(seen) << topic << " was not cleared";
+  }
+}
+
+TEST_F(NSPanelTest, panel_with_relays_and_a_temperature_sensor_keeps_its_discovery_when_it_registers) {
+  load_panel();
+  nspm_test::mqtt_published_to("none");
+
+  register_panel(nlohmann::json::array({"lvgl_look"}));
+
+  // Nothing changed for a Sonoff panel, so discovery is not published again.
+  EXPECT_TRUE(nspm_test::mqtt_published_to("homeassistant/sensor/nspanelmanager/c0_49_ef_00_01_01_temperature/config").empty());
 }
