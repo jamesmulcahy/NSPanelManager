@@ -2190,7 +2190,9 @@ TEST_F(NSPanelTest, panel_without_a_tft_refuses_a_gui_update) {
   }
 }
 
-TEST_F(NSPanelTest, panel_without_a_temperature_sensor_clears_its_temperature_discovery) {
+// The retained configs are cleared with MQTT_Manager::clear_retain(), which a test cannot observe, so these check that
+// discovery is no longer published after the panel registers with the feature (it is, before, for a panel without it).
+TEST_F(NSPanelTest, panel_without_a_temperature_sensor_gets_no_temperature_discovery) {
   const std::string topic = "homeassistant/sensor/nspanelmanager/c0_49_ef_00_01_01_temperature/config";
   load_panel();
   auto first = nspm_test::mqtt_published_to(topic);
@@ -2199,36 +2201,25 @@ TEST_F(NSPanelTest, panel_without_a_temperature_sensor_clears_its_temperature_di
 
   register_panel(nlohmann::json::array({"lvgl_look", "no_temperature"}), "waveshare_p4");
 
-  auto messages = nspm_test::mqtt_published_to(topic);
-  ASSERT_FALSE(messages.empty());
-  for (auto &message : messages) {
-    EXPECT_TRUE(message.payload.empty());
-  }
+  EXPECT_TRUE(nspm_test::mqtt_published_to(topic).empty());
 }
 
-TEST_F(NSPanelTest, panel_without_relays_clears_its_relay_discovery) {
-  const std::vector<std::string> topics = {
-      "homeassistant/light/nspanelmanager/c0_49_ef_00_01_01_relay1/config",
-      "homeassistant/light/nspanelmanager/c0_49_ef_00_01_01_relay2/config",
-      "homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_relay1/config",
-      "homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_relay2/config",
+TEST_F(NSPanelTest, panel_without_relays_gets_no_relay_discovery) {
+  const std::string light1 = "homeassistant/light/nspanelmanager/c0_49_ef_00_01_01_relay1/config";
+  const std::string light2 = "homeassistant/light/nspanelmanager/c0_49_ef_00_01_01_relay2/config";
+  const std::string switch1 = "homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_relay1/config";
+  const std::string switch2 = "homeassistant/switch/nspanelmanager/c0_49_ef_00_01_01_relay2/config";
+  auto is_relay_config = [&](const MQTT_Manager::TestPublishedMessage &message) {
+    return message.topic == light1 || message.topic == light2 || message.topic == switch1 || message.topic == switch2;
   };
   load_panel();
-  MQTT_Manager::test_take_published_messages();
+  auto before = MQTT_Manager::test_take_published_messages();
+  EXPECT_TRUE(std::any_of(before.begin(), before.end(), is_relay_config));
 
   register_panel(nlohmann::json::array({"lvgl_look", "no_relays"}), "waveshare_p4");
 
-  auto messages = MQTT_Manager::test_take_published_messages();
-  for (const std::string &topic : topics) {
-    bool seen = false;
-    for (auto &message : messages) {
-      if (message.topic == topic) {
-        seen = true;
-        EXPECT_TRUE(message.payload.empty()) << topic;
-      }
-    }
-    EXPECT_TRUE(seen) << topic << " was not cleared";
-  }
+  auto after = MQTT_Manager::test_take_published_messages();
+  EXPECT_FALSE(std::any_of(after.begin(), after.end(), is_relay_config));
 }
 
 TEST_F(NSPanelTest, panel_with_relays_and_a_temperature_sensor_keeps_its_discovery_when_it_registers) {
