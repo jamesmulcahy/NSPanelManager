@@ -84,6 +84,7 @@ class NSPanel(models.Model):
     class NSPanelModel(models.TextChoices):
         SONOFF = "sonoff"
         CUSTOM = "custom"
+        WAVESHARE_P4 = "waveshare_p4"
 
     mac_address = models.CharField(max_length=17)
     friendly_name = models.CharField(max_length=100)
@@ -184,7 +185,7 @@ class FirmwareUpload(models.Model):
         BUNDLED = "bundled"  # Shipped in the manager image
 
     md5 = models.CharField(max_length=32, db_index=True)
-    model = models.CharField(max_length=16)  # "sonoff" or "custom"
+    model = models.CharField(max_length=16)  # A model id from board_models.MODELS
     source = models.CharField(max_length=16, choices=Source.choices)
     repo = models.CharField(max_length=200, blank=True, default="")
     tag = models.CharField(max_length=100, blank=True, default="")

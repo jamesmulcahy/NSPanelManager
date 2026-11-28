@@ -16,18 +16,19 @@ const MODAL = `
   <select id="fwgh_release_select"><option value="">Latest</option></select>
   <div id="fwgh_result" class="hidden"></div>
   <span id="fwgh_spinner" class="hidden"></span>
+  <script type="application/json" id="fwgh_boards">[["sonoff", "Sonoff original NSPanel"], ["waveshare_p4", "Waveshare ESP32-P4 board"]]</script>
   <button id="fwgh_refresh_button"></button><button id="fwgh_stage_button"></button>
 </dialog>`;
 
 const status = (overrides: Record<string, unknown> = {}) => ({
   repo: "owner/fw",
   release: "latest",
-  resolved: { tag: "build-bbbbbbbb", commit: "b".repeat(40), boards: { sonoff: { md5: "new1", size: 1 }, custom: { md5: "same2", size: 1 } } },
+  resolved: { tag: "build-bbbbbbbb", commit: "b".repeat(40), boards: { sonoff: { md5: "new1", size: 1 }, waveshare_p4: { md5: "same2", size: 1 } } },
   staged: {
     sonoff: { md5: "old1", source: "github", tag: "build-aaaaaaaa", commit: "a".repeat(40), staged_at: null },
-    custom: { md5: "same2", source: null, tag: null, commit: null, staged_at: null },
+    waveshare_p4: { md5: "same2", source: null, tag: null, commit: null, staged_at: null },
   },
-  up_to_date: { sonoff: false, custom: true },
+  up_to_date: { sonoff: false, waveshare_p4: true },
   releases: [{ tag: "build-bbbbbbbb", commit: "b".repeat(40), built_at: "2026-11-19T12:00:00Z" }],
   error: null,
   ...overrides,
@@ -95,7 +96,7 @@ describe("staging", () => {
   it("re-fetches the chosen release when the picker changes, without the list", async () => {
     const select = document.getElementById("fwgh_release_select") as HTMLSelectElement;
     select.value = "build-bbbbbbbb";
-    replies["GET /ingress/rest/v2/firmware"] = { status: 200, body: status({ release: "build-bbbbbbbb", releases: undefined, resolved: { tag: "build-bbbbbbbb", commit: "b", boards: { sonoff: { md5: "pinned1", size: 1 }, custom: { md5: "pinned2", size: 1 } } } }) };
+    replies["GET /ingress/rest/v2/firmware"] = { status: 200, body: status({ release: "build-bbbbbbbb", releases: undefined, resolved: { tag: "build-bbbbbbbb", commit: "b", boards: { sonoff: { md5: "pinned1", size: 1 }, waveshare_p4: { md5: "pinned2", size: 1 } } } }) };
     await window.firmwareGithub.pick();
 
     expect(calls[0].url).toBe("/ingress/rest/v2/firmware?release=build-bbbbbbbb");
@@ -113,7 +114,7 @@ describe("staging", () => {
     (document.getElementById("fwgh_release_select") as HTMLSelectElement).value = "build-bbbbbbbb";
     replies["POST /ingress/rest/v2/firmware/stage"] = {
       status: 200,
-      body: { tag: "build-bbbbbbbb", commit: "b".repeat(40), boards: { sonoff: { before_md5: "old1", after_md5: "new1", changed: true }, custom: { before_md5: "same2", after_md5: "same2", changed: false } } },
+      body: { tag: "build-bbbbbbbb", commit: "b".repeat(40), boards: { sonoff: { before_md5: "old1", after_md5: "new1", changed: true }, waveshare_p4: { before_md5: "same2", after_md5: "same2", changed: false } } },
     };
     await window.firmwareGithub.stage();
 
@@ -127,18 +128,18 @@ describe("staging", () => {
   });
 
   it("omits the release for Latest", async () => {
-    replies["POST /ingress/rest/v2/firmware/stage"] = { status: 200, body: { tag: "t", commit: "c", boards: { sonoff: { before_md5: "x", after_md5: "x", changed: false }, custom: { before_md5: "y", after_md5: "y", changed: false } } } };
+    replies["POST /ingress/rest/v2/firmware/stage"] = { status: 200, body: { tag: "t", commit: "c", boards: { sonoff: { before_md5: "x", after_md5: "x", changed: false }, waveshare_p4: { before_md5: "y", after_md5: "y", changed: false } } } };
     await window.firmwareGithub.stage();
 
     expect(JSON.parse(calls[0].init?.body as string)).toEqual({});
   });
 
   it("shows a failed stage as an error and no result", async () => {
-    replies["POST /ingress/rest/v2/firmware/stage"] = { status: 502, body: { error: { code: "verification_failed", message: "Wrong chip.", board: "custom" } } };
+    replies["POST /ingress/rest/v2/firmware/stage"] = { status: 502, body: { error: { code: "verification_failed", message: "Wrong chip.", board: "waveshare_p4" } } };
     await window.firmwareGithub.stage();
 
     expect(text("fwgh_error")).toContain("Wrong chip.");
-    expect(text("fwgh_error")).toContain("custom");
+    expect(text("fwgh_error")).toContain("waveshare_p4");
     expect(hidden("fwgh_result")).toBe(true);
     expect((document.getElementById("fwgh_stage_button") as HTMLButtonElement).disabled).toBe(false);
   });

@@ -49,7 +49,7 @@ class BoardImageSerializer(serializers.Serializer):
 
 class BoardImagesSerializer(serializers.Serializer):
     sonoff = BoardImageSerializer()
-    custom = BoardImageSerializer()
+    waveshare_p4 = BoardImageSerializer()
 
 
 class ResolvedReleaseSerializer(serializers.Serializer):
@@ -71,12 +71,12 @@ class StagedBoardSerializer(serializers.Serializer):
 
 class StagedSerializer(serializers.Serializer):
     sonoff = StagedBoardSerializer()
-    custom = StagedBoardSerializer()
+    waveshare_p4 = StagedBoardSerializer()
 
 
 class UpToDateSerializer(serializers.Serializer):
     sonoff = serializers.BooleanField()
-    custom = serializers.BooleanField()
+    waveshare_p4 = serializers.BooleanField()
 
 
 class ReleaseListItemSerializer(serializers.Serializer):
@@ -112,7 +112,7 @@ class StagedChangeSerializer(serializers.Serializer):
 
 class StageChangesSerializer(serializers.Serializer):
     sonoff = StagedChangeSerializer()
-    custom = StagedChangeSerializer()
+    waveshare_p4 = StagedChangeSerializer()
 
 
 class StageResultSerializer(serializers.Serializer):

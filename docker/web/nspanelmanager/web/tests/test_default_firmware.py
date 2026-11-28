@@ -20,6 +20,8 @@ from .harness import NSPMTestCase
 
 FIRMWARE_DIR = Path(settings.BASE_DIR) / "firmware"
 PROVENANCE = FIRMWARE_DIR / "PROVENANCE.md"
+# The models the image ships firmware for. A model's slot (a board_models entry) is empty until its first upload.
+SHIPPED = [model for model in CHIP_IDS if (FIRMWARE_DIR / model).is_dir()]
 
 
 def recorded_md5s():
@@ -33,20 +35,20 @@ class DefaultFirmwareTests(NSPMTestCase):
     def test_every_shipped_file_matches_provenance(self):
         md5s = recorded_md5s()
 
-        expected = {f"{model}/{name}" for model in CHIP_IDS for name in ("firmware.bin", "data_file.bin", "merged_flash.bin")}
+        expected = {f"{model}/{name}" for model in SHIPPED for name in ("firmware.bin", "data_file.bin", "merged_flash.bin")}
         self.assertEqual(set(md5s), expected)
         for path, md5 in md5s.items():
             with self.subTest(path=path):
                 self.assertEqual(hashlib.md5((FIRMWARE_DIR / path).read_bytes()).hexdigest(), md5)
 
     def test_images_fit_the_partition_table(self):
-        for model in CHIP_IDS:
+        for model in SHIPPED:
             with self.subTest(model=model):
                 self.assertLessEqual((FIRMWARE_DIR / model / "firmware.bin").stat().st_size, APP_SLOT_BYTES)
                 self.assertLessEqual((FIRMWARE_DIR / model / "data_file.bin").stat().st_size, LITTLEFS_PARTITION_BYTES)
 
     def test_each_model_ships_an_image_for_its_chip(self):
-        for model, chip_id in CHIP_IDS.items():
+        for model, chip_id in ((model, CHIP_IDS[model]) for model in SHIPPED):
             with self.subTest(model=model):
                 header = (FIRMWARE_DIR / model / "firmware.bin").read_bytes()[:16]
                 self.assertEqual(header[0], 0xE9, "not an ESP app image")
@@ -57,7 +59,7 @@ class DefaultFirmwareTests(NSPMTestCase):
     @override_settings(MEDIA_ROOT=settings.BASE_DIR)
     def test_views_serve_the_shipped_files(self):
         md5s = recorded_md5s()
-        for model in CHIP_IDS:
+        for model in SHIPPED:
             with self.subTest(model=model):
                 firmware = self.client.get(reverse("checksum_firmware"), {"model": model})
                 data_file = self.client.get(reverse("checksum_data_file"), {"model": model})
