@@ -754,6 +754,20 @@ void NSPanel::mqtt_callback(std::string topic, std::string payload) {
         this->_current_firmware_md5_checksum = report.md5_firmware();
         this->_current_littlefs_md5_checksum = report.md5_littlefs();
         this->_current_tft_md5_checksum = report.md5_tft_gui();
+        if (report.has_build()) {
+          const BuildInfo &build_message = report.build();
+          std::lock_guard<std::mutex> build_lock(this->_build_mutex);
+          this->_build = FirmwareBuildInfo{
+              .version = build_message.version(),
+              .project = build_message.project(),
+              .build_date = build_message.build_date(),
+              .idf_version = build_message.idf_version(),
+              .elf_sha256 = boost::algorithm::to_lower_copy(build_message.elf_sha256()),
+              .image_sha256 = boost::algorithm::to_lower_copy(build_message.image_sha256()),
+              .chip = build_message.chip(),
+              .ota_partition = build_message.ota_partition(),
+          };
+        }
         {
           std::lock_guard<std::recursive_mutex> lock(this->_lvgl_mutex);
           this->_reported_display_mode = report.display_mode();
@@ -1081,9 +1095,13 @@ void NSPanel::send_websocket_status_update() {
   status_data["has_pressure"] = this->_has_pressure;
   status_data["has_temperature"] = this->_has_temperature;
 
+  // What build the panel runs, and what the manager has staged for its model (null where unknown).
+  status_data.update(this->get_build_status_json());
+
   // Check if NSPanel has firmware, littlefs or tft file updates available and set appropriate warning.
   // Every known model has firmware and littlefs; the TFT warnings below are skipped for panels without a Nextion display.
-  if (this->_current_firmware_md5_checksum.empty() || this->_current_littlefs_md5_checksum.empty()) {
+  // A panel that was flashed over USB reports no firmware md5, but its image sha-256 identifies the firmware as well.
+  if (!this->has_firmware_identity() || this->_current_littlefs_md5_checksum.empty()) {
     status_data["warnings"].push_back(nlohmann::json{
         {"level", "warning"},
         {"text", "Manager has no checksum for installed firmware on panel. If this doesn't go away within 5 minutes, try performing a firmware update."}});
@@ -1165,7 +1183,35 @@ void NSPanel::send_websocket_status_update() {
   WebsocketServer::update_stomp_topic_value(this->_mqtt_status_topic, status_data);
 }
 
+std::optional<FirmwareBuildInfo> NSPanel::get_build() {
+  std::lock_guard<std::mutex> lock(this->_build_mutex);
+  return this->_build;
+}
+
+nlohmann::json NSPanel::get_build_status_json() {
+  const std::optional<FirmwareBuildInfo> build = this->get_build();
+  auto staged_build = MqttManagerConfig::get_firmware_build_info(this->_model);
+  return nlohmann::json{
+      {"build", build ? build->to_json() : nlohmann::json(nullptr)},
+      {"staged_build", staged_build ? staged_build->to_json() : nlohmann::json(nullptr)},
+  };
+}
+
+bool NSPanel::has_firmware_identity() {
+  const std::optional<FirmwareBuildInfo> build = this->get_build();
+  return !this->_current_firmware_md5_checksum.empty() || (build && !build->image_sha256.empty());
+}
+
 bool NSPanel::has_firmware_update() {
+  // The image sha-256 is the exact identity of the image, so it is compared when both sides know it. Otherwise (firmware
+  // that predates build info, or a staged image without an appended hash) the md5 checksums decide, as before.
+  const std::optional<FirmwareBuildInfo> build = this->get_build();
+  if (build && !build->image_sha256.empty()) {
+    auto staged = MqttManagerConfig::get_firmware_build_info(this->_model);
+    if (staged && !staged->image_sha256.empty()) {
+      return build->image_sha256 != staged->image_sha256;
+    }
+  }
   auto result = MqttManagerConfig::get_firmware_checksum(this->_model);
   if (!result) {
     SPDLOG_ERROR("Failed to get checksum for {} firmware!", nspanel_model_id(this->_model));
@@ -1605,6 +1651,30 @@ bool NSPanel::register_to_manager(const nlohmann::json &register_request_payload
 
     if (register_request_payload.contains("md5_firmware") && register_request_payload.at("md5_firmware").is_string()) {
       this->_current_firmware_md5_checksum = register_request_payload.at("md5_firmware").get<std::string>();
+    }
+
+    {
+      // A register_request replaces what was known: it is the first thing a rebooted (or updated) panel sends, and
+      // firmware that predates "build" has none. The status reports that follow carry it again.
+      std::optional<FirmwareBuildInfo> build;
+      if (register_request_payload.contains("build") && register_request_payload.at("build").is_object()) {
+        const nlohmann::json &build_json = register_request_payload.at("build");
+        auto text = [&build_json](const char *key) {
+          return build_json.contains(key) && build_json.at(key).is_string() ? build_json.at(key).get<std::string>() : std::string();
+        };
+        build = FirmwareBuildInfo{
+            .version = text("version"),
+            .project = text("project"),
+            .build_date = text("build_date"),
+            .idf_version = text("idf_version"),
+            .elf_sha256 = boost::algorithm::to_lower_copy(text("elf_sha256")),
+            .image_sha256 = boost::algorithm::to_lower_copy(text("image_sha256")),
+            .chip = text("chip"),
+            .ota_partition = text("ota_partition"),
+        };
+      }
+      std::lock_guard<std::mutex> build_lock(this->_build_mutex);
+      this->_build = build;
     }
 
     if (register_request_payload.contains("md5_data_file") && register_request_payload.at("md5_data_file").is_string()) {

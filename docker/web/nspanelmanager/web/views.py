@@ -8,6 +8,7 @@ import environ
 import psutil
 from django.core.files.storage import FileSystemStorage
 from django.forms.models import model_to_dict
+from django.http import JsonResponse
 from django.shortcuts import Http404, HttpResponse, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from requests import delete
@@ -620,6 +621,21 @@ def checksum_firmware(request):
         model = "sonoff"
 
     return checksum_response(get_file_md5sum(f"firmware/{model}/firmware.bin"))
+
+
+def firmware_info(request):
+    """What the staged firmware.bin of a model is: its md5, size and build identity (version, image sha-256, ...).
+    checksum_firmware keeps answering with the md5 alone, which panels parse. Fields of an image that is not an ESP app
+    image are null."""
+    model = request.GET.get("model", "sonoff")
+    if model not in board_models.MODEL_IDS:
+        return HttpResponse("ERROR! Unknown model!", status=400)
+    fs = FileSystemStorage()
+    name = f"firmware/{model}/firmware.bin"
+    if not fs.exists(name):
+        return JsonResponse({"error": "No firmware is staged for this model."}, status=404)
+    info = board_models.read_app_image_info(fs.path(name))
+    return JsonResponse({"model": model, "md5": get_file_md5sum(name), "size": fs.size(name), "build": info.as_dict() if info else None})
 
 
 def checksum_data_file(request):

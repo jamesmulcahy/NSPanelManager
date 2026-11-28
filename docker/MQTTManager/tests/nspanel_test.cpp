@@ -1,5 +1,6 @@
 #include "test_helpers.hpp"
 #include <algorithm>
+#include <cstring>
 #include <command_manager/command_manager.hpp>
 #include <filesystem>
 #include <fstream>
@@ -2287,4 +2288,232 @@ TEST_F(NSPanelTest, panel_with_relays_and_a_temperature_sensor_keeps_its_discove
 
   // Nothing changed for a Sonoff panel, so discovery is not published again.
   EXPECT_TRUE(nspm_test::mqtt_published_to("homeassistant/sensor/nspanelmanager/c0_49_ef_00_01_01_temperature/config").empty());
+}
+
+// Build identity: what an ESP-IDF app image says about itself, and what a panel reports.
+namespace {
+
+const std::string STAGED_SHA = std::string(31, '\x11') + '\xab';
+const std::string STAGED_SHA_HEX = std::string(62, '1') + "ab";
+
+// A synthetic app image: header (magic, chip id at 12-13, hash_appended at 23), esp_app_desc_t at offset 32, a body,
+// and a trailing SHA-256 when hash_appended.
+std::string app_image(const std::string &version, uint16_t chip_id, bool hash_appended, const std::string &appended_sha = STAGED_SHA) {
+  std::string image(32 + 256, '\0');
+  image[0] = '\xE9';
+  image[12] = static_cast<char>(chip_id & 0xff);
+  image[13] = static_cast<char>(chip_id >> 8);
+  image[23] = hash_appended ? 1 : 0;
+  const uint32_t magic = 0xABCD5432;
+  std::memcpy(&image[32], &magic, sizeof(magic));
+  auto put = [&image](size_t offset, const std::string &text) { std::memcpy(&image[32 + offset], text.data(), text.size()); };
+  put(16, version);
+  put(48, "firmware_espidf");
+  put(80, "07:08:09");
+  put(96, "Nov 28 2026");
+  put(112, "v5.5.0");
+  for (size_t i = 0; i < 32; i++) {
+    image[32 + 144 + i] = static_cast<char>(i + 1);
+  }
+  image += std::string(1000, 'x');
+  if (hash_appended) {
+    image += appended_sha;
+  }
+  return image;
+}
+
+// Stages firmware.bin for the sonoff slot for the test's lifetime.
+struct StagedFirmware {
+  std::filesystem::path directory;
+  std::string previous_directory;
+
+  explicit StagedFirmware(const std::string &image) {
+    directory = std::filesystem::temp_directory_path() / fmt::format("nspm-staged-fw-{}-{}", ::getpid(), reinterpret_cast<uintptr_t>(this));
+    std::filesystem::create_directories(directory / "sonoff");
+    std::ofstream(directory / "sonoff" / "firmware.bin", std::ios::binary) << image;
+    previous_directory = MqttManagerConfig::firmware_directory;
+    MqttManagerConfig::firmware_directory = directory.string() + "/";
+    MqttManagerConfig::update_firmware_checksum();
+  }
+
+  ~StagedFirmware() {
+    MqttManagerConfig::firmware_directory = previous_directory;
+    MqttManagerConfig::update_firmware_checksum();
+    std::filesystem::remove_all(directory);
+  }
+};
+
+nlohmann::json build_json(const std::string &image_sha256, const std::string &version = "build-abc123") {
+  return {{"version", version}, {"project", "firmware_espidf"}, {"build_date", "07:08:09 Nov 28 2026"}, {"idf_version", "v5.5.0"}, {"elf_sha256", std::string(64, 'E')}, {"image_sha256", image_sha256}, {"chip", "esp32"}, {"ota_partition", "ota_0"}};
+}
+
+std::string report_with_build(const std::string &image_sha256, const std::string &version) {
+  NSPanelStatusReport report;
+  report.set_mac_address(PANEL_MAC);
+  report.set_rssi(-61);
+  BuildInfo *build = report.mutable_build();
+  build->set_version(version);
+  build->set_image_sha256(image_sha256);
+  build->set_chip("esp32");
+  return report.SerializeAsString();
+}
+
+} // namespace
+
+TEST(FirmwareImageTest, identity_is_read_from_the_app_description_and_the_appended_hash) {
+  const std::string image = app_image("build-abc123", 0x0000, true);
+  auto info = MqttManagerConfig::parse_app_image(image.substr(0, 288), image.substr(image.size() - 32));
+
+  ASSERT_TRUE(info.has_value());
+  EXPECT_EQ(info->version, "build-abc123");
+  EXPECT_EQ(info->project, "firmware_espidf");
+  EXPECT_EQ(info->build_date, "Nov 28 2026 07:08:09");
+  EXPECT_EQ(info->idf_version, "v5.5.0");
+  EXPECT_EQ(info->elf_sha256, "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20");
+  EXPECT_EQ(info->image_sha256, STAGED_SHA_HEX);
+  EXPECT_EQ(info->chip, "esp32");
+}
+
+TEST(FirmwareImageTest, chip_comes_from_the_header) {
+  for (auto [chip_id, name] : {std::pair<uint16_t, const char *>{0x0009, "esp32s3"}, {0x0012, "esp32p4"}}) {
+    const std::string image = app_image("v", chip_id, true);
+    EXPECT_EQ(MqttManagerConfig::parse_app_image(image.substr(0, 288), image.substr(image.size() - 32))->chip, name);
+  }
+}
+
+TEST(FirmwareImageTest, an_image_without_an_appended_hash_has_no_image_sha) {
+  const std::string image = app_image("v", 0x0000, false);
+  auto info = MqttManagerConfig::parse_app_image(image.substr(0, 288), image.substr(image.size() - 32));
+
+  ASSERT_TRUE(info.has_value());
+  EXPECT_EQ(info->version, "v");
+  EXPECT_EQ(info->image_sha256, "");
+}
+
+TEST(FirmwareImageTest, something_that_is_not_an_app_image_has_no_identity) {
+  EXPECT_FALSE(MqttManagerConfig::parse_app_image("", "").has_value());
+  EXPECT_FALSE(MqttManagerConfig::parse_app_image(std::string(288, '\0'), std::string(32, '\0')).has_value());
+  std::string no_description = app_image("v", 0x0000, true);
+  no_description[32] = 0;
+  EXPECT_FALSE(MqttManagerConfig::parse_app_image(no_description.substr(0, 288), std::string(32, '\0')).has_value());
+}
+
+TEST_F(NSPanelTest, staged_firmware_identity_is_read_from_its_slot) {
+  StagedFirmware staged(app_image("build-staged", 0x0000, true));
+
+  auto info = MqttManagerConfig::get_firmware_build_info(MQTT_MANAGER_NSPANEL_MODEL::SONOFF);
+  ASSERT_TRUE(info.has_value());
+  EXPECT_EQ(info->version, "build-staged");
+  EXPECT_EQ(info->image_sha256, STAGED_SHA_HEX);
+  EXPECT_FALSE(MqttManagerConfig::get_firmware_build_info(MQTT_MANAGER_NSPANEL_MODEL::WAVESHARE_P4).has_value());
+}
+
+TEST_F(NSPanelTest, a_panel_without_build_info_has_none) {
+  load_panel();
+  register_panel();
+
+  EXPECT_FALSE(panel->get_build().has_value());
+  EXPECT_TRUE(panel->get_build_status_json().at("build").is_null());
+}
+
+TEST_F(NSPanelTest, register_request_build_is_stored_and_lowercased) {
+  load_panel();
+  auto request = nlohmann::json{{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
+  request["build"] = build_json("ABCDEF");
+  panel->register_to_manager(request);
+
+  auto build = panel->get_build();
+  ASSERT_TRUE(build.has_value());
+  EXPECT_EQ(build->version, "build-abc123");
+  EXPECT_EQ(build->image_sha256, "abcdef");
+  EXPECT_EQ(build->elf_sha256, std::string(64, 'e'));
+  EXPECT_EQ(build->ota_partition, "ota_0");
+  EXPECT_EQ(panel->get_build_status_json().at("build").at("version"), "build-abc123");
+}
+
+TEST_F(NSPanelTest, status_report_build_replaces_the_registered_one) {
+  load_panel();
+  auto request = nlohmann::json{{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
+  request["build"] = build_json("aa");
+  panel->register_to_manager(request);
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build("bb", "from-report"));
+
+  EXPECT_EQ(panel->get_build()->version, "from-report");
+  EXPECT_EQ(panel->get_build()->image_sha256, "bb");
+}
+
+TEST_F(NSPanelTest, a_status_report_without_build_keeps_the_known_build) {
+  load_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build("bb", "from-report"));
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", temperature_report(70.0, true));
+
+  EXPECT_EQ(panel->get_build()->version, "from-report");
+}
+
+TEST_F(NSPanelTest, registering_without_build_forgets_the_old_build) {
+  load_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build("bb", "from-report"));
+  register_panel();
+
+  EXPECT_FALSE(panel->get_build().has_value());
+}
+
+TEST_F(NSPanelTest, firmware_update_compares_image_sha_when_both_are_known) {
+  StagedFirmware staged(app_image("build-staged", 0x0000, true));
+  load_panel();
+  // The md5s differ from the staged file's, so the md5 comparison alone would say an update is available.
+  register_panel();
+  EXPECT_TRUE(panel->has_firmware_update());
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build(STAGED_SHA_HEX, "build-staged"));
+  EXPECT_FALSE(panel->has_firmware_update());
+
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build(std::string(64, '2'), "build-older"));
+  EXPECT_TRUE(panel->has_firmware_update());
+}
+
+TEST_F(NSPanelTest, firmware_update_falls_back_to_md5_without_a_staged_image_sha) {
+  StagedFirmware staged(app_image("build-staged", 0x0000, false));
+  load_panel();
+  register_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build(STAGED_SHA_HEX, "build-staged"));
+
+  EXPECT_TRUE(panel->has_firmware_update()); // The panel's md5 ("f") is not the staged file's.
+}
+
+TEST_F(NSPanelTest, firmware_update_falls_back_to_md5_without_a_panel_image_sha) {
+  StagedFirmware staged(app_image("build-staged", 0x0000, true));
+  load_panel();
+  register_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build("", "build-x"));
+
+  EXPECT_TRUE(panel->has_firmware_update());
+}
+
+TEST_F(NSPanelTest, a_panel_with_an_image_sha_but_no_md5_has_a_firmware_identity) {
+  load_panel();
+  NSPanelStatusReport usb_flashed;
+  usb_flashed.set_mac_address(PANEL_MAC);
+  usb_flashed.set_md5_littlefs("d");
+  usb_flashed.mutable_build()->set_image_sha256(STAGED_SHA_HEX);
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", usb_flashed.SerializeAsString());
+  EXPECT_TRUE(panel->has_firmware_identity());
+
+  NSPanelStatusReport unknown;
+  unknown.set_mac_address(PANEL_MAC);
+  unknown.set_md5_littlefs("d");
+  panel.reset();
+  load_panel();
+  panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", unknown.SerializeAsString());
+  EXPECT_FALSE(panel->has_firmware_identity());
+}
+
+TEST_F(NSPanelTest, status_json_carries_the_staged_build) {
+  StagedFirmware staged(app_image("build-staged", 0x0000, true));
+  load_panel();
+
+  auto json = panel->get_build_status_json();
+  EXPECT_EQ(json.at("staged_build").at("version"), "build-staged");
+  EXPECT_EQ(json.at("staged_build").at("image_sha256"), STAGED_SHA_HEX);
+  EXPECT_TRUE(json.at("build").is_null());
 }

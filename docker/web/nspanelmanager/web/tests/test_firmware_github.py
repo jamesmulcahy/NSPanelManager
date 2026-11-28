@@ -24,6 +24,7 @@ from web.rest_v2.global_settings import FIRMWARE_GITHUB_REPO_DEFAULT
 from web.settings_helper import set_setting_value
 
 from .harness import NSPMTestCase
+from .test_board_models import esp_app_image
 
 REPO = FIRMWARE_GITHUB_REPO_DEFAULT
 TAG = "build-545a9e4d"
@@ -187,13 +188,24 @@ class StageTests(FirmwareGithubTestCase):
         self.assertEqual(body["commit"], COMMIT)
         for model in images:
             self.assertEqual(self.staged(model), images[model])
-            self.assertEqual(body["boards"][model], {"before_md5": md5(self.old[model]), "after_md5": md5(images[model]), "changed": True})
+            self.assertEqual(body["boards"][model], {"before_md5": md5(self.old[model]), "after_md5": md5(images[model]), "changed": True, "version": None, "image_sha256": None})
             row = FirmwareUpload.objects.get(model=model)
             self.assertEqual((row.md5, row.source, row.repo, row.tag, row.commit), (md5(images[model]), "github", REPO, TAG, COMMIT))
             self.assertEqual(row.run_url, "https://github.com/x/y/actions/runs/1")
         self.assertManagerReloaded(times=1)
         self.assertEqual(sorted(os.listdir(os.path.dirname(self.path("sonoff")))), ["firmware.bin"])
         self.assertEqual(oct(os.stat(self.path("sonoff")).st_mode & 0o777), "0o644")
+
+    def test_the_response_names_the_staged_version_and_image_sha(self):
+        sonoff = esp_app_image("build-staged")
+        images = self.github.add_release(images={"sonoff": sonoff, "waveshare_p4": esp_app_image("build-p4", chip_id=0x0012)})
+
+        body = self.stage().json()
+
+        self.assertEqual(body["boards"]["sonoff"]["version"], "build-staged")
+        self.assertEqual(body["boards"]["sonoff"]["image_sha256"], hashlib.sha256(sonoff[:-32]).hexdigest())
+        self.assertEqual(body["boards"]["waveshare_p4"]["version"], "build-p4")
+        self.assertEqual(self.staged("sonoff"), images["sonoff"])
 
     def test_stages_when_nothing_was_staged_before(self):
         for model in self.old:
@@ -212,7 +224,7 @@ class StageTests(FirmwareGithubTestCase):
 
         body = self.stage().json()
         for model in images:
-            self.assertEqual(body["boards"][model], {"before_md5": md5(images[model]), "after_md5": md5(images[model]), "changed": False})
+            self.assertEqual(body["boards"][model], {"before_md5": md5(images[model]), "after_md5": md5(images[model]), "changed": False, "version": None, "image_sha256": None})
             self.assertEqual(os.stat(self.path(model)).st_mtime_ns, before[model])
         self.assertEqual(FirmwareUpload.objects.count(), rows)
         self.assertManagerNotReloaded()
@@ -739,7 +751,7 @@ class StatusTests(FirmwareGithubTestCase):
         self.assertEqual(resolved["html_url"], f"https://github.com/{REPO}/releases/tag/{TAG}")
         self.assertEqual(resolved["boards"]["waveshare_p4"], {"md5": md5(images["waveshare_p4"]), "size": len(images["waveshare_p4"])})
         self.assertEqual(body["up_to_date"], {"sonoff": False, "waveshare_p4": False})
-        self.assertEqual(body["staged"]["sonoff"], {"md5": md5(self.old["sonoff"]), "source": None, "tag": None, "commit": None, "staged_at": None})
+        self.assertEqual(body["staged"]["sonoff"], {"md5": md5(self.old["sonoff"]), "version": None, "image_sha256": None, "source": None, "tag": None, "commit": None, "staged_at": None})
 
     def test_up_to_date_after_staging(self):
         self.github.add_release()

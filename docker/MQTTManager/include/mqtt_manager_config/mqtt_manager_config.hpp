@@ -1,6 +1,7 @@
 #ifndef MQTTMANAGER_CONFIG_HPP
 #define MQTTMANAGER_CONFIG_HPP
 #include "light/light.hpp"
+#include "nspanel/firmware_build_info.hpp"
 #include "nspanel/nspanel_model.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/exception/diagnostic_information.hpp>
@@ -8,6 +9,7 @@
 #include <database_manager/database_manager.hpp>
 #include <expected>
 #include <mutex>
+#include <optional>
 #include <nlohmann/json.hpp>
 #include <nlohmann/json_fwd.hpp>
 #include <protobuf/protobuf_mqttmanager.pb.h>
@@ -148,6 +150,23 @@ public:
   static void update_firmware_checksum();
   static void update_tft_checksums();
 
+  // Where Django keeps the firmware slots (firmware/<model id>/firmware.bin, data_file.bin). A variable so that tests can
+  // point it elsewhere.
+  static inline std::string firmware_directory = "/usr/src/app/nspanelmanager/firmware/";
+
+  /**
+   * Read the build identity out of an ESP-IDF app image: the version, project, dates and ELF SHA-256 from esp_app_desc_t
+   * (at offset 32), the chip from the header, and the image SHA-256 from the last 32 bytes when the header says one is
+   * appended (hash_appended, byte 23).
+   * @param head: At least the first 288 bytes of the image.
+   * @param tail: The last 32 bytes of the image.
+   * @return The identity, or empty if this is not an app image.
+   */
+  static std::optional<FirmwareBuildInfo> parse_app_image(const std::string &head, const std::string &tail);
+
+  // The identity of the staged firmware.bin of a model's slot. Unexpected when none is staged or it is not an app image.
+  static std::expected<FirmwareBuildInfo, bool> get_firmware_build_info(MQTT_MANAGER_NSPANEL_MODEL model);
+
   // The staged firmware.bin / data_file.bin of a model's slot. Unexpected when there is none.
   static std::expected<std::string, bool> get_firmware_checksum(MQTT_MANAGER_NSPANEL_MODEL model);
   static std::expected<std::string, bool> get_littlefs_checksum(MQTT_MANAGER_NSPANEL_MODEL model);
@@ -186,10 +205,12 @@ private:
   static inline LightTurnOnBehaviour _light_turn_on_behaviour = LightTurnOnBehaviour::COLOR_TEMPERATURE;
 
   static std::optional<std::string> _get_file_md5_checksum(std::string file_path);
+  static std::optional<FirmwareBuildInfo> _read_firmware_build_info(const std::string &file_path);
   static inline std::mutex _md5_checksum_files_mutex;
   // Keyed by model id.
   static inline std::unordered_map<std::string, std::string> _md5_checksum_firmware;
   static inline std::unordered_map<std::string, std::string> _md5_checksum_littlefs;
+  static inline std::unordered_map<std::string, FirmwareBuildInfo> _firmware_build_info;
   static inline std::string _md5_checksum_bundled_terminal_us;
   static inline std::string _md5_checksum_bundled_terminal_eu;
   static inline std::string _md5_checksum_terminal_us;

@@ -188,6 +188,22 @@ message NSPanelStatusReport {
   // sensor is failing) leaves it false and `temperature` at 0. Firmware that predates this field never sets it:
   // read a non-zero `temperature` from such a panel as present.
   bool has_temperature = 20;
+
+  // Which build is running. Unset (not has_build) on firmware that predates it.
+  BuildInfo build = 21;
+}
+
+// Identity of a firmware build, read from the running image's esp_app_desc_t and OTA partition.
+// Also sent in register_request as a JSON "build" object with the same field names.
+message BuildInfo {
+  string version = 1;       // esp_app_desc_t.version, normally `git describe --always --tags --dirty`
+  string project = 2;       // esp_app_desc_t.project_name
+  string build_date = 3;    // esp_app_desc_t.date + " " + time
+  string idf_version = 4;   // esp_app_desc_t.idf_ver
+  string elf_sha256 = 5;    // esp_app_desc_t.app_elf_sha256, 64 lowercase hex characters
+  string image_sha256 = 6;  // SHA-256 of the image in the running OTA partition (the .bin's last 32 bytes), 64 lowercase hex characters
+  string chip = 7;          // "esp32", "esp32s3" or "esp32p4"
+  string ota_partition = 8; // Label of the running partition: ota_0, ota_1 or factory
 }
 
 // Container of data shown on the "Entities page".

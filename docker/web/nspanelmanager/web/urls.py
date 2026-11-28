@@ -26,6 +26,7 @@ urlpatterns = [
     path("download_data_file", views.download_data_file, name="download_data_file"),
     path("download_tft/<int:panel_id>", views.download_tft, name="download_tft"),
     path("checksum_firmware", views.checksum_firmware, name="checksum_firmware"),
+    path("firmware_info", views.firmware_info, name="firmware_info"),
     path("checksum_data_file", views.checksum_data_file, name="checksum_data_file"),
     path("checksum_tft_file/<int:panel_id>", views.checksum_tft_file, name="checksum_tft_file"),
     path("manual", views.get_manual, name="manual"),

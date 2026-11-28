@@ -996,6 +996,10 @@ export interface components {
         StagedBoard: {
             /** @description md5 of the staged file; null if there is none. */
             md5: string | null;
+            /** @description The staged image's version (esp_app_desc_t); null if there is none or it is not an ESP app image. */
+            version: string | null;
+            /** @description The staged image's appended SHA-256 (hex); null if unknown. */
+            image_sha256: string | null;
             /**
              * @description Where the staged file came from, if the manager recorded it.
              *
@@ -1012,6 +1016,10 @@ export interface components {
         StagedChange: {
             before_md5: string | null;
             after_md5: string;
+            /** @description The staged image's version (esp_app_desc_t). */
+            version: string | null;
+            /** @description The staged image's appended SHA-256 (hex); null if unknown. */
+            image_sha256: string | null;
             changed: boolean;
         };
         /**

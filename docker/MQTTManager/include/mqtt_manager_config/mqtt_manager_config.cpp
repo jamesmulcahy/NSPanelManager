@@ -192,7 +192,7 @@ void MqttManagerConfig::update_firmware_checksum() {
 
   for (const NSPanelModelInfo &info : NSPANEL_MODELS) {
     const std::string id(info.id);
-    const std::string slot = fmt::format("/usr/src/app/nspanelmanager/firmware/{}/", id);
+    const std::string slot = fmt::format("{}{}/", MqttManagerConfig::firmware_directory, id);
 
     // Update firmware checksum
     const std::string firmware_warning = fmt::format("MD5 checksum for {} firmware was not able to be calculated.", id);
@@ -201,8 +201,16 @@ void MqttManagerConfig::update_firmware_checksum() {
       MqttManagerConfig::_md5_checksum_firmware[id] = firmware_checksum.value();
       WebsocketServer::remove_warning(firmware_warning);
       SPDLOG_INFO("Firmware checksum for {}: {}", id, firmware_checksum.value());
+      auto build_info = MqttManagerConfig::_read_firmware_build_info(slot + "firmware.bin");
+      if (build_info) {
+        SPDLOG_INFO("Firmware build for {}: version {}, image sha256 {}", id, build_info->version, build_info->image_sha256);
+        MqttManagerConfig::_firmware_build_info[id] = *build_info;
+      } else {
+        MqttManagerConfig::_firmware_build_info.erase(id);
+      }
     } else {
       MqttManagerConfig::_md5_checksum_firmware.erase(id);
+      MqttManagerConfig::_firmware_build_info.erase(id);
       if (info.firmware_bundled) {
         WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, firmware_warning);
         SPDLOG_ERROR("Failed to calculate checksum for {} firmware!", id);
@@ -346,6 +354,103 @@ std::expected<std::string, bool> MqttManagerConfig::get_firmware_checksum(MQTT_M
     return std::unexpected(false);
   }
   return checksum->second;
+}
+
+namespace {
+// esp_app_desc_t sits at offset 32 of an app image (after the 24-byte header and the 8-byte first segment header).
+constexpr size_t APP_DESC_OFFSET = 32;
+constexpr uint32_t APP_DESC_MAGIC = 0xABCD5432;
+constexpr size_t APP_DESC_SIZE = 256;
+constexpr size_t SHA256_SIZE = 32;
+
+// A NUL-padded fixed-size C string field.
+std::string fixed_string(const std::string &data, size_t offset, size_t size) {
+  std::string value = data.substr(offset, size);
+  value.resize(strnlen(value.c_str(), value.size()));
+  return value;
+}
+
+std::string hex_string(const std::string &data, size_t offset, size_t size) {
+  static const char *digits = "0123456789abcdef";
+  std::string hex;
+  for (size_t i = offset; i < offset + size; i++) {
+    const unsigned char byte = static_cast<unsigned char>(data[i]);
+    hex.push_back(digits[byte >> 4]);
+    hex.push_back(digits[byte & 0x0f]);
+  }
+  return hex;
+}
+
+const char *chip_name_from_id(uint16_t chip_id) {
+  switch (chip_id) {
+  case 0x0000:
+    return "esp32";
+  case 0x0009:
+    return "esp32s3";
+  case 0x0012:
+    return "esp32p4";
+  default:
+    return "";
+  }
+}
+} // namespace
+
+std::optional<FirmwareBuildInfo> MqttManagerConfig::parse_app_image(const std::string &head, const std::string &tail) {
+  if (head.size() < APP_DESC_OFFSET + APP_DESC_SIZE || static_cast<unsigned char>(head[0]) != 0xE9) {
+    return std::nullopt;
+  }
+  uint32_t magic = 0;
+  std::memcpy(&magic, head.data() + APP_DESC_OFFSET, sizeof(magic));
+  if (magic != APP_DESC_MAGIC) {
+    return std::nullopt;
+  }
+
+  FirmwareBuildInfo info;
+  const size_t desc = APP_DESC_OFFSET;
+  info.version = fixed_string(head, desc + 16, 32);
+  info.project = fixed_string(head, desc + 48, 32);
+  const std::string time = fixed_string(head, desc + 80, 16);
+  const std::string date = fixed_string(head, desc + 96, 16);
+  info.build_date = date + " " + time;
+  info.idf_version = fixed_string(head, desc + 112, 32);
+  info.elf_sha256 = hex_string(head, desc + 144, SHA256_SIZE);
+  const uint16_t chip_id = static_cast<uint16_t>(static_cast<unsigned char>(head[12]) | (static_cast<unsigned char>(head[13]) << 8));
+  info.chip = chip_name_from_id(chip_id);
+  const bool hash_appended = head[23] != 0;
+  if (hash_appended && tail.size() == SHA256_SIZE) {
+    info.image_sha256 = hex_string(tail, 0, SHA256_SIZE);
+  }
+  return info;
+}
+
+std::optional<FirmwareBuildInfo> MqttManagerConfig::_read_firmware_build_info(const std::string &file_path) {
+  std::ifstream file(file_path, std::ifstream::binary | std::ifstream::ate);
+  if (!file) {
+    return std::nullopt;
+  }
+  const std::streamoff size = file.tellg();
+  if (size < static_cast<std::streamoff>(APP_DESC_OFFSET + APP_DESC_SIZE + SHA256_SIZE)) {
+    return std::nullopt;
+  }
+  std::string head(APP_DESC_OFFSET + APP_DESC_SIZE, '\0');
+  std::string tail(SHA256_SIZE, '\0');
+  file.seekg(0);
+  file.read(head.data(), head.size());
+  file.seekg(size - static_cast<std::streamoff>(SHA256_SIZE));
+  file.read(tail.data(), tail.size());
+  if (!file) {
+    return std::nullopt;
+  }
+  return MqttManagerConfig::parse_app_image(head, tail);
+}
+
+std::expected<FirmwareBuildInfo, bool> MqttManagerConfig::get_firmware_build_info(MQTT_MANAGER_NSPANEL_MODEL model) {
+  std::lock_guard<std::mutex> lock_guard(MqttManagerConfig::_md5_checksum_files_mutex);
+  auto info = MqttManagerConfig::_firmware_build_info.find(std::string(nspanel_model_id(model)));
+  if (info == MqttManagerConfig::_firmware_build_info.end()) {
+    return std::unexpected(false);
+  }
+  return info->second;
 }
 
 std::expected<std::string, bool> MqttManagerConfig::get_littlefs_checksum(MQTT_MANAGER_NSPANEL_MODEL model) {
