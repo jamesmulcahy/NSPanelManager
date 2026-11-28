@@ -19,6 +19,7 @@ import {
 } from "@mdi/js";
 import { useStompStore } from "../../stores/StompStore";
 import { Notify } from "../NSPanelToastContainer";
+import { hasFeature, isKnownModel } from "../../lib/panelModels";
 
 const NSPanelStatus = ({ status }: { status: INSPanelStatusData }) => {
   if (status.state == "online") {
@@ -98,7 +99,7 @@ const NSPanelStatus = ({ status }: { status: INSPanelStatusData }) => {
 };
 
 const NSPanelWiFiStatus = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") return null;
+  if (!isKnownModel(status.model)) return null;
   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
     return (
       <div className="list-row flex items-center justify-start gap-1 text-base py-3 px-2">
@@ -137,7 +138,7 @@ const NSPanelWiFiStatus = ({ status }: { status: INSPanelStatusData }) => {
 };
 
 const NSPanelRamStatus = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") return null;
+  if (!isKnownModel(status.model)) return null;
   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
     return (
       <div className="list-row flex items-center justify-start gap-1 text-base py-3 px-2">
@@ -155,7 +156,7 @@ const NSPanelRamStatus = ({ status }: { status: INSPanelStatusData }) => {
 };
 
 const NSPanelTemperatureStatus = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") return null;
+  if (!isKnownModel(status.model) || hasFeature(status, "no_temperature")) return null;
   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
     return (
       <div className="list-row flex items-center justify-start gap-1 text-base py-3 px-2">
@@ -174,7 +175,7 @@ const NSPanelTemperatureStatus = ({ status }: { status: INSPanelStatusData }) =>
 };
 
 const NSPanelHumidityStatus = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "custom") return null;
+  if (!status.has_humidity) return null;
   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
     return (
       <div className="list-row flex items-center justify-start gap-1 text-base py-3 px-2">
@@ -192,7 +193,7 @@ const NSPanelHumidityStatus = ({ status }: { status: INSPanelStatusData }) => {
 };
 
 const NSPanelPressureStatus = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "custom") return null;
+  if (!status.has_pressure) return null;
   if (status.state == "offline" || status.state == "unknown" || status.state == "waiting" || status.state == "rebooting") {
     return (
       <div className="list-row flex items-center justify-start gap-1 text-base py-3 px-2">
@@ -210,7 +211,7 @@ const NSPanelPressureStatus = ({ status }: { status: INSPanelStatusData }) => {
 };
 
 const NSPanelRebootButton = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") {
+  if (!isKnownModel(status.model)) {
     return null;
   }
 
@@ -229,7 +230,7 @@ const NSPanelRebootButton = ({ status }: { status: INSPanelStatusData }) => {
 };
 
 const NSPanelVisitButton = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") {
+  if (!isKnownModel(status.model)) {
     return null;
   }
 
@@ -246,7 +247,7 @@ const NSPanelVisitButton = ({ status }: { status: INSPanelStatusData }) => {
 };
 
 const NSPanelFirmwareUpdateButton = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") return;
+  if (!isKnownModel(status.model)) return;
 
   return (
     <div
@@ -264,7 +265,7 @@ const NSPanelFirmwareUpdateButton = ({ status }: { status: INSPanelStatusData })
 };
 
 const NSPanelForceFirmwareUpdateButton = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") return;
+  if (!isKnownModel(status.model)) return;
 
   return (
     <div
@@ -282,7 +283,7 @@ const NSPanelForceFirmwareUpdateButton = ({ status }: { status: INSPanelStatusDa
 };
 
 const NSPanelGuiUpdateButton = ({ status }: { status: INSPanelStatusData }) => {
-  if (status.model != "sonoff" && status.model != "custom") return;
+  if (!isKnownModel(status.model) || hasFeature(status, "no_tft")) return;
 
   return (
     <div

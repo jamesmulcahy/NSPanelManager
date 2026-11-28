@@ -228,17 +228,17 @@ export interface components {
         BlankEnum: "";
         /**
          * @description * `sonoff` - sonoff
-         *     * `custom` - custom
+         *     * `waveshare_p4` - waveshare_p4
          * @enum {string}
          */
-        BoardEnum: "sonoff" | "custom";
+        BoardEnum: "sonoff" | "waveshare_p4";
         BoardImage: {
             md5: string;
             size: number;
         };
         BoardImages: {
             sonoff: components["schemas"]["BoardImage"];
-            custom: components["schemas"]["BoardImage"];
+            waveshare_p4: components["schemas"]["BoardImage"];
         };
         /**
          * @description * `bad_release` - bad_release
@@ -327,7 +327,7 @@ export interface components {
              * @description The board a verification failure is about.
              *
              *     * `sonoff` - sonoff
-             *     * `custom` - custom
+             *     * `waveshare_p4` - waveshare_p4
              */
             board?: components["schemas"]["BoardEnum"];
         };
@@ -978,7 +978,7 @@ export interface components {
         SourceEnum: "upload" | "github" | "bundled";
         StageChanges: {
             sonoff: components["schemas"]["StagedChange"];
-            custom: components["schemas"]["StagedChange"];
+            waveshare_p4: components["schemas"]["StagedChange"];
         };
         StageRequestRequest: {
             /** @description "latest" or a release tag. The firmware_github_release setting when omitted. */
@@ -991,7 +991,7 @@ export interface components {
         };
         Staged: {
             sonoff: components["schemas"]["StagedBoard"];
-            custom: components["schemas"]["StagedBoard"];
+            waveshare_p4: components["schemas"]["StagedBoard"];
         };
         StagedBoard: {
             /** @description md5 of the staged file; null if there is none. */
@@ -1022,7 +1022,7 @@ export interface components {
         TurnOnBehaviorEnum: "color_temp" | "restore";
         UpToDate: {
             sonoff: boolean;
-            custom: boolean;
+            waveshare_p4: boolean;
         };
         /** @description A 400 for a malformed body: {"detail": message}, or messages by field (one object per list item). */
         ValidationError: {
