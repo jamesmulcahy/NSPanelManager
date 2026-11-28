@@ -14,7 +14,7 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from web import github_firmware
+from web import board_models, github_firmware
 from web.models import FirmwareUpload
 
 from .global_settings import _GITHUB_TAG, get_firmware_github_source
@@ -63,6 +63,8 @@ class ResolvedReleaseSerializer(serializers.Serializer):
 
 class StagedBoardSerializer(serializers.Serializer):
     md5 = serializers.CharField(allow_null=True, help_text="md5 of the staged file; null if there is none.")
+    version = serializers.CharField(allow_null=True, help_text="The staged image's version (esp_app_desc_t); null if there is none or it is not an ESP app image.")
+    image_sha256 = serializers.CharField(allow_null=True, help_text="The staged image's appended SHA-256 (hex); null if unknown.")
     source = serializers.ChoiceField(choices=FirmwareUpload.Source.choices, allow_null=True, help_text="Where the staged file came from, if the manager recorded it.")
     tag = serializers.CharField(allow_null=True)
     commit = serializers.CharField(allow_null=True)
@@ -107,6 +109,8 @@ class StageRequestSerializer(serializers.Serializer):
 class StagedChangeSerializer(serializers.Serializer):
     before_md5 = serializers.CharField(allow_null=True)
     after_md5 = serializers.CharField()
+    version = serializers.CharField(allow_null=True, help_text="The staged image's version (esp_app_desc_t).")
+    image_sha256 = serializers.CharField(allow_null=True, help_text="The staged image's appended SHA-256 (hex); null if unknown.")
     changed = serializers.BooleanField()
 
 
@@ -141,8 +145,11 @@ def _staged():
     for model in github_firmware.BOARDS:
         md5 = github_firmware.file_md5(github_firmware.firmware_path(model))
         row = FirmwareUpload.objects.filter(md5=md5, model=model).order_by("-staged_at", "-id").first() if md5 else None
+        info = board_models.read_app_image_info(github_firmware.firmware_path(model)) if md5 else None
         staged[model] = {
             "md5": md5,
+            "version": (info.version or None) if info else None,
+            "image_sha256": (info.image_sha256 or None) if info else None,
             "source": row.source if row else None,
             "tag": (row.tag or None) if row else None,
             "commit": (row.commit or None) if row else None,
@@ -208,4 +215,8 @@ class FirmwareStageView(APIView):
         except github_firmware.FirmwareError as error:
             logger.warning("Staging firmware from %s %s failed: %s", repo, release, error.message)
             return _error_response(error)
-        return Response({"tag": result["tag"], "commit": result["commit"], "boards": result["boards"]})
+        boards = {}
+        for model, change in result["boards"].items():
+            info = board_models.read_app_image_info(github_firmware.firmware_path(model))
+            boards[model] = {**change, "version": (info.version or None) if info else None, "image_sha256": (info.image_sha256 or None) if info else None}
+        return Response({"tag": result["tag"], "commit": result["commit"], "boards": boards})

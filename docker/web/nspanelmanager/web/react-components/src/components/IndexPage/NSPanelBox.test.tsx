@@ -74,4 +74,46 @@ describe("NSPanelBox", () => {
     expect(container.textContent).not.toContain("Reboot");
     expect(container.textContent).not.toContain("Update firmware");
   });
+
+  describe("build identity", () => {
+    const build = (overrides = {}) => ({
+      version: "build-1a2b3c4d",
+      project: "firmware_espidf",
+      build_date: "Nov 28 2026 07:08:09",
+      idf_version: "v5.5.0",
+      elf_sha256: "e".repeat(64),
+      image_sha256: "9f8e7d6c" + "0".repeat(56),
+      chip: "esp32",
+      ota_partition: "ota_0",
+      ...overrides,
+    });
+
+    it("shows the version and a short image sha", () => {
+      const { getByTestId } = show(panel({ build: build() }));
+
+      expect(getByTestId("panel-build").textContent).toBe("build-1a2b3c4d · 9f8e7d6c");
+    });
+
+    it("shows nothing for a panel that reports no build", () => {
+      expect(show(panel()).queryByTestId("panel-build")).toBeNull();
+      useEntityStatesStore.setState({ status: "none", nspanels: {} });
+      expect(show(panel({ build: null })).queryByTestId("panel-build")).toBeNull();
+    });
+
+    it("names the staged version when the staged image is another one", () => {
+      const { getByTestId } = show(panel({ build: build(), staged_build: build({ version: "build-5e6f7a8b", image_sha256: "1".repeat(64) }) }));
+
+      expect(getByTestId("panel-build").textContent).toBe("build-1a2b3c4d · 9f8e7d6c → build-5e6f7a8b");
+    });
+
+    it("shows no staged version when the images are the same or the staged sha is unknown", () => {
+      const same = show(panel({ build: build(), staged_build: build() }));
+      expect(same.getByTestId("panel-build").textContent).toBe("build-1a2b3c4d · 9f8e7d6c");
+      useEntityStatesStore.setState({ status: "none", nspanels: {} });
+      same.unmount();
+
+      const unknown = show(panel({ build: build(), staged_build: build({ version: "build-5e6f7a8b", image_sha256: "" }) }));
+      expect(unknown.getByTestId("panel-build").textContent).toBe("build-1a2b3c4d · 9f8e7d6c");
+    });
+  });
 });

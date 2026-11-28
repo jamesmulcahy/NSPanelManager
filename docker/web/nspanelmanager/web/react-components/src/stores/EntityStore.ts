@@ -23,6 +23,18 @@ export interface INSPanelWarningData {
   action?: "gui_update";
 }
 
+// Which firmware build a panel runs, or the manager has staged. Every field is "" when unknown.
+export interface IFirmwareBuild {
+  version: string;
+  project: string;
+  build_date: string;
+  idf_version: string;
+  elf_sha256: string;
+  image_sha256: string;
+  chip: string;
+  ota_partition: string;
+}
+
 export interface INSPanelStatusData {
   id: number;
   mac: string;
@@ -45,6 +57,9 @@ export interface INSPanelStatusData {
   has_humidity?: boolean;
   has_pressure?: boolean;
   has_temperature?: boolean;
+  // The running build, or null/absent when the panel's firmware does not report it. staged_build is the firmware staged for the panel's model.
+  build?: IFirmwareBuild | null;
+  staged_build?: IFirmwareBuild | null;
   state: "online" | "offline" | "updating_fw" | "updating_fs" | "updating_tft" | "waiting" | "awaiting_accept" | "rebooting" | "unknown";
 }
 

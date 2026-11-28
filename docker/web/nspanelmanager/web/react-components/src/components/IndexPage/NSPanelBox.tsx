@@ -142,6 +142,25 @@ const NSPanelStatusHeader = ({ state, update_progress }: { state: string; update
   }
 };
 
+// "build-1a2b3c4d · 9f8e7d6c", and the staged version when the staged image is another one. Nothing for firmware that reports no build.
+const NSPanelBuild = ({ status }: { status: INSPanelStatusData }) => {
+  const build = status.build;
+  if (!build || (!build.version && !build.image_sha256)) return null;
+  const staged = status.staged_build;
+  const behind = !!staged && !!staged.image_sha256 && !!build.image_sha256 && staged.image_sha256 !== build.image_sha256;
+  const staged_label = behind ? staged?.version || staged?.image_sha256.slice(0, 8) : "";
+  const title = [`Version: ${build.version}`, `Image SHA-256: ${build.image_sha256}`, build.build_date && `Built: ${build.build_date}`, behind && `Staged: ${staged?.version} (${staged?.image_sha256})`]
+    .filter(Boolean)
+    .join("\n");
+  return (
+    <div className="text-xs text-base-content/60 font-mono truncate" title={title} data-testid="panel-build">
+      {build.version}
+      {build.image_sha256 && ` · ${build.image_sha256.slice(0, 8)}`}
+      {behind && <span className="text-info">{` → ${staged_label}`}</span>}
+    </div>
+  );
+};
+
 const NSPanelWarnings = ({ warnings, mac, name }: { warnings: INSPanelWarningData[]; mac: string; name: string }) => {
   if (warnings.length === 0) return null;
 
@@ -343,6 +362,7 @@ const AcceptedNSPanelContent = ({ status }: { status: INSPanelStatusData }) => {
             </div>
           </div>
 
+          <NSPanelBuild status={status} />
           <div className="flex justify-between items-end">
             <div>
               <div className="my-1">

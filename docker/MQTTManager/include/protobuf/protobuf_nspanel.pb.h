@@ -52,6 +52,9 @@ struct TableStruct_protobuf_5fnspanel_2eproto {
 };
 extern const ::google::protobuf::internal::DescriptorTable
     descriptor_table_protobuf_5fnspanel_2eproto;
+class BuildInfo;
+struct BuildInfoDefaultTypeInternal;
+extern BuildInfoDefaultTypeInternal _BuildInfo_default_instance_;
 class NSPanelCalendarUpdate;
 struct NSPanelCalendarUpdateDefaultTypeInternal;
 extern NSPanelCalendarUpdateDefaultTypeInternal _NSPanelCalendarUpdate_default_instance_;
@@ -667,7 +670,7 @@ class NSPanelWeatherUpdate_ForecastItem final : public ::google::protobuf::Messa
     return reinterpret_cast<const NSPanelWeatherUpdate_ForecastItem*>(
         &_NSPanelWeatherUpdate_ForecastItem_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 9;
+  static constexpr int kIndexInFileMessages = 10;
   friend void swap(NSPanelWeatherUpdate_ForecastItem& a, NSPanelWeatherUpdate_ForecastItem& b) { a.Swap(&b); }
   inline void Swap(NSPanelWeatherUpdate_ForecastItem* other) {
     if (other == this) return;
@@ -1143,7 +1146,7 @@ class NSPanelRoomStatus final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelRoomStatus*>(
         &_NSPanelRoomStatus_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 8;
+  static constexpr int kIndexInFileMessages = 9;
   friend void swap(NSPanelRoomStatus& a, NSPanelRoomStatus& b) { a.Swap(&b); }
   inline void Swap(NSPanelRoomStatus* other) {
     if (other == this) return;
@@ -1516,7 +1519,7 @@ class NSPanelRoomEntitiesPage_EntitySlot final : public ::google::protobuf::Mess
     return reinterpret_cast<const NSPanelRoomEntitiesPage_EntitySlot*>(
         &_NSPanelRoomEntitiesPage_EntitySlot_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 6;
+  static constexpr int kIndexInFileMessages = 7;
   friend void swap(NSPanelRoomEntitiesPage_EntitySlot& a, NSPanelRoomEntitiesPage_EntitySlot& b) { a.Swap(&b); }
   inline void Swap(NSPanelRoomEntitiesPage_EntitySlot* other) {
     if (other == this) return;
@@ -1845,7 +1848,7 @@ class NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage final : public ::go
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage*>(
         &_NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 17;
+  static constexpr int kIndexInFileMessages = 18;
   friend void swap(NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage& a, NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ToggleEntityFromEntitiesPage* other) {
     if (other == this) return;
@@ -2047,7 +2050,7 @@ class NSPanelMQTTManagerCommand_ThermostatTemperatureCommand final : public ::go
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ThermostatTemperatureCommand*>(
         &_NSPanelMQTTManagerCommand_ThermostatTemperatureCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 20;
+  static constexpr int kIndexInFileMessages = 21;
   friend void swap(NSPanelMQTTManagerCommand_ThermostatTemperatureCommand& a, NSPanelMQTTManagerCommand_ThermostatTemperatureCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ThermostatTemperatureCommand* other) {
     if (other == this) return;
@@ -2249,7 +2252,7 @@ class NSPanelMQTTManagerCommand_ThermostatCommand final : public ::google::proto
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ThermostatCommand*>(
         &_NSPanelMQTTManagerCommand_ThermostatCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 21;
+  static constexpr int kIndexInFileMessages = 22;
   friend void swap(NSPanelMQTTManagerCommand_ThermostatCommand& a, NSPanelMQTTManagerCommand_ThermostatCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ThermostatCommand* other) {
     if (other == this) return;
@@ -2475,7 +2478,7 @@ class NSPanelMQTTManagerCommand_SaveSceneCommand final : public ::google::protob
     return reinterpret_cast<const NSPanelMQTTManagerCommand_SaveSceneCommand*>(
         &_NSPanelMQTTManagerCommand_SaveSceneCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 18;
+  static constexpr int kIndexInFileMessages = 19;
   friend void swap(NSPanelMQTTManagerCommand_SaveSceneCommand& a, NSPanelMQTTManagerCommand_SaveSceneCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_SaveSceneCommand* other) {
     if (other == this) return;
@@ -2677,7 +2680,7 @@ class NSPanelMQTTManagerCommand_MediaPlayerCommand final : public ::google::prot
     return reinterpret_cast<const NSPanelMQTTManagerCommand_MediaPlayerCommand*>(
         &_NSPanelMQTTManagerCommand_MediaPlayerCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 22;
+  static constexpr int kIndexInFileMessages = 23;
   friend void swap(NSPanelMQTTManagerCommand_MediaPlayerCommand& a, NSPanelMQTTManagerCommand_MediaPlayerCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_MediaPlayerCommand* other) {
     if (other == this) return;
@@ -3009,7 +3012,7 @@ class NSPanelMQTTManagerCommand_LvglLook final : public ::google::protobuf::Mess
     return reinterpret_cast<const NSPanelMQTTManagerCommand_LvglLook*>(
         &_NSPanelMQTTManagerCommand_LvglLook_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 24;
+  static constexpr int kIndexInFileMessages = 25;
   friend void swap(NSPanelMQTTManagerCommand_LvglLook& a, NSPanelMQTTManagerCommand_LvglLook& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_LvglLook* other) {
     if (other == this) return;
@@ -3223,7 +3226,7 @@ class NSPanelMQTTManagerCommand_LightCommand final : public ::google::protobuf::
     return reinterpret_cast<const NSPanelMQTTManagerCommand_LightCommand*>(
         &_NSPanelMQTTManagerCommand_LightCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 16;
+  static constexpr int kIndexInFileMessages = 17;
   friend void swap(NSPanelMQTTManagerCommand_LightCommand& a, NSPanelMQTTManagerCommand_LightCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_LightCommand* other) {
     if (other == this) return;
@@ -3518,7 +3521,7 @@ class NSPanelMQTTManagerCommand_FirstPageTurnLightOn final : public ::google::pr
     return reinterpret_cast<const NSPanelMQTTManagerCommand_FirstPageTurnLightOn*>(
         &_NSPanelMQTTManagerCommand_FirstPageTurnLightOn_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 14;
+  static constexpr int kIndexInFileMessages = 15;
   friend void swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOn& a, NSPanelMQTTManagerCommand_FirstPageTurnLightOn& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOn* other) {
     if (other == this) return;
@@ -3780,7 +3783,7 @@ class NSPanelMQTTManagerCommand_FirstPageTurnLightOff final : public ::google::p
     return reinterpret_cast<const NSPanelMQTTManagerCommand_FirstPageTurnLightOff*>(
         &_NSPanelMQTTManagerCommand_FirstPageTurnLightOff_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 15;
+  static constexpr int kIndexInFileMessages = 16;
   friend void swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOff& a, NSPanelMQTTManagerCommand_FirstPageTurnLightOff& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_FirstPageTurnLightOff* other) {
     if (other == this) return;
@@ -3982,7 +3985,7 @@ class NSPanelMQTTManagerCommand_CoverCommand final : public ::google::protobuf::
     return reinterpret_cast<const NSPanelMQTTManagerCommand_CoverCommand*>(
         &_NSPanelMQTTManagerCommand_CoverCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 23;
+  static constexpr int kIndexInFileMessages = 24;
   friend void swap(NSPanelMQTTManagerCommand_CoverCommand& a, NSPanelMQTTManagerCommand_CoverCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_CoverCommand* other) {
     if (other == this) return;
@@ -4256,7 +4259,7 @@ class NSPanelMQTTManagerCommand_ButtonPressed final : public ::google::protobuf:
     return reinterpret_cast<const NSPanelMQTTManagerCommand_ButtonPressed*>(
         &_NSPanelMQTTManagerCommand_ButtonPressed_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 19;
+  static constexpr int kIndexInFileMessages = 20;
   friend void swap(NSPanelMQTTManagerCommand_ButtonPressed& a, NSPanelMQTTManagerCommand_ButtonPressed& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand_ButtonPressed* other) {
     if (other == this) return;
@@ -4446,7 +4449,7 @@ class NSPanelEnergyUpdate final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelEnergyUpdate*>(
         &_NSPanelEnergyUpdate_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 13;
+  static constexpr int kIndexInFileMessages = 14;
   friend void swap(NSPanelEnergyUpdate& a, NSPanelEnergyUpdate& b) { a.Swap(&b); }
   inline void Swap(NSPanelEnergyUpdate* other) {
     if (other == this) return;
@@ -5418,7 +5421,7 @@ class NSPanelCalendarUpdate_Event final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelCalendarUpdate_Event*>(
         &_NSPanelCalendarUpdate_Event_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 11;
+  static constexpr int kIndexInFileMessages = 12;
   friend void swap(NSPanelCalendarUpdate_Event& a, NSPanelCalendarUpdate_Event& b) { a.Swap(&b); }
   inline void Swap(NSPanelCalendarUpdate_Event* other) {
     if (other == this) return;
@@ -5609,6 +5612,328 @@ class NSPanelCalendarUpdate_Event final : public ::google::protobuf::Message
 };
 // -------------------------------------------------------------------
 
+class BuildInfo final : public ::google::protobuf::Message
+/* @@protoc_insertion_point(class_definition:BuildInfo) */ {
+ public:
+  inline BuildInfo() : BuildInfo(nullptr) {}
+  ~BuildInfo() PROTOBUF_FINAL;
+
+#if defined(PROTOBUF_CUSTOM_VTABLE)
+  void operator delete(BuildInfo* msg, std::destroying_delete_t) {
+    SharedDtor(*msg);
+    ::google::protobuf::internal::SizedDelete(msg, sizeof(BuildInfo));
+  }
+#endif
+
+  template <typename = void>
+  explicit PROTOBUF_CONSTEXPR BuildInfo(
+      ::google::protobuf::internal::ConstantInitialized);
+
+  inline BuildInfo(const BuildInfo& from) : BuildInfo(nullptr, from) {}
+  inline BuildInfo(BuildInfo&& from) noexcept
+      : BuildInfo(nullptr, std::move(from)) {}
+  inline BuildInfo& operator=(const BuildInfo& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BuildInfo& operator=(BuildInfo&& from) noexcept {
+    if (this == &from) return *this;
+    if (::google::protobuf::internal::CanMoveWithInternalSwap(GetArena(), from.GetArena())) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance);
+  }
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields()
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return _internal_metadata_.mutable_unknown_fields<::google::protobuf::UnknownFieldSet>();
+  }
+
+  static const ::google::protobuf::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::google::protobuf::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::google::protobuf::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BuildInfo& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const BuildInfo* internal_default_instance() {
+    return reinterpret_cast<const BuildInfo*>(
+        &_BuildInfo_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages = 6;
+  friend void swap(BuildInfo& a, BuildInfo& b) { a.Swap(&b); }
+  inline void Swap(BuildInfo* other) {
+    if (other == this) return;
+    if (::google::protobuf::internal::CanUseInternalSwap(GetArena(), other->GetArena())) {
+      InternalSwap(other);
+    } else {
+      ::google::protobuf::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BuildInfo* other) {
+    if (other == this) return;
+    ABSL_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BuildInfo* New(::google::protobuf::Arena* arena = nullptr) const {
+    return ::google::protobuf::Message::DefaultConstruct<BuildInfo>(arena);
+  }
+  using ::google::protobuf::Message::CopyFrom;
+  void CopyFrom(const BuildInfo& from);
+  using ::google::protobuf::Message::MergeFrom;
+  void MergeFrom(const BuildInfo& from) { BuildInfo::MergeImpl(*this, from); }
+
+  private:
+  static void MergeImpl(
+      ::google::protobuf::MessageLite& to_msg,
+      const ::google::protobuf::MessageLite& from_msg);
+
+  public:
+  bool IsInitialized() const {
+    return true;
+  }
+  ABSL_ATTRIBUTE_REINITIALIZES void Clear() PROTOBUF_FINAL;
+  #if defined(PROTOBUF_CUSTOM_VTABLE)
+  private:
+  static ::size_t ByteSizeLong(const ::google::protobuf::MessageLite& msg);
+  static ::uint8_t* _InternalSerialize(
+      const MessageLite& msg, ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream);
+
+  public:
+  ::size_t ByteSizeLong() const { return ByteSizeLong(*this); }
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    return _InternalSerialize(*this, target, stream);
+  }
+  #else   // PROTOBUF_CUSTOM_VTABLE
+  ::size_t ByteSizeLong() const final;
+  ::uint8_t* _InternalSerialize(
+      ::uint8_t* target,
+      ::google::protobuf::io::EpsCopyOutputStream* stream) const final;
+  #endif  // PROTOBUF_CUSTOM_VTABLE
+  int GetCachedSize() const { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::google::protobuf::Arena* arena);
+  static void SharedDtor(MessageLite& self);
+  void InternalSwap(BuildInfo* other);
+ private:
+  template <typename T>
+  friend ::absl::string_view(
+      ::google::protobuf::internal::GetAnyMessageName)();
+  static ::absl::string_view FullMessageName() { return "BuildInfo"; }
+
+ protected:
+  explicit BuildInfo(::google::protobuf::Arena* arena);
+  BuildInfo(::google::protobuf::Arena* arena, const BuildInfo& from);
+  BuildInfo(::google::protobuf::Arena* arena, BuildInfo&& from) noexcept
+      : BuildInfo(arena) {
+    *this = ::std::move(from);
+  }
+  const ::google::protobuf::internal::ClassData* GetClassData() const PROTOBUF_FINAL;
+  static void* PlacementNew_(const void*, void* mem,
+                             ::google::protobuf::Arena* arena);
+  static constexpr auto InternalNewImpl_();
+  static const ::google::protobuf::internal::ClassDataFull _class_data_;
+
+ public:
+  ::google::protobuf::Metadata GetMetadata() const;
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+  enum : int {
+    kVersionFieldNumber = 1,
+    kProjectFieldNumber = 2,
+    kBuildDateFieldNumber = 3,
+    kIdfVersionFieldNumber = 4,
+    kElfSha256FieldNumber = 5,
+    kImageSha256FieldNumber = 6,
+    kChipFieldNumber = 7,
+    kOtaPartitionFieldNumber = 8,
+  };
+  // string version = 1;
+  void clear_version() ;
+  const std::string& version() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_version(Arg_&& arg, Args_... args);
+  std::string* mutable_version();
+  PROTOBUF_NODISCARD std::string* release_version();
+  void set_allocated_version(std::string* value);
+
+  private:
+  const std::string& _internal_version() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_version(
+      const std::string& value);
+  std::string* _internal_mutable_version();
+
+  public:
+  // string project = 2;
+  void clear_project() ;
+  const std::string& project() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_project(Arg_&& arg, Args_... args);
+  std::string* mutable_project();
+  PROTOBUF_NODISCARD std::string* release_project();
+  void set_allocated_project(std::string* value);
+
+  private:
+  const std::string& _internal_project() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_project(
+      const std::string& value);
+  std::string* _internal_mutable_project();
+
+  public:
+  // string build_date = 3;
+  void clear_build_date() ;
+  const std::string& build_date() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_build_date(Arg_&& arg, Args_... args);
+  std::string* mutable_build_date();
+  PROTOBUF_NODISCARD std::string* release_build_date();
+  void set_allocated_build_date(std::string* value);
+
+  private:
+  const std::string& _internal_build_date() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_build_date(
+      const std::string& value);
+  std::string* _internal_mutable_build_date();
+
+  public:
+  // string idf_version = 4;
+  void clear_idf_version() ;
+  const std::string& idf_version() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_idf_version(Arg_&& arg, Args_... args);
+  std::string* mutable_idf_version();
+  PROTOBUF_NODISCARD std::string* release_idf_version();
+  void set_allocated_idf_version(std::string* value);
+
+  private:
+  const std::string& _internal_idf_version() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_idf_version(
+      const std::string& value);
+  std::string* _internal_mutable_idf_version();
+
+  public:
+  // string elf_sha256 = 5;
+  void clear_elf_sha256() ;
+  const std::string& elf_sha256() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_elf_sha256(Arg_&& arg, Args_... args);
+  std::string* mutable_elf_sha256();
+  PROTOBUF_NODISCARD std::string* release_elf_sha256();
+  void set_allocated_elf_sha256(std::string* value);
+
+  private:
+  const std::string& _internal_elf_sha256() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_elf_sha256(
+      const std::string& value);
+  std::string* _internal_mutable_elf_sha256();
+
+  public:
+  // string image_sha256 = 6;
+  void clear_image_sha256() ;
+  const std::string& image_sha256() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_image_sha256(Arg_&& arg, Args_... args);
+  std::string* mutable_image_sha256();
+  PROTOBUF_NODISCARD std::string* release_image_sha256();
+  void set_allocated_image_sha256(std::string* value);
+
+  private:
+  const std::string& _internal_image_sha256() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_image_sha256(
+      const std::string& value);
+  std::string* _internal_mutable_image_sha256();
+
+  public:
+  // string chip = 7;
+  void clear_chip() ;
+  const std::string& chip() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_chip(Arg_&& arg, Args_... args);
+  std::string* mutable_chip();
+  PROTOBUF_NODISCARD std::string* release_chip();
+  void set_allocated_chip(std::string* value);
+
+  private:
+  const std::string& _internal_chip() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_chip(
+      const std::string& value);
+  std::string* _internal_mutable_chip();
+
+  public:
+  // string ota_partition = 8;
+  void clear_ota_partition() ;
+  const std::string& ota_partition() const;
+  template <typename Arg_ = const std::string&, typename... Args_>
+  void set_ota_partition(Arg_&& arg, Args_... args);
+  std::string* mutable_ota_partition();
+  PROTOBUF_NODISCARD std::string* release_ota_partition();
+  void set_allocated_ota_partition(std::string* value);
+
+  private:
+  const std::string& _internal_ota_partition() const;
+  inline PROTOBUF_ALWAYS_INLINE void _internal_set_ota_partition(
+      const std::string& value);
+  std::string* _internal_mutable_ota_partition();
+
+  public:
+  // @@protoc_insertion_point(class_scope:BuildInfo)
+ private:
+  class _Internal;
+  friend class ::google::protobuf::internal::TcParser;
+  static const ::google::protobuf::internal::TcParseTable<
+      3, 8, 0,
+      100, 2>
+      _table_;
+
+  friend class ::google::protobuf::MessageLite;
+  friend class ::google::protobuf::Arena;
+  template <typename T>
+  friend class ::google::protobuf::Arena::InternalHelper;
+  using InternalArenaConstructable_ = void;
+  using DestructorSkippable_ = void;
+  struct Impl_ {
+    inline explicit constexpr Impl_(
+        ::google::protobuf::internal::ConstantInitialized) noexcept;
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena);
+    inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
+                          ::google::protobuf::Arena* arena, const Impl_& from,
+                          const BuildInfo& from_msg);
+    ::google::protobuf::internal::ArenaStringPtr version_;
+    ::google::protobuf::internal::ArenaStringPtr project_;
+    ::google::protobuf::internal::ArenaStringPtr build_date_;
+    ::google::protobuf::internal::ArenaStringPtr idf_version_;
+    ::google::protobuf::internal::ArenaStringPtr elf_sha256_;
+    ::google::protobuf::internal::ArenaStringPtr image_sha256_;
+    ::google::protobuf::internal::ArenaStringPtr chip_;
+    ::google::protobuf::internal::ArenaStringPtr ota_partition_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
+    PROTOBUF_TSAN_DECLARE_MEMBER
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_protobuf_5fnspanel_2eproto;
+};
+// -------------------------------------------------------------------
+
 class NSPanelWeatherUpdate final : public ::google::protobuf::Message
 /* @@protoc_insertion_point(class_definition:NSPanelWeatherUpdate) */ {
  public:
@@ -5668,7 +5993,7 @@ class NSPanelWeatherUpdate final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelWeatherUpdate*>(
         &_NSPanelWeatherUpdate_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 10;
+  static constexpr int kIndexInFileMessages = 11;
   friend void swap(NSPanelWeatherUpdate& a, NSPanelWeatherUpdate& b) { a.Swap(&b); }
   inline void Swap(NSPanelWeatherUpdate* other) {
     if (other == this) return;
@@ -6131,6 +6456,7 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     kMd5TftGuiFieldNumber = 11,
     kLvglThemeFieldNumber = 17,
     kLvglBackgroundFieldNumber = 18,
+    kBuildFieldNumber = 21,
     kNspanelStateFieldNumber = 1,
     kUpdateProgressFieldNumber = 2,
     kRssiFieldNumber = 3,
@@ -6273,6 +6599,21 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   std::string* _internal_mutable_lvgl_background();
 
   public:
+  // .BuildInfo build = 21;
+  bool has_build() const;
+  void clear_build() ;
+  const ::BuildInfo& build() const;
+  PROTOBUF_NODISCARD ::BuildInfo* release_build();
+  ::BuildInfo* mutable_build();
+  void set_allocated_build(::BuildInfo* value);
+  void unsafe_arena_set_allocated_build(::BuildInfo* value);
+  ::BuildInfo* unsafe_arena_release_build();
+
+  private:
+  const ::BuildInfo& _internal_build() const;
+  ::BuildInfo* _internal_mutable_build();
+
+  public:
   // .NSPanelStatusReport.state nspanel_state = 1;
   void clear_nspanel_state() ;
   ::NSPanelStatusReport_state nspanel_state() const;
@@ -6398,7 +6739,7 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<
-      5, 20, 1,
+      5, 21, 2,
       125, 2>
       _table_;
 
@@ -6416,6 +6757,8 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     inline explicit Impl_(::google::protobuf::internal::InternalVisibility visibility,
                           ::google::protobuf::Arena* arena, const Impl_& from,
                           const NSPanelStatusReport& from_msg);
+    ::google::protobuf::internal::HasBits<1> _has_bits_;
+    ::google::protobuf::internal::CachedSize _cached_size_;
     ::google::protobuf::RepeatedPtrField< ::NSPanelWarning > warnings_;
     ::google::protobuf::internal::ArenaStringPtr mac_address_;
     ::google::protobuf::internal::ArenaStringPtr ip_address_;
@@ -6424,6 +6767,7 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     ::google::protobuf::internal::ArenaStringPtr md5_tft_gui_;
     ::google::protobuf::internal::ArenaStringPtr lvgl_theme_;
     ::google::protobuf::internal::ArenaStringPtr lvgl_background_;
+    ::BuildInfo* build_;
     int nspanel_state_;
     ::int32_t update_progress_;
     ::int32_t rssi_;
@@ -6436,7 +6780,6 @@ class NSPanelStatusReport final : public ::google::protobuf::Message
     bool has_temperature_;
     int display_mode_;
     ::int32_t metrics_port_;
-    ::google::protobuf::internal::CachedSize _cached_size_;
     PROTOBUF_TSAN_DECLARE_MEMBER
   };
   union { Impl_ _impl_; };
@@ -6503,7 +6846,7 @@ class NSPanelRoomEntitiesPage final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelRoomEntitiesPage*>(
         &_NSPanelRoomEntitiesPage_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 7;
+  static constexpr int kIndexInFileMessages = 8;
   friend void swap(NSPanelRoomEntitiesPage& a, NSPanelRoomEntitiesPage& b) { a.Swap(&b); }
   inline void Swap(NSPanelRoomEntitiesPage* other) {
     if (other == this) return;
@@ -6757,7 +7100,7 @@ class NSPanelMQTTManagerCommand final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelMQTTManagerCommand*>(
         &_NSPanelMQTTManagerCommand_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 25;
+  static constexpr int kIndexInFileMessages = 26;
   friend void swap(NSPanelMQTTManagerCommand& a, NSPanelMQTTManagerCommand& b) { a.Swap(&b); }
   inline void Swap(NSPanelMQTTManagerCommand* other) {
     if (other == this) return;
@@ -8153,7 +8496,7 @@ class NSPanelCalendarUpdate final : public ::google::protobuf::Message
     return reinterpret_cast<const NSPanelCalendarUpdate*>(
         &_NSPanelCalendarUpdate_default_instance_);
   }
-  static constexpr int kIndexInFileMessages = 12;
+  static constexpr int kIndexInFileMessages = 13;
   friend void swap(NSPanelCalendarUpdate& a, NSPanelCalendarUpdate& b) { a.Swap(&b); }
   inline void Swap(NSPanelCalendarUpdate* other) {
     if (other == this) return;
@@ -10642,6 +10985,490 @@ inline bool NSPanelStatusReport::_internal_has_temperature() const {
 inline void NSPanelStatusReport::_internal_set_has_temperature(bool value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.has_temperature_ = value;
+}
+
+// .BuildInfo build = 21;
+inline bool NSPanelStatusReport::has_build() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.build_ != nullptr);
+  return value;
+}
+inline void NSPanelStatusReport::clear_build() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.build_ != nullptr) _impl_.build_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::BuildInfo& NSPanelStatusReport::_internal_build() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  const ::BuildInfo* p = _impl_.build_;
+  return p != nullptr ? *p : reinterpret_cast<const ::BuildInfo&>(::_BuildInfo_default_instance_);
+}
+inline const ::BuildInfo& NSPanelStatusReport::build() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:NSPanelStatusReport.build)
+  return _internal_build();
+}
+inline void NSPanelStatusReport::unsafe_arena_set_allocated_build(::BuildInfo* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.build_);
+  }
+  _impl_.build_ = reinterpret_cast<::BuildInfo*>(value);
+  if (value != nullptr) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:NSPanelStatusReport.build)
+}
+inline ::BuildInfo* NSPanelStatusReport::release_build() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::BuildInfo* released = _impl_.build_;
+  _impl_.build_ = nullptr;
+  if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
+    auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
+    released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    if (GetArena() == nullptr) {
+      delete old;
+    }
+  } else {
+    if (GetArena() != nullptr) {
+      released = ::google::protobuf::internal::DuplicateIfNonNull(released);
+    }
+  }
+  return released;
+}
+inline ::BuildInfo* NSPanelStatusReport::unsafe_arena_release_build() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:NSPanelStatusReport.build)
+
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::BuildInfo* temp = _impl_.build_;
+  _impl_.build_ = nullptr;
+  return temp;
+}
+inline ::BuildInfo* NSPanelStatusReport::_internal_mutable_build() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (_impl_.build_ == nullptr) {
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::BuildInfo>(GetArena());
+    _impl_.build_ = reinterpret_cast<::BuildInfo*>(p);
+  }
+  return _impl_.build_;
+}
+inline ::BuildInfo* NSPanelStatusReport::mutable_build() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  ::BuildInfo* _msg = _internal_mutable_build();
+  // @@protoc_insertion_point(field_mutable:NSPanelStatusReport.build)
+  return _msg;
+}
+inline void NSPanelStatusReport::set_allocated_build(::BuildInfo* value) {
+  ::google::protobuf::Arena* message_arena = GetArena();
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  if (message_arena == nullptr) {
+    delete (_impl_.build_);
+  }
+
+  if (value != nullptr) {
+    ::google::protobuf::Arena* submessage_arena = (value)->GetArena();
+    if (message_arena != submessage_arena) {
+      value = ::google::protobuf::internal::GetOwnedMessage(message_arena, value, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+
+  _impl_.build_ = reinterpret_cast<::BuildInfo*>(value);
+  // @@protoc_insertion_point(field_set_allocated:NSPanelStatusReport.build)
+}
+
+// -------------------------------------------------------------------
+
+// BuildInfo
+
+// string version = 1;
+inline void BuildInfo::clear_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::version() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.version)
+  return _internal_version();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_version(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.version)
+}
+inline std::string* BuildInfo::mutable_version() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_version();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.version)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.version_.Get();
+}
+inline void BuildInfo::_internal_set_version(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.version_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.version)
+  return _impl_.version_.Release();
+}
+inline void BuildInfo::set_allocated_version(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.version_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.version_.IsDefault()) {
+    _impl_.version_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.version)
+}
+
+// string project = 2;
+inline void BuildInfo::clear_project() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.project_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::project() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.project)
+  return _internal_project();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_project(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.project_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.project)
+}
+inline std::string* BuildInfo::mutable_project() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_project();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.project)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_project() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.project_.Get();
+}
+inline void BuildInfo::_internal_set_project(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.project_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_project() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.project_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_project() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.project)
+  return _impl_.project_.Release();
+}
+inline void BuildInfo::set_allocated_project(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.project_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.project_.IsDefault()) {
+    _impl_.project_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.project)
+}
+
+// string build_date = 3;
+inline void BuildInfo::clear_build_date() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.build_date_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::build_date() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.build_date)
+  return _internal_build_date();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_build_date(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.build_date_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.build_date)
+}
+inline std::string* BuildInfo::mutable_build_date() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_build_date();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.build_date)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_build_date() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.build_date_.Get();
+}
+inline void BuildInfo::_internal_set_build_date(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.build_date_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_build_date() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.build_date_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_build_date() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.build_date)
+  return _impl_.build_date_.Release();
+}
+inline void BuildInfo::set_allocated_build_date(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.build_date_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.build_date_.IsDefault()) {
+    _impl_.build_date_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.build_date)
+}
+
+// string idf_version = 4;
+inline void BuildInfo::clear_idf_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.idf_version_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::idf_version() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.idf_version)
+  return _internal_idf_version();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_idf_version(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.idf_version_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.idf_version)
+}
+inline std::string* BuildInfo::mutable_idf_version() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_idf_version();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.idf_version)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_idf_version() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.idf_version_.Get();
+}
+inline void BuildInfo::_internal_set_idf_version(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.idf_version_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_idf_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.idf_version_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_idf_version() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.idf_version)
+  return _impl_.idf_version_.Release();
+}
+inline void BuildInfo::set_allocated_idf_version(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.idf_version_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.idf_version_.IsDefault()) {
+    _impl_.idf_version_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.idf_version)
+}
+
+// string elf_sha256 = 5;
+inline void BuildInfo::clear_elf_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.elf_sha256_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::elf_sha256() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.elf_sha256)
+  return _internal_elf_sha256();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_elf_sha256(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.elf_sha256_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.elf_sha256)
+}
+inline std::string* BuildInfo::mutable_elf_sha256() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_elf_sha256();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.elf_sha256)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_elf_sha256() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.elf_sha256_.Get();
+}
+inline void BuildInfo::_internal_set_elf_sha256(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.elf_sha256_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_elf_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.elf_sha256_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_elf_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.elf_sha256)
+  return _impl_.elf_sha256_.Release();
+}
+inline void BuildInfo::set_allocated_elf_sha256(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.elf_sha256_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.elf_sha256_.IsDefault()) {
+    _impl_.elf_sha256_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.elf_sha256)
+}
+
+// string image_sha256 = 6;
+inline void BuildInfo::clear_image_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.image_sha256_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::image_sha256() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.image_sha256)
+  return _internal_image_sha256();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_image_sha256(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.image_sha256_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.image_sha256)
+}
+inline std::string* BuildInfo::mutable_image_sha256() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_image_sha256();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.image_sha256)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_image_sha256() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.image_sha256_.Get();
+}
+inline void BuildInfo::_internal_set_image_sha256(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.image_sha256_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_image_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.image_sha256_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_image_sha256() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.image_sha256)
+  return _impl_.image_sha256_.Release();
+}
+inline void BuildInfo::set_allocated_image_sha256(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.image_sha256_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.image_sha256_.IsDefault()) {
+    _impl_.image_sha256_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.image_sha256)
+}
+
+// string chip = 7;
+inline void BuildInfo::clear_chip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.chip_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::chip() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.chip)
+  return _internal_chip();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_chip(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.chip_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.chip)
+}
+inline std::string* BuildInfo::mutable_chip() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_chip();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.chip)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_chip() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.chip_.Get();
+}
+inline void BuildInfo::_internal_set_chip(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.chip_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_chip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.chip_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_chip() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.chip)
+  return _impl_.chip_.Release();
+}
+inline void BuildInfo::set_allocated_chip(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.chip_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.chip_.IsDefault()) {
+    _impl_.chip_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.chip)
+}
+
+// string ota_partition = 8;
+inline void BuildInfo::clear_ota_partition() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ota_partition_.ClearToEmpty();
+}
+inline const std::string& BuildInfo::ota_partition() const
+    ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:BuildInfo.ota_partition)
+  return _internal_ota_partition();
+}
+template <typename Arg_, typename... Args_>
+inline PROTOBUF_ALWAYS_INLINE void BuildInfo::set_ota_partition(Arg_&& arg,
+                                                     Args_... args) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ota_partition_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
+  // @@protoc_insertion_point(field_set:BuildInfo.ota_partition)
+}
+inline std::string* BuildInfo::mutable_ota_partition() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  std::string* _s = _internal_mutable_ota_partition();
+  // @@protoc_insertion_point(field_mutable:BuildInfo.ota_partition)
+  return _s;
+}
+inline const std::string& BuildInfo::_internal_ota_partition() const {
+  ::google::protobuf::internal::TSanRead(&_impl_);
+  return _impl_.ota_partition_.Get();
+}
+inline void BuildInfo::_internal_set_ota_partition(const std::string& value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ota_partition_.Set(value, GetArena());
+}
+inline std::string* BuildInfo::_internal_mutable_ota_partition() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  return _impl_.ota_partition_.Mutable( GetArena());
+}
+inline std::string* BuildInfo::release_ota_partition() {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  // @@protoc_insertion_point(field_release:BuildInfo.ota_partition)
+  return _impl_.ota_partition_.Release();
+}
+inline void BuildInfo::set_allocated_ota_partition(std::string* value) {
+  ::google::protobuf::internal::TSanWrite(&_impl_);
+  _impl_.ota_partition_.SetAllocated(value, GetArena());
+  if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.ota_partition_.IsDefault()) {
+    _impl_.ota_partition_.Set("", GetArena());
+  }
+  // @@protoc_insertion_point(field_set_allocated:BuildInfo.ota_partition)
 }
 
 // -------------------------------------------------------------------

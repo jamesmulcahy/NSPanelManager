@@ -2570,6 +2570,15 @@ components:
           type: string
           nullable: true
           description: md5 of the staged file; null if there is none.
+        version:
+          type: string
+          nullable: true
+          description: The staged image's version (esp_app_desc_t); null if there
+            is none or it is not an ESP app image.
+        image_sha256:
+          type: string
+          nullable: true
+          description: The staged image's appended SHA-256 (hex); null if unknown.
         source:
           nullable: true
           description: |-
@@ -2593,10 +2602,12 @@ components:
           nullable: true
       required:
       - commit
+      - image_sha256
       - md5
       - source
       - staged_at
       - tag
+      - version
     StagedChange:
       type: object
       properties:
@@ -2605,12 +2616,22 @@ components:
           nullable: true
         after_md5:
           type: string
+        version:
+          type: string
+          nullable: true
+          description: The staged image's version (esp_app_desc_t).
+        image_sha256:
+          type: string
+          nullable: true
+          description: The staged image's appended SHA-256 (hex); null if unknown.
         changed:
           type: boolean
       required:
       - after_md5
       - before_md5
       - changed
+      - image_sha256
+      - version
     TurnOnBehaviorEnum:
       enum:
       - color_temp

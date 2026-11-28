@@ -1,5 +1,6 @@
 #ifndef MQTT_MANAGER_NSPANEL
 #define MQTT_MANAGER_NSPANEL
+#include "nspanel/firmware_build_info.hpp"
 #include "nspanel/nspanel_model.hpp"
 #include "protobuf_nspanel.pb.h"
 #include "websocket_server/websocket_server.hpp"
@@ -165,6 +166,23 @@ public:
   bool has_firmware_update();
 
   /**
+   * The build the panel reported, if it did.
+   */
+  std::optional<FirmwareBuildInfo> get_build();
+
+  /**
+   * The "build" (what the panel reported, or null) and "staged_build" (the staged firmware of its model, or null) keys of
+   * the websocket status.
+   */
+  nlohmann::json get_build_status_json();
+
+  /**
+   * Whether the manager can tell which firmware the panel runs: it reported a firmware md5 or an image sha-256. A panel
+   * flashed over USB reports no md5.
+   */
+  bool has_firmware_identity();
+
+  /**
    * Compare stored LittleFS checksum with current LittleFS checksum and return true if they are different.
    * Always false for panels that report NSPM_WEB_UI_EMBEDDED, they have no LittleFS image to update.
    */
@@ -276,6 +294,10 @@ private:
   std::string _current_firmware_md5_checksum;
   std::string _current_littlefs_md5_checksum;
   std::string _current_tft_md5_checksum;
+  // Which firmware build the panel runs, from the latest register_request ("build") or status report (BuildInfo), the
+  // report winning. Unset for firmware that sends neither. Guarded by _build_mutex.
+  std::optional<FirmwareBuildInfo> _build;
+  std::mutex _build_mutex;
 
   // The look (docs/LVGL_PANEL_MODE.md). The settings as of the last reload_config(); an empty look is not managed.
   std::string _lvgl_theme;
