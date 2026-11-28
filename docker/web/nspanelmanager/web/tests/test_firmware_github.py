@@ -270,9 +270,21 @@ class RejectionTests(FirmwareGithubTestCase):
         self.assertRejected422(self.stage(), "sonoff", "0xE9")
 
     def test_oversized_image(self):
-        big = make_image("sonoff", 1, size=APP_SLOT_BYTES + 1)
+        big = make_image("sonoff", 1, size=APP_SLOT_BYTES["sonoff"] + 1)
         self.github.add_release(images={"sonoff": big, "waveshare_p4": make_image("waveshare_p4", 2)})
         self.assertRejected422(self.stage(), "sonoff", "app slot")
+
+    def test_p4_image_may_be_larger_than_a_sonoff_slot(self):
+        # The P4's partition table has 4 MiB app slots; its builds are already past the Sonoff's 0x1B0000.
+        images = self.github.add_release(images={"sonoff": make_image("sonoff", 1), "waveshare_p4": make_image("waveshare_p4", 2, size=APP_SLOT_BYTES["sonoff"] + 4096)})
+        response = self.stage()
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(self.staged("waveshare_p4"), images["waveshare_p4"])
+
+    def test_oversized_p4_image(self):
+        big = make_image("waveshare_p4", 2, size=APP_SLOT_BYTES["waveshare_p4"] + 1)
+        self.github.add_release(images={"sonoff": make_image("sonoff", 1), "waveshare_p4": big})
+        self.assertRejected422(self.stage(), "waveshare_p4", "app slot")
 
     def test_oversized_image_is_not_read_beyond_the_cap(self):
         # build.json claims a plausible size but the server keeps sending: the download stops at the slot size + 1.

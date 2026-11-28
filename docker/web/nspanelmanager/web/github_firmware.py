@@ -34,9 +34,9 @@ from .models import FirmwareUpload
 
 logger = logging.getLogger(__name__)
 
-# firmware_espidf/partitions.csv in the firmware repo: the ota_0/ota_1 app slots and the
-# spiffs partition that holds LittleFS.
-APP_SLOT_BYTES = 0x1B0000
+# Each model's ota_0/ota_1 app slot size (board_models.py), and the Sonoff partition table's spiffs
+# partition, which holds LittleFS.
+APP_SLOT_BYTES = board_models.APP_SLOT_BYTES
 LITTLEFS_PARTITION_BYTES = 0x8F000
 
 # The models, the chip each one's image is for (esp_image_header_t.chip_id) and each one's board in the release:
@@ -353,8 +353,8 @@ def verify_image(model, path, info):
     size = os.path.getsize(path)
     if size != info.size:
         fail(f"size is {size} bytes, build.json says {info.size}")
-    if size > APP_SLOT_BYTES:
-        fail(f"{size} bytes does not fit an app slot ({APP_SLOT_BYTES} bytes)")
+    if size > APP_SLOT_BYTES[model]:
+        fail(f"{size} bytes does not fit an app slot ({APP_SLOT_BYTES[model]} bytes)")
     with open(path, "rb") as image:
         header = image.read(16)
         if len(header) < 16 or header[0] != ESP_IMAGE_MAGIC:
@@ -386,7 +386,7 @@ def _download_image(info, target_dir, deadline):
             try:
                 for chunk in response.iter_content(chunk_size=CHUNK_BYTES):
                     total += len(chunk)
-                    if total > APP_SLOT_BYTES + 1:
+                    if total > APP_SLOT_BYTES[info.model] + 1:
                         break
                     if time.monotonic() > deadline:
                         raise FirmwareError("download_failed", f"{info.model}: download timed out")
@@ -395,8 +395,8 @@ def _download_image(info, target_dir, deadline):
                 raise FirmwareError("download_failed", f"{info.model}: download failed ({type(error).__name__})") from None
             finally:
                 response.close()
-        if total > APP_SLOT_BYTES:
-            raise FirmwareError("verification_failed", f"{info.model}: the image is larger than an app slot ({APP_SLOT_BYTES} bytes)", board=info.model)
+        if total > APP_SLOT_BYTES[info.model]:
+            raise FirmwareError("verification_failed", f"{info.model}: the image is larger than an app slot ({APP_SLOT_BYTES[info.model]} bytes)", board=info.model)
         os.chmod(temp_path, 0o644)
         return temp_path
     except BaseException:
