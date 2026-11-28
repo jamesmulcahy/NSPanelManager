@@ -2418,7 +2418,7 @@ TEST_F(NSPanelTest, a_panel_without_build_info_has_none) {
 
 TEST_F(NSPanelTest, register_request_build_is_stored_and_lowercased) {
   load_panel();
-  auto request = nlohmann::json{{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
+  auto request = nlohmann::json{{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
   request["build"] = build_json("ABCDEF");
   panel->register_to_manager(request);
 
@@ -2433,7 +2433,7 @@ TEST_F(NSPanelTest, register_request_build_is_stored_and_lowercased) {
 
 TEST_F(NSPanelTest, status_report_build_replaces_the_registered_one) {
   load_panel();
-  auto request = nlohmann::json{{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
+  auto request = nlohmann::json{{"mac_origin", PANEL_MAC}, {"friendly_name", PANEL_NAME}, {"model", "sonoff"}, {"version", "1.0"}, {"md5_firmware", "f"}, {"md5_data_file", "d"}, {"md5_tft_file", "t"}};
   request["build"] = build_json("aa");
   panel->register_to_manager(request);
   panel->mqtt_callback("nspanel/" + PANEL_MAC + "/status_report", report_with_build("bb", "from-report"));
