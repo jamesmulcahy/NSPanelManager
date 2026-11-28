@@ -14,7 +14,7 @@ from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
-from web.github_firmware import APP_SLOT_BYTES, CHIP_IDS, LITTLEFS_PARTITION_BYTES
+from web.github_firmware import APP_SLOT_BYTES, CHIP_IDS
 
 from .harness import NSPMTestCase
 
@@ -35,7 +35,8 @@ class DefaultFirmwareTests(NSPMTestCase):
     def test_every_shipped_file_matches_provenance(self):
         md5s = recorded_md5s()
 
-        expected = {f"{model}/{name}" for model in SHIPPED for name in ("firmware.bin", "data_file.bin", "merged_flash.bin")}
+        # No data_file.bin: builds have had no LittleFS image since the firmware began serving its web UI from the app image.
+        expected = {f"{model}/{name}" for model in SHIPPED for name in ("firmware.bin", "merged_flash.bin")}
         self.assertEqual(set(md5s), expected)
         for path, md5 in md5s.items():
             with self.subTest(path=path):
@@ -44,8 +45,7 @@ class DefaultFirmwareTests(NSPMTestCase):
     def test_images_fit_the_partition_table(self):
         for model in SHIPPED:
             with self.subTest(model=model):
-                self.assertLessEqual((FIRMWARE_DIR / model / "firmware.bin").stat().st_size, APP_SLOT_BYTES)
-                self.assertLessEqual((FIRMWARE_DIR / model / "data_file.bin").stat().st_size, LITTLEFS_PARTITION_BYTES)
+                self.assertLessEqual((FIRMWARE_DIR / model / "firmware.bin").stat().st_size, APP_SLOT_BYTES[model])
 
     def test_each_model_ships_an_image_for_its_chip(self):
         for model, chip_id in ((model, CHIP_IDS[model]) for model in SHIPPED):
@@ -64,7 +64,7 @@ class DefaultFirmwareTests(NSPMTestCase):
                 firmware = self.client.get(reverse("checksum_firmware"), {"model": model})
                 data_file = self.client.get(reverse("checksum_data_file"), {"model": model})
                 self.assertEqual(firmware.content.decode(), md5s[f"{model}/firmware.bin"])
-                self.assertEqual(data_file.content.decode(), md5s[f"{model}/data_file.bin"])
+                self.assertEqual((data_file.status_code, data_file.content), (404, b""))
 
                 download = self.client.get(reverse("download_firmware"), {"model": model})
                 self.assertEqual(hashlib.md5(download.content).hexdigest(), md5s[f"{model}/firmware.bin"])

@@ -32,17 +32,20 @@ class BoardModel:
     chip_id: int
     # The board's name in the firmware repo's GitHub release (firmware-<board>.bin), or None if it is not built any more.
     release_board: Optional[str] = None
+    # The size of its ota_0/ota_1 app slots, from the firmware repo's partition table for the board.
+    app_slot_bytes: int = 0x1B0000
 
 
 MODELS = (
-    BoardModel("sonoff", "Sonoff original NSPanel", 0x0000, "original_sonoff"),
+    BoardModel("sonoff", "Sonoff original NSPanel", 0x0000, "original_sonoff"),  # partitions.csv
     # The legacy ESP32-S3 custom PCB. No longer built; kept so existing panels and database rows keep working.
     BoardModel("custom", "Legacy custom board (ESP32-S3)", 0x0009),
-    BoardModel("waveshare_p4", "Waveshare ESP32-P4 board", 0x0012, "custom_pcb"),
+    BoardModel("waveshare_p4", "Waveshare ESP32-P4 board", 0x0012, "custom_pcb", app_slot_bytes=0x400000),  # partitions_p4.csv
 )
 
 MODEL_IDS = tuple(model.id for model in MODELS)
 CHIP_IDS = {model.id: model.chip_id for model in MODELS}
+APP_SLOT_BYTES = {model.id: model.app_slot_bytes for model in MODELS}
 # Manager model -> the board's name in the GitHub release, for the models that are still built.
 BOARDS = {model.id: model.release_board for model in MODELS if model.release_board}
 

@@ -211,21 +211,15 @@ void MqttManagerConfig::update_firmware_checksum() {
       }
     }
 
-    // Update LittleFS checksum
-    const std::string littlefs_warning = fmt::format("MD5 checksum for {} littlefs/data file was not able to be calculated.", id);
+    // Update LittleFS checksum. Firmware that serves its web UI from the app image reports "embedded" and never
+    // downloads a data file, so the image ships none and a slot without one is normal.
     auto littlefs_checksum = MqttManagerConfig::_get_file_md5_checksum(slot + "data_file.bin");
     if (littlefs_checksum.has_value()) {
       MqttManagerConfig::_md5_checksum_littlefs[id] = littlefs_checksum.value();
-      WebsocketServer::remove_warning(littlefs_warning);
       SPDLOG_INFO("LittleFS checksum for {}: {}", id, littlefs_checksum.value());
     } else {
       MqttManagerConfig::_md5_checksum_littlefs.erase(id);
-      if (info.firmware_bundled) {
-        WebsocketServer::register_warning(WebsocketServer::ActiveWarningLevel::ERROR, littlefs_warning);
-        SPDLOG_ERROR("Failed to calculate checksum for {} LittleFS!", id);
-      } else {
-        SPDLOG_INFO("No {} LittleFS image staged.", id);
-      }
+      SPDLOG_INFO("No {} LittleFS image staged.", id);
     }
   }
 }
